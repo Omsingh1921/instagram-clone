@@ -1,0 +1,80 @@
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Environment secrets
+.env
+.env.local
+.env.production
+
+# Package Files #
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Environment variables
+.env
+.env.production
+.env.staging
+
+# IDE & Editor files
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+.metadata/
+bin/
+*.sublime-project
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+
+# ---- Upload directories (local media storage — never commit binaries) ----
+uploads/
+backend/uploads/
+**/uploads/
+
+# ---- JVM crash & heap dumps (generated on JVM crash) ----
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
+
+# ---- Build artifacts and temporary zips ----
+util.zip
+request.zip
+*.zip
+

@@ -1,0 +1,151 @@
+.incoming-call-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.incoming-call-card {
+  width: 90%;
+  max-width: 360px;
+  background: rgba(28, 28, 30, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28px;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.incoming-call-avatar-container {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.incoming-call-pulse-ring {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 149, 246, 0.5);
+  animation: pulseRipple 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+}
+
+.incoming-call-pulse-ring.ring-2 {
+  inset: -24px;
+  animation-delay: 0.6s;
+}
+
+.incoming-call-avatar {
+  width: 96px !important;
+  height: 96px !important;
+  border-radius: 50% !important;
+  border: 3px solid #0095f6 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.incoming-call-info {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.incoming-call-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.2px;
+}
+
+.incoming-call-subtext {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.incoming-call-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+}
+
+.call-action-circle-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  transition: transform 0.18s ease, filter 0.18s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.call-action-circle-btn:hover {
+  transform: scale(1.08);
+}
+
+.call-action-circle-btn:active {
+  transform: scale(0.96);
+}
+
+.decline-btn {
+  background: #ed4956;
+}
+
+.decline-btn:hover {
+  filter: brightness(1.1);
+}
+
+.accept-btn {
+  background: #22c55e;
+}
+
+.accept-btn:hover {
+  filter: brightness(1.1);
+}
+
+@keyframes pulseRipple {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+

@@ -1,0 +1,199 @@
+/* Insights Modal Styles */
+.insights-modal-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 4px 0 16px;
+  color: var(--text-primary);
+}
+
+.insights-overview-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.insights-thumbnail-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background-color: #000;
+  flex-shrink: 0;
+}
+
+.insights-media-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.insights-summary-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.insights-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.insights-timestamp {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Hero Stats Card */
+.insights-hero-stat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.hero-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.hero-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.hero-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 36px;
+  background-color: var(--border-subtle);
+}
+
+/* Sections */
+.insights-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insights-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.insights-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.insights-total-badge {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-primary);
+  background: rgba(0, 149, 246, 0.12);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+/* 4-Box Metrics Grid */
+.insights-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.metric-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  gap: 6px;
+  text-align: center;
+}
+
+.metric-icon-bubble {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary);
+}
+
+.metric-icon-bubble.likes {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.metric-icon-bubble.comments {
+  background: rgba(0, 149, 246, 0.1);
+}
+
+.metric-icon-bubble.shares {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.metric-icon-bubble.saves {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.metric-num {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.metric-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Activity Breakdown List */
+.insights-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+}
+
+.activity-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 4px 0;
+}
+
+.activity-label {
+  color: var(--text-secondary);
+}
+
+.activity-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}

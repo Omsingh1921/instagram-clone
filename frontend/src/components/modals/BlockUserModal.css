@@ -1,0 +1,158 @@
+.block-user-modal-dialog .modal-container {
+  max-width: 400px;
+  background-color: var(--surface, #262626);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-color, #363636);
+}
+
+.block-user-modal-dialog .modal-content {
+  padding: 0;
+}
+
+.block-modal-wrapper {
+  display: flex;
+  flex-direction: column;
+}
+
+.block-modal-header {
+  padding: 24px 24px 16px;
+  text-align: center;
+}
+
+.block-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin: 0 0 10px 0;
+}
+
+.block-modal-subtitle {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary, #a8a8a8);
+  margin: 0;
+}
+
+.block-modal-options {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 16px 16px;
+  gap: 10px;
+}
+
+.block-option-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--bg-secondary, #1a1a1a);
+  border: 1px solid var(--border-color, #333333);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.block-option-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--text-secondary, #555555);
+}
+
+.block-option-card.selected {
+  border-color: var(--ig-primary-button, #0095f6);
+  background: rgba(0, 149, 246, 0.06);
+}
+
+.block-option-radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.block-option-radio input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+}
+
+.custom-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--text-secondary, #8e8e8e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.block-option-card.selected .custom-radio {
+  border-color: var(--ig-primary-button, #0095f6);
+}
+
+.block-option-card.selected .custom-radio::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--ig-primary-button, #0095f6);
+}
+
+.block-option-text {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--text-primary, #ffffff);
+}
+
+.block-option-text strong {
+  font-weight: 500;
+}
+
+.block-modal-actions {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-color, #363636);
+}
+
+.block-action-btn {
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.block-action-btn.danger-btn {
+  color: #ed4956;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-color, #363636);
+}
+
+.block-action-btn.danger-btn:hover {
+  background-color: rgba(237, 73, 86, 0.12);
+}
+
+.block-action-btn.cancel-btn {
+  color: var(--text-primary, #ffffff);
+  font-weight: 400;
+}
+
+.block-action-btn.cancel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.block-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

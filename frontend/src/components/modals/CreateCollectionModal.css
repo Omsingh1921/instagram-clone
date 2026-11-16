@@ -1,0 +1,19 @@
+.create-collection-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.collection-name-input {
+  width: 100%;
+  font-size: 14px;
+  padding: 10px 14px;
+}
+
+.collection-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}

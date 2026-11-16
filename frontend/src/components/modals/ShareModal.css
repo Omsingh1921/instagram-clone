@@ -1,0 +1,210 @@
+/* ==================== INSTAGRAM SHARE MODAL STYLING ==================== */
+.share-sheet-container {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  max-height: 480px;
+  overflow: hidden;
+  color: var(--text-primary);
+}
+
+.share-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.share-sheet-title {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.share-sheet-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 4px;
+  transition: all var(--transition-fast);
+}
+
+.share-sheet-close-btn:hover {
+  color: var(--text-primary);
+  background-color: var(--bg-hover);
+}
+
+/* Search bar */
+.share-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 16px;
+  padding: 8px 14px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+}
+
+.share-search-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.share-search-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+}
+
+.share-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Users list */
+.share-users-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 240px;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.share-user-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-lg);
+  transition: background var(--transition-fast);
+}
+
+.share-user-row:hover {
+  background-color: var(--bg-hover);
+}
+
+.share-user-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.share-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  min-width: 0;
+}
+
+.share-user-uname {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-user-name {
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.share-send-btn {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.share-send-btn:hover {
+  opacity: 0.9;
+}
+
+.share-send-btn.sent {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: default;
+}
+
+.share-loading-box,
+.share-empty-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px 0;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Bottom Action Tray */
+.share-bottom-tray {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background-color: var(--bg-secondary);
+}
+
+.share-tray-action {
+  background: transparent;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  transition: transform var(--transition-fast);
+}
+
+.share-tray-action:hover {
+  transform: translateY(-2px);
+}
+
+.share-tray-icon-bubble {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary);
+  transition: background var(--transition-fast);
+}
+
+.share-tray-action:hover .share-tray-icon-bubble {
+  background-color: var(--bg-hover);
+}

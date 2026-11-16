@@ -1,0 +1,36 @@
+package com.instagramclone.follow.entity;
+
+import com.instagramclone.common.entity.BaseAuditableEntity;
+import lombok.experimental.SuperBuilder;
+import com.instagramclone.follow.enums.FollowRequestStatus;
+
+import com.instagramclone.user.entity.User;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+
+@Entity
+@Table(name = "follow_requests", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_follow_req_pair", columnNames = {"requester_id", "target_id"})
+})
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
+@EntityListeners(AuditingEntityListener.class)
+public class FollowRequest extends BaseAuditableEntity {
+@ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "requester_id", nullable = false)
+    private User requester;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "target_id", nullable = false)
+    private User target;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private FollowRequestStatus status = FollowRequestStatus.PENDING;
+}

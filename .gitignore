@@ -4,10 +4,18 @@
 # Log file
 *.log
 
-# Environment secrets
+# Environment secrets & Firebase admin keys
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
+secrets/
+**/secrets/
+*-firebase-adminsdk-*.json
+**/*firebase-adminsdk-*.json
+
+# Submodule backups
+.git_submodule_backup/
+**/.git_submodule_backup/
 
 # Package Files #
 *.jar

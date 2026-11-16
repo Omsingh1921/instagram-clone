@@ -1,0 +1,1035 @@
+/* ============================================================
+   Shared Dark Neon Glassmorphism Styles for Auth Flow Pages
+   (SignupPage, ForgotPasswordPage, ResetPasswordPage)
+   Inherits dark aurora + autofill base from LoginPage.css (.ig-login-redesign)
+   ============================================================ */
+
+.ig-auth-flow-root.ig-login-page-root.ig-login-redesign {
+  box-sizing: border-box;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  padding: 6px 0 4px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ig-auth-flow-root.ig-login-page-root.ig-login-redesign::-webkit-scrollbar {
+  display: none;
+}
+
+.ig-auth-aurora-center {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 620px;
+  height: 560px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(139, 92, 246, 0.16) 0%,
+    rgba(217, 70, 239, 0.08) 44%,
+    transparent 74%
+  );
+  filter: blur(88px);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.ig-auth-flow-main {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 16px;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ig-auth-flow-card {
+  width: 100%;
+  max-width: 408px;
+  max-height: calc(100dvh - 58px);
+  margin: 0 auto;
+  padding: 18px 24px 15px;
+  border-radius: 22px;
+  background: linear-gradient(
+    180deg,
+    rgba(15, 14, 26, 0.92) 0%,
+    rgba(10, 9, 18, 0.95) 100%
+  );
+  border: 1px solid rgba(168, 85, 247, 0.34);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.14),
+    0 24px 64px rgba(0, 0, 0, 0.72),
+    0 0 46px -14px rgba(168, 85, 247, 0.32);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-sizing: border-box;
+  text-align: center;
+  position: relative;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ig-auth-flow-card::-webkit-scrollbar {
+  display: none;
+}
+
+.ig-auth-flow-card-wide {
+  max-width: 424px;
+}
+
+.ig-auth-card-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+/* ---------------- 3-Step Neon Progress Stepper ---------------- */
+.ig-neon-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+}
+
+.ig-step-orb {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #9b9cb2;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.24s ease;
+  flex-shrink: 0;
+}
+
+.ig-step-orb.is-active {
+  color: #ffffff;
+  border-color: transparent;
+  background: radial-gradient(circle at 30% 30%, #f472b6 0%, #d946ef 42%, #9333ea 100%);
+  box-shadow:
+    0 0 18px rgba(217, 70, 239, 0.72),
+    0 0 0 3px rgba(217, 70, 239, 0.16);
+}
+
+.ig-step-orb.is-completed {
+  color: #10b981;
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.14);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+}
+
+.ig-step-line {
+  width: 52px;
+  height: 2px;
+  margin: 0 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  transition: background 0.24s ease;
+}
+
+.ig-step-line.is-to-active {
+  background: linear-gradient(90deg, #10b981 0%, #d946ef 100%);
+}
+
+.ig-step-line.is-done {
+  background: #10b981;
+}
+
+/* ---------------- Header Copy & Badges ---------------- */
+.ig-auth-step-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #b5b6c9;
+  margin: 0 0 6px;
+  letter-spacing: 0.2px;
+}
+
+.ig-neon-badge-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  margin: 0 auto 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(168, 85, 247, 0.44);
+  color: #f3e8ff;
+  box-shadow:
+    inset 0 0 12px rgba(168, 85, 247, 0.15),
+    0 0 20px rgba(168, 85, 247, 0.26);
+}
+
+.ig-neon-badge-box.is-emerald {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.48);
+  color: #34d399;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+}
+
+.ig-auth-card-title {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+
+.ig-auth-card-subtitle {
+  margin: 0 auto 10px;
+  max-width: 310px;
+  font-size: 12.5px;
+  line-height: 1.38;
+  color: #a1a2b8;
+}
+
+.ig-auth-card-subtitle strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.ig-signup-step1-lead {
+  margin: 2px auto 6px;
+  max-width: 280px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #f3f4f6;
+}
+
+.ig-signup-collage-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2px auto 8px;
+}
+
+/* ---------------- Alerts / Banners ---------------- */
+.ig-auth-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.ig-auth-banner-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.36);
+  color: #fca5a5;
+}
+
+.ig-auth-banner-success {
+  background: rgba(16, 185, 129, 0.14);
+  border: 1px solid rgba(16, 185, 129, 0.34);
+  color: #34d399;
+}
+
+.ig-auth-banner svg {
+  flex-shrink: 0;
+}
+
+/* ---------------- Dark Glass Form Controls ---------------- */
+.ig-auth-flow-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ig-auth-glass-field {
+  min-height: 40px;
+  padding: 5px 13px;
+  border-radius: 11px;
+  background: #131320;
+  border: 1px solid rgba(168, 85, 247, 0.34);
+  box-sizing: border-box;
+}
+
+.ig-auth-glass-field:focus-within {
+  border-color: rgba(192, 132, 252, 0.92);
+  background: #171728;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+
+.ig-auth-glass-field .ig-glass-input:-webkit-autofill,
+.ig-auth-glass-field .ig-glass-input:-webkit-autofill:hover,
+.ig-auth-glass-field .ig-glass-input:-webkit-autofill:focus,
+.ig-auth-glass-field .ig-glass-input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #131320 inset !important;
+  box-shadow: 0 0 0 1000px #131320 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
+.ig-auth-glass-field:focus-within .ig-glass-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px #171728 inset !important;
+  box-shadow: 0 0 0 1000px #171728 inset !important;
+}
+
+/* Verified email pill row in Step 3 */
+.ig-auth-email-pill-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  background: rgba(19, 19, 32, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.ig-auth-email-pill-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: #b4b5c9;
+}
+
+.ig-auth-email-pill-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-verified-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.42);
+  flex-shrink: 0;
+}
+
+/* ---------------- 6-Digit Glowing OTP Boxes ---------------- */
+.ig-otp-visual-wrapper {
+  position: relative;
+  width: 100%;
+  height: 44px;
+}
+
+.ig-otp-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ig-otp-slot-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #12121f;
+  border: 1px solid rgba(168, 85, 247, 0.42);
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #ffffff;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.ig-otp-slot-cell.is-filled {
+  border-color: rgba(192, 132, 252, 0.72);
+  background: #17162a;
+}
+
+.ig-otp-slot-cell.is-current {
+  border-color: #d946ef;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.35), 0 0 0 2px rgba(217, 70, 239, 0.18);
+}
+
+.ig-otp-slot-caret {
+  width: 2px;
+  height: 20px;
+  background: #e879f9;
+  border-radius: 2px;
+  animation: igOtpBlink 1s step-end infinite;
+}
+
+@keyframes igOtpBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.ig-otp-overlay-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0 10px;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: transparent;
+  caret-color: transparent;
+  font-size: 16px;
+  cursor: text;
+  box-sizing: border-box;
+  letter-spacing: 0.4em;
+}
+
+.ig-otp-overlay-input::placeholder {
+  color: transparent;
+}
+
+/* Multi-input OTP boxes on ForgotPasswordPage */
+.ig-auth-flow-root .ig-otp-inputs-row {
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+
+.ig-auth-flow-root .ig-otp-digit-box {
+  width: 44px;
+  height: 48px;
+  border-radius: 10px;
+  background: #12121f;
+  border: 1px solid rgba(168, 85, 247, 0.42);
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.ig-auth-flow-root .ig-otp-digit-box:focus {
+  border-color: #d946ef;
+  background: #17162a;
+  box-shadow: 0 0 14px rgba(217, 70, 239, 0.35), 0 0 0 2px rgba(217, 70, 239, 0.18);
+}
+
+/* ---------------- Gradient CTA & Secondary Buttons ---------------- */
+.ig-neon-gradient-btn {
+  width: 100%;
+  height: 40px;
+  border: none;
+  border-radius: 11px;
+  background: linear-gradient(90deg, #a855f7 0%, #d946ef 42%, #f97316 100%);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 28px -6px rgba(217, 70, 239, 0.56);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.ig-neon-gradient-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px -6px rgba(217, 70, 239, 0.72);
+}
+
+.ig-neon-gradient-btn:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.ig-auth-secondary-btn {
+  width: 100%;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f3f4f6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.ig-auth-secondary-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.ig-auth-secondary-btn:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.ig-auth-text-action-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #a1a2b8;
+  transition: color 0.15s ease;
+}
+
+.ig-auth-text-action-btn:hover:not(:disabled) {
+  color: #ffffff;
+}
+
+.ig-auth-link-blue {
+  color: #38a0ff;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ig-auth-link-blue:hover {
+  text-decoration: underline;
+}
+
+.ig-auth-bottom-pill-row {
+  margin-top: 4px;
+  height: 36px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  color: #d4d4e0;
+}
+
+.ig-auth-bottom-link-row {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: #d4d4e0;
+}
+
+/* Compact footer inside auth flow viewport */
+.ig-auth-flow-root .ig-login-footer {
+  padding: 2px 12px 4px;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.ig-auth-flow-root .ig-account-selector-list,
+.ig-auth-flow-root .ig-sessions-list-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ig-auth-flow-root .ig-account-selector-list::-webkit-scrollbar,
+.ig-auth-flow-root .ig-sessions-list-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* ---------------- ForgotPassword Dark Account & Session Cards ---------------- */
+.ig-auth-flow-root .ig-account-selector-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 18px 0 20px;
+  max-height: 320px;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.ig-auth-flow-root .ig-account-select-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(19, 19, 32, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.ig-auth-flow-root .ig-account-select-card:hover {
+  border-color: rgba(192, 132, 252, 0.85);
+  background: rgba(28, 28, 46, 0.95);
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.22), 0 2px 6px rgba(0, 0, 0, 0.4);
+  transform: translateY(-2px);
+}
+
+.ig-auth-flow-root .ig-account-select-card:active {
+  transform: translateY(0);
+}
+
+.ig-auth-flow-root .ig-account-card-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ig-auth-flow-root .ig-account-avatar-frame {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 48px;
+  max-height: 48px;
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.45) 0%, rgba(217, 70, 239, 0.3) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ig-auth-flow-root .ig-account-card-left .avatar-wrapper {
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+}
+
+.ig-auth-flow-root .ig-account-card-left .avatar-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+.ig-auth-flow-root .ig-account-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ig-auth-flow-root .ig-account-username-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ig-auth-flow-root .ig-account-card-username {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.ig-auth-flow-root .ig-account-slot-pill {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.16);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.ig-auth-flow-root .ig-account-card-name {
+  font-size: 12.5px;
+  color: #9b9cb2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ig-auth-flow-root .ig-account-card-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.ig-auth-flow-root .ig-account-select-btn-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c084fc;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  transition: all 0.15s ease;
+}
+
+.ig-auth-flow-root .ig-account-select-card:hover .ig-account-select-btn-text {
+  background: rgba(168, 85, 247, 0.25);
+  color: #ffffff;
+  border-color: rgba(168, 85, 247, 0.6);
+}
+
+.ig-auth-flow-root .ig-account-chevron {
+  color: #8f90a6;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.ig-auth-flow-root .ig-account-select-card:hover .ig-account-chevron {
+  color: #c084fc;
+  transform: translateX(3px);
+}
+
+.ig-auth-flow-root .ig-session-item-row {
+  background: #131320;
+  border: 1px solid rgba(255, 255, 255, 0.11);
+}
+
+.ig-auth-flow-root .ig-session-device-title {
+  color: #ffffff;
+}
+
+.ig-auth-flow-root .ig-session-subtext {
+  color: #9b9cb2;
+}
+
+/* Password Strength Bar inside Dark Glass Card */
+.ig-dark-strength-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: -2px;
+  padding: 0 2px;
+}
+
+.ig-dark-strength-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  height: 4px;
+}
+
+.ig-dark-strength-seg {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background-color 0.2s ease;
+}
+
+.ig-dark-strength-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #9b9cb2;
+}
+
+@media (max-width: 480px) {
+  .ig-auth-flow-card {
+    padding: 20px 18px 16px;
+    border-radius: 18px;
+  }
+
+  .ig-step-line {
+    width: 38px;
+  }
+
+  .ig-auth-flow-root .ig-otp-digit-box {
+    width: 38px;
+    height: 44px;
+  }
+}
+
+/* ============================================================
+   Signup Split-Screen Neon Obsidian Redesign
+   (Scoped strictly to .ig-signup-figma-root)
+   ============================================================ */
+
+.ig-login-page-root.ig-signup-figma-root {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0;
+  background-color: #06050d;
+  color: #f5f5f7;
+  color-scheme: dark;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow-x: hidden;
+  isolation: isolate;
+}
+
+.ig-signup-glow-bl {
+  position: fixed;
+  bottom: -180px;
+  left: -140px;
+  width: 580px;
+  height: 580px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(109, 40, 217, 0.42) 0%,
+    rgba(147, 51, 234, 0.2) 45%,
+    transparent 74%
+  );
+  filter: blur(84px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ig-signup-glow-tr {
+  position: fixed;
+  top: -170px;
+  right: -130px;
+  width: 540px;
+  height: 540px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(168, 85, 247, 0.38) 0%,
+    rgba(192, 38, 211, 0.18) 46%,
+    transparent 74%
+  );
+  filter: blur(82px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ig-signup-glow-br {
+  position: fixed;
+  bottom: -200px;
+  right: -140px;
+  width: 520px;
+  height: 520px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle at center,
+    rgba(124, 58, 237, 0.32) 0%,
+    rgba(168, 85, 247, 0.14) 48%,
+    transparent 74%
+  );
+  filter: blur(86px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ig-signup-figma-split {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ig-signup-figma-showcase {
+  display: none;
+  position: relative;
+  flex: 1 1 0%;
+  min-width: 0;
+  padding: clamp(24px, 3.6vw, 48px);
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+
+.ig-signup-corner-brand {
+  position: absolute;
+  top: clamp(20px, 2.8vw, 32px);
+  left: clamp(24px, 3vw, 38px);
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.ig-signup-showcase-center {
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: clamp(16px, 2.8dvh, 26px);
+}
+
+.ig-signup-hero-headline {
+  margin: 0;
+  font-size: clamp(27px, 2.8vw, 38px);
+  line-height: 1.24;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: #f5f5f7;
+}
+
+.ig-signup-collage-img {
+  width: clamp(250px, 29vw, 390px);
+  max-width: 100%;
+  max-height: clamp(210px, 40dvh, 345px);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ig-signup-figma-panel {
+  flex: 1 1 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(24px, 3.6vw, 48px) clamp(20px, 3.6vw, 46px);
+  box-sizing: border-box;
+}
+
+@media (min-width: 900px) {
+  .ig-signup-figma-split {
+    flex-direction: row;
+  }
+
+  .ig-signup-figma-showcase {
+    display: flex;
+  }
+
+  .ig-signup-figma-panel {
+    flex: 0 0 auto;
+    width: clamp(410px, 45.5vw, 600px);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .ig-signup-mobile-brand {
+    display: none;
+  }
+}
+
+.ig-signup-figma-inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.ig-signup-mobile-brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+@media (min-width: 900px) {
+  .ig-signup-mobile-brand {
+    display: none;
+  }
+}
+
+.ig-signup-figma-title {
+  margin: 0 0 6px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.ig-signup-figma-root .ig-signup-step1-lead {
+  margin: 0 auto 14px;
+  max-width: 340px;
+  font-size: 13.5px;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #a5a6bc;
+}
+
+.ig-signup-figma-root .ig-neon-stepper {
+  margin: 2px auto 10px;
+}
+
+.ig-signup-figma-root .ig-signup-collage-wrap {
+  margin: 6px auto 16px;
+}
+
+.ig-signup-figma-root .ig-auth-flow-form {
+  gap: 11px;
+}
+
+.ig-signup-figma-root .ig-signup-field {
+  min-height: 46px;
+  padding: 6px 14px;
+  border-radius: 11px;
+  background: rgba(20, 19, 34, 0.78);
+  border: 1px solid rgba(168, 85, 247, 0.48);
+}
+
+.ig-signup-figma-root .ig-signup-field:focus-within {
+  border-color: rgba(192, 132, 252, 0.95);
+  background: rgba(24, 23, 42, 0.92);
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+
+.ig-signup-figma-root .ig-signup-cta-btn {
+  height: 44px;
+  border-radius: 11px;
+  background: linear-gradient(90deg, #9333ea 0%, #c026d3 52%, #db2777 100%);
+  box-shadow: 0 10px 28px -6px rgba(192, 38, 211, 0.55);
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.ig-signup-figma-root .ig-signup-cta-btn:disabled {
+  opacity: 0.76;
+  cursor: not-allowed;
+}
+
+.ig-signup-figma-root .ig-signup-bottom-pill {
+  height: 42px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.ig-signup-figma-footer {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 24px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+

@@ -1,0 +1,41 @@
+.progressive-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.progressive-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(20px);
+  transform: scale(1.08); /* Extends blur beyond container edges to avoid white borders */
+  opacity: 1;
+  transition: opacity 0.4s ease-in-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.progressive-placeholder.fade-out {
+  opacity: 0;
+}
+
+.progressive-highres {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  z-index: 2;
+}
+
+.progressive-highres.loaded {
+  opacity: 1;
+}
+

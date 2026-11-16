@@ -1,0 +1,163 @@
+.report-problem-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+  padding: var(--space-2, 8px) 0;
+}
+
+.report-problem-subtitle {
+  font-size: var(--font-size-sm, 14px);
+  color: var(--text-secondary, #a8a8a8);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.report-problem-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.report-problem-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.report-problem-select {
+  padding: 10px 12px;
+  background-color: var(--bg-secondary, #262626);
+  border: 1px solid var(--border-subtle, #363636);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.report-problem-textarea {
+  padding: 10px 12px;
+  background-color: var(--bg-secondary, #262626);
+  border: 1px solid var(--border-subtle, #363636);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+}
+
+.report-problem-textarea:focus,
+.report-problem-select:focus {
+  border-color: var(--color-primary, #0095f6);
+}
+
+.report-problem-attachment {
+  display: flex;
+  align-items: center;
+}
+
+.upload-screenshot-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px dashed var(--border-subtle, #404040);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-secondary, #a8a8a8);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+  justify-content: center;
+}
+
+.upload-screenshot-label:hover {
+  border-color: var(--text-primary, #ffffff);
+  color: var(--text-primary, #ffffff);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.report-screenshot-preview {
+  position: relative;
+  display: inline-block;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle, #363636);
+  max-width: 160px;
+  max-height: 100px;
+}
+
+.report-screenshot-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-screenshot-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.report-problem-disclaimer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-tertiary, #737373);
+  line-height: 1.35;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.03));
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.report-problem-disclaimer svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.report-problem-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3, 12px);
+  margin-top: 4px;
+}
+
+.report-problem-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-6, 24px) var(--space-4, 16px);
+  gap: 12px;
+}
+
+.report-problem-success-icon {
+  color: var(--color-success, #22c55e);
+}
+
+.report-problem-success h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary, #ffffff);
+}
+
+.report-problem-success p {
+  font-size: 14px;
+  color: var(--text-secondary, #a8a8a8);
+  margin: 0;
+}

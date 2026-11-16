@@ -1,0 +1,50 @@
+.profile-gear-menu-dialog .modal-container {
+  max-width: 400px;
+  background-color: var(--surface, #262626);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.profile-gear-menu-dialog .modal-content {
+  padding: 0;
+}
+
+.gear-menu-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.gear-menu-item {
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color, #363636);
+  color: var(--text-primary, #ffffff);
+  font-size: 14px;
+  font-weight: 400;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.gear-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.gear-menu-item.danger {
+  color: #ed4956;
+  font-weight: 700;
+}
+
+.gear-menu-item.danger:hover {
+  background-color: rgba(237, 73, 86, 0.1);
+}
+
+.gear-menu-item.cancel-item {
+  border-bottom: none;
+  font-weight: 400;
+  color: var(--text-primary, #ffffff);
+}

@@ -1,0 +1,157 @@
+/* Add To Highlight Modal */
+.add-to-highlight-modal {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary, #050509);
+  border-radius: var(--radius-xl, 16px);
+  padding: 18px 20px 22px;
+  color: var(--text-primary, #ffffff);
+  min-width: 290px;
+  max-width: 440px;
+}
+
+.add-to-highlight-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
+.add-to-highlight-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary, #ffffff);
+}
+
+.add-to-highlight-icon {
+  color: #c084fc;
+}
+
+.add-to-highlight-body {
+  padding-top: 18px;
+  min-height: 120px;
+}
+
+.add-to-highlight-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px 0;
+  color: var(--text-secondary, #a8a8a8);
+  font-size: 13px;
+}
+
+.add-to-highlight-spinner {
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #c084fc;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.add-to-highlight-tray {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  scrollbar-width: none;
+}
+
+.add-to-highlight-tray::-webkit-scrollbar {
+  display: none;
+}
+
+.add-to-highlight-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  width: 68px;
+  flex-shrink: 0;
+  transition: transform 0.16s ease;
+}
+
+.add-to-highlight-card:hover {
+  transform: translateY(-2px);
+}
+
+.add-to-highlight-card:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-to-highlight-bubble {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-secondary, #121212);
+  border: 2px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.18s ease;
+}
+
+.add-to-highlight-card:hover .add-to-highlight-bubble {
+  border-color: #c084fc;
+}
+
+.add-to-highlight-bubble.new-bubble {
+  border: 1.5px dashed rgba(192, 132, 252, 0.6);
+  background: rgba(192, 132, 252, 0.08);
+  color: #c084fc;
+}
+
+.add-to-highlight-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.add-to-highlight-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.add-to-highlight-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(192, 132, 252, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.add-to-highlight-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary, #ffffff);
+  text-align: center;
+  max-width: 68px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

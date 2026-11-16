@@ -1,0 +1,206 @@
+/* ==================== CREATE HIGHLIGHT MODAL STYLING ==================== */
+.create-highlight-container {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  color: var(--text-primary);
+  min-height: 380px;
+}
+
+.highlight-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.highlight-modal-title {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 auto;
+}
+
+.highlight-header-btn {
+  background: transparent;
+  border: none;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.highlight-header-btn:hover {
+  color: var(--text-primary);
+}
+
+.highlight-header-btn.next {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.highlight-header-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Step 1: Select stories */
+.highlight-step-select {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+.highlight-stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.highlight-story-tile {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background-color: var(--bg-secondary);
+  border: 2px solid transparent;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.highlight-story-tile.selected {
+  border-color: var(--color-primary);
+}
+
+.highlight-tile-media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.highlight-tile-checkbox {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.highlight-story-tile.selected .highlight-tile-checkbox {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.highlight-loading-box,
+.highlight-empty-stories {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  gap: 10px;
+}
+
+.highlight-empty-stories p {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.highlight-empty-stories span {
+  font-size: var(--font-size-xs);
+  max-width: 280px;
+}
+
+/* Step 2: Name & Cover */
+.highlight-step-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 36px 24px;
+  gap: 24px;
+}
+
+.highlight-cover-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--border-subtle);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.highlight-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.highlight-input-group {
+  width: 100%;
+  max-width: 320px;
+}
+
+.highlight-title-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.highlight-title-input:focus {
+  border-color: #a855f7;
+}
+
+.highlight-category-presets {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 340px;
+}
+
+.highlight-preset-chip {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.highlight-preset-chip:hover {
+  border-color: rgba(168, 85, 247, 0.55);
+  color: var(--text-primary);
+}
+
+.highlight-preset-chip.active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.18);
+  color: #f3e8ff;
+}

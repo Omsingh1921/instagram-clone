@@ -475,7 +475,7 @@ export const ForgotPasswordPage = () => {
               >
                 <div className="ig-account-card-left">
                   <div className="ig-account-avatar-frame">
-                    <Avatar src={acc.avatarUrl} alt={acc.username} size={44} />
+                    <Avatar src={acc.avatarUrl} alt={acc.username} size={44} style={{ width: 44, height: 44, minWidth: 44, minHeight: 44, maxWidth: 44, maxHeight: 44, borderRadius: "50%", overflow: "hidden", flexShrink: 0, aspectRatio: "1 / 1" }} />
                   </div>
                   <div className="ig-account-card-info">
                     <div className="ig-account-username-row">

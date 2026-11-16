@@ -4,6 +4,7 @@ import { cleanup } from '@testing-library/react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import chatService from '../services/chat.service';
+import userService from '../services/user.service';
 import MessagesPage from '../pages/MessagesPage';
 import { AuthProvider } from '../context/AuthContext';
 import { ToastProvider } from '../context/ToastContext';
@@ -41,6 +42,21 @@ vi.mock('../services/user.service', () => ({
   },
 }));
 
+vi.mock('../services/note.service', () => ({
+  default: {
+    getActiveNotesFeed: vi.fn().mockResolvedValue({ data: [] }),
+    createOrUpdateNote: vi.fn().mockResolvedValue({}),
+    deleteCurrentNote: vi.fn().mockResolvedValue({}),
+  },
+}));
+
+vi.mock('../services/story.service', () => ({
+  default: {
+    getStoryFeed: vi.fn().mockResolvedValue({ data: [] }),
+    getUserStories: vi.fn().mockResolvedValue({ data: [] }),
+  },
+}));
+
 vi.mock('../services/websocket', () => ({
   default: {
     connect: vi.fn(),
@@ -64,7 +80,7 @@ describe('Chat & Messages Suite', () => {
   };
 
   const mockConversation = {
-    id: '33333333-3333-3333-3333-333333333333',
+    id: 'conv-id-test-3',
     members: [mockUser, mockOtherUser],
     lastMessage: { content: 'hello from test2', createdAt: new Date().toISOString() },
     unreadCount: 0,
@@ -77,6 +93,20 @@ describe('Chat & Messages Suite', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.setItem('access_token', 'mock_jwt_token');
+    localStorage.setItem('user', JSON.stringify(mockUser));
+    userService.getCurrentUser.mockImplementation(() =>
+      Promise.resolve({
+        data: {
+          id: '11111111-1111-1111-1111-111111111111',
+          userId: '11111111-1111-1111-1111-111111111111',
+          username: 'test1',
+          displayName: 'Test One',
+        },
+      })
+    );
+    chatService.getConversations.mockResolvedValue({
+      data: { content: [mockConversation] },
+    });
   });
 
   it('renders conversations sidebar and placeholder correctly', async () => {
@@ -136,14 +166,10 @@ describe('Chat & Messages Suite', () => {
     expect(await screen.findByText('Unread by test2')).toBeInTheDocument();
 
     await waitFor(() => {
-      const b = screen.getByText('Unread by test2').closest('.message-bubble');
-      expect(b).toHaveClass('mine');
+      const msgBubble = screen.getByText('Unread by test2').closest('.message-bubble');
+      expect(msgBubble).toHaveClass('mine');
+      expect(msgBubble.querySelector('.status-check-single')).toBeInTheDocument();
     });
-    const msgBubble = screen.getByText('Unread by test2').closest('.message-bubble');
-
-    // Single right tick should be present
-    const singleCheck = msgBubble.querySelector('.status-check-single');
-    expect(singleCheck).toBeInTheDocument();
   });
 
   it('shows double right tick when recipient replied or seen', async () => {
@@ -188,12 +214,11 @@ describe('Chat & Messages Suite', () => {
     expect(await screen.findByText('Sent earlier')).toBeInTheDocument();
     expect(await screen.findByText('I see your message')).toBeInTheDocument();
 
-    const sentBubble = screen.getByText('Sent earlier').closest('.message-bubble');
-    expect(sentBubble).toHaveClass('mine');
-
-    // Double right tick should be present
-    const doubleCheck = sentBubble.querySelector('.status-check-double');
-    expect(doubleCheck).toBeInTheDocument();
+    await waitFor(() => {
+      const sentBubble = screen.getByText('Sent earlier').closest('.message-bubble');
+      expect(sentBubble).toHaveClass('mine');
+      expect(sentBubble.querySelector('.status-check-double')).toBeInTheDocument();
+    });
   });
 
   it('renders call snippet cleanly without phone emoji and toggles 3-dots conversation menu', async () => {

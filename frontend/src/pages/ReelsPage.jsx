@@ -64,9 +64,12 @@ export const ReelsPage = () => {
   const [isDraggingReel, setIsDraggingReel] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReelId, setReportReelId] = useState(null);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [slideDirection, setSlideDirection] = useState(null);
 
   const videoRef = useRef(null);
   const containerRef = useRef(null);
+  const lastTouchTapRef = useRef(0);
   const menuRef = useRef(null);
   const topMenuBtnRef = useRef(null);
   const bottomMenuBtnRef = useRef(null);
@@ -261,14 +264,25 @@ export const ReelsPage = () => {
     setHasMore(true);
   };
 
+  useEffect(() => {
+    if (slideDirection) {
+      const timer = setTimeout(() => setSlideDirection(null), 360);
+      return () => clearTimeout(timer);
+    }
+  }, [slideDirection]);
+
   const handleNextReel = useCallback(() => {
     if (activeIndex < effectiveReels.length - 1) {
+      setSlideDirection('next');
+      setVideoProgress(0);
       setActiveIndex((prev) => prev + 1);
     }
   }, [activeIndex, effectiveReels.length]);
 
   const handlePrevReel = useCallback(() => {
     if (activeIndex > 0) {
+      setSlideDirection('prev');
+      setVideoProgress(0);
       setActiveIndex((prev) => prev - 1);
     }
   }, [activeIndex]);
@@ -537,9 +551,48 @@ export const ReelsPage = () => {
 
   const handleDoubleTap = (reelId) => {
     setShowHeartAnim(true);
-    setTimeout(() => setShowHeartAnim(false), 800);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate([20, 40]);
+      } catch {
+        // ignore
+      }
+    }
+    setTimeout(() => setShowHeartAnim(false), 850);
     if (!likesMap[reelId]?.liked) {
       handleLikeToggle(reelId);
+    }
+  };
+
+  const handleVideoTouchStart = () => {
+    const now = Date.now();
+    if (now - lastTouchTapRef.current < 320) {
+      if (currentReel && !currentReel.isUploading) {
+        handleDoubleTap(currentReel.id);
+      }
+      lastTouchTapRef.current = 0;
+    } else {
+      lastTouchTapRef.current = now;
+    }
+  };
+
+  const handleTimeUpdate = (e) => {
+    const v = e.currentTarget;
+    if (v && v.duration && !Number.isNaN(v.duration) && v.duration > 0) {
+      setVideoProgress((v.currentTime / v.duration) * 100);
+    }
+  };
+
+  const handleSeekProgress = (e) => {
+    e.stopPropagation();
+    const track = e.currentTarget;
+    const rect = track.getBoundingClientRect();
+    if (!rect.width) return;
+    const clickX = e.clientX - rect.left;
+    const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+    if (videoRef.current && videoRef.current.duration) {
+      videoRef.current.currentTime = ratio * videoRef.current.duration;
+      setVideoProgress(ratio * 100);
     }
   };
 
@@ -622,6 +675,8 @@ export const ReelsPage = () => {
   };
 
   const currentReel = effectiveReels[activeIndex];
+  const prevReel = activeIndex > 0 ? effectiveReels[activeIndex - 1] : null;
+  const nextReel = activeIndex < effectiveReels.length - 1 ? effectiveReels[activeIndex + 1] : null;
 
   const myId = String(currentUser?.id || currentUser?.userId || '').trim().toLowerCase();
   const reelAuthorId = String(
@@ -861,59 +916,119 @@ export const ReelsPage = () => {
         />
       ) : currentReel ? (
         <div className="reels-carousel-wrapper">
-          {/* Active Reel Card (One by One) */}
-          <div
-            className={`reel-card-item ${isDraggingReel ? 'is-dragging' : ''}`}
-            style={dragOffsetY ? { transform: `translateY(${dragOffsetY}px)` } : undefined}
-          >
-            {/* Live Uploading Banner if reel is currently uploading */}
-            {currentReel.isUploading && (
-              <div className="reel-uploading-header-banner">
-                <div className="reel-uploading-banner-top">
-                  <div className="reel-uploading-banner-title">
-                    <RotateCw size={14} className="story-upload-spinning-icon" />
-                    <span>Uploading Reel... {currentReel.uploadProgress || 10}%</span>
+              <div
+                className={`reels-carousel-stage ${isDraggingReel ? 'is-dragging' : ''}`}
+                style={
+                  dragOffsetY
+                    ? { transform: `translateY(${dragOffsetY}px)`, transition: 'none' }
+                    : { transform: 'translateY(0px)', transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)' }
+                }
+              >
+                {/* Prev Preview Card (if activeIndex > 0) */}
+                {prevReel && (
+                  <div className="reel-card-preview reel-card-prev" aria-hidden="true">
+                    <video
+                      src={prevReel.videoUrl?.startsWith('blob:') ? prevReel.videoUrl : getAdaptiveVideoUrl(prevReel.videoUrl)}
+                      poster={prevReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(prevReel.videoUrl, prevReel.thumbnailUrl)}
+                      className="reel-video-element-preview"
+                      preload="none"
+                      muted
+                      playsInline
+                    />
+                    <div className="reel-preview-overlay">
+                      <span className="reel-preview-caption">@{prevReel.author?.username}</span>
+                    </div>
                   </div>
-                  <span className="reel-uploading-status-pill">In Progress</span>
-                </div>
-                <div className="reel-uploading-progress-track">
-                  <div
-                    className="reel-uploading-progress-bar"
-                    style={{ width: `${Math.max(8, currentReel.uploadProgress || 10)}%` }}
+                )}
+
+                {/* Active Reel Card (One by One) */}
+                <div
+                  className={`reel-card-item ${isDraggingReel ? 'is-dragging' : ''} ${
+                    slideDirection === 'next'
+                      ? 'reel-slide-in-from-bottom'
+                      : slideDirection === 'prev'
+                      ? 'reel-slide-in-from-top'
+                      : ''
+                  }`}
+                >
+                  {/* Live Uploading Banner if reel is currently uploading */}
+                  {currentReel.isUploading && (
+                    <div className="reel-uploading-header-banner">
+                      <div className="reel-uploading-banner-top">
+                        <div className="reel-uploading-banner-title">
+                          <RotateCw size={14} className="story-upload-spinning-icon" />
+                          <span>Uploading Reel... {currentReel.uploadProgress || 10}%</span>
+                        </div>
+                        <span className="reel-uploading-status-pill">In Progress</span>
+                      </div>
+                      <div className="reel-uploading-progress-track">
+                        <div
+                          className="reel-uploading-progress-bar"
+                          style={{ width: `${Math.max(8, currentReel.uploadProgress || 10)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <video
+                    ref={videoRef}
+                    key={`${currentReel.id}-${activeIndex}`}
+                    src={currentReel.videoUrl?.startsWith('blob:') ? currentReel.videoUrl : getAdaptiveVideoUrl(currentReel.videoUrl)}
+                    poster={currentReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(currentReel.videoUrl, currentReel.thumbnailUrl)}
+                    className="reel-video-element"
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    onClick={toggleVideoPlay}
+                    onDoubleClick={() => !currentReel.isUploading && handleDoubleTap(currentReel.id)}
+                    onTouchStart={handleVideoTouchStart}
+                    onTimeUpdate={handleTimeUpdate}
                   />
-                </div>
-              </div>
-            )}
 
-            <video
-              ref={videoRef}
-              key={`${currentReel.id}-${activeIndex}`}
-              src={currentReel.videoUrl?.startsWith('blob:') ? currentReel.videoUrl : getAdaptiveVideoUrl(currentReel.videoUrl)}
-              poster={currentReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(currentReel.videoUrl, currentReel.thumbnailUrl)}
-              className="reel-video-element"
-              autoPlay
-              loop
-              muted={isMuted}
-              playsInline
-              onClick={toggleVideoPlay}
-              onDoubleClick={() => !currentReel.isUploading && handleDoubleTap(currentReel.id)}
-            />
+                  {/* Play/Pause Indicator if paused */}
+                  {!isPlaying && (
+                    <div className="reel-play-indicator" onClick={toggleVideoPlay}>
+                      <Play size={48} fill="#fff" />
+                    </div>
+                  )}
 
-            {/* Play/Pause Indicator if paused */}
-            {!isPlaying && (
-              <div className="reel-play-indicator" onClick={toggleVideoPlay}>
-                <Play size={48} fill="#fff" />
-              </div>
-            )}
+                  {/* Double Tap Instagram Heart Burst */}
+                  {showHeartAnim && (
+                    <div className="reel-heart-burst">
+                      <div className="reel-heart-burst-glow" />
+                      <div className="reel-heart-burst-main">
+                        <Heart size={92} fill="#ff3040" color="#ff3040" />
+                      </div>
+                      <div className="reel-heart-particle p1">
+                        <Heart size={26} fill="#ff3040" color="#ff3040" />
+                      </div>
+                      <div className="reel-heart-particle p2">
+                        <Heart size={22} fill="#ff3040" color="#ff3040" />
+                      </div>
+                      <div className="reel-heart-particle p3">
+                        <Heart size={24} fill="#ff3040" color="#ff3040" />
+                      </div>
+                    </div>
+                  )}
 
-            {/* Double Tap Heart Burst */}
-            {showHeartAnim && (
-              <div className="reel-heart-burst">
-                <Heart size={80} fill="#ff3040" color="#ff3040" />
-              </div>
-            )}
+                  <div className="reel-overlay-gradient" />
 
-            <div className="reel-overlay-gradient" />
+                  {/* Instagram Video Scrub Progress Bar */}
+                  <div
+                    className="reel-progress-track"
+                    onClick={handleSeekProgress}
+                    role="progressbar"
+                    aria-valuenow={Math.round(videoProgress)}
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="Reel video progress"
+                  >
+                    <div
+                      className="reel-progress-bar"
+                      style={{ width: `${videoProgress}%` }}
+                    />
+                  </div>
 
 
 
@@ -1061,8 +1176,26 @@ export const ReelsPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Next Preview Card with Next Video Preloading */}
+          {nextReel && (
+            <div className="reel-card-preview reel-card-next" aria-hidden="true">
+              <video
+                src={nextReel.videoUrl?.startsWith('blob:') ? nextReel.videoUrl : getAdaptiveVideoUrl(nextReel.videoUrl)}
+                poster={nextReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(nextReel.videoUrl, nextReel.thumbnailUrl)}
+                className="reel-video-element-preview"
+                preload="auto"
+                muted
+                playsInline
+              />
+              <div className="reel-preview-overlay">
+                <span className="reel-preview-caption">@{nextReel.author?.username}</span>
+              </div>
+            </div>
+          )}
         </div>
-      ) : null}
+      </div>
+    ) : null}
 
       {/* Reel Comments Modal if opened */}
       {commentsModalOpen && selectedPostId && (

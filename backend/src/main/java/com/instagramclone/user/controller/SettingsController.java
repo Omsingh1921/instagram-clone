@@ -154,7 +154,7 @@ public class SettingsController {
         return ResponseEntity.ok(ApiResponse.success(muted));
     }
 
-    @GetMapping("/muted")
+    @GetMapping({"/muted", "/settings/muted"})
     public ResponseEntity<ApiResponse<PageResponse<FollowUserResponse>>> getMutedUsers(
             @PageableDefault(size = ApiConstants.DEFAULT_PAGE_SIZE_20, sort = ApiConstants.SORT_BY_CREATED_AT, direction = Sort.Direction.DESC) Pageable pageable) {
         PageResponse<FollowUserResponse> muted = settingsService.getMutedUsers(pageable);

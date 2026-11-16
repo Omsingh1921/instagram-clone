@@ -22,6 +22,8 @@ public final class SettingsConstants {
     public static final String PATH_USER_BLOCK = "/{userId}/block";
     public static final String PATH_USER_BLOCK_STATUS = "/{userId}/block-status";
     public static final String PATH_USER_MUTE = "/{userId}/mute";
+    public static final String PATH_MUTED_USERS = "/muted";
+    public static final String PATH_SETTINGS_MUTED = "/settings/muted";
     public static final String PATH_ME_BLOCKS = "/me/blocks";
     public static final String PATH_ME_SCREEN_TIME = "/me/screen-time";
     public static final String PATH_ME_SCREEN_TIME_HEARTBEAT = "/me/screen-time/heartbeat";

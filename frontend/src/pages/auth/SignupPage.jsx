@@ -122,6 +122,13 @@ export const SignupPage = () => {
     confirmPassword: '',
   });
 
+  const [usernameStatus, setUsernameStatus] = useState({
+    checking: false,
+    available: null, // null | true | false
+    message: '',
+    suggestions: [],
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -327,6 +334,53 @@ export const SignupPage = () => {
     if (errorMessage) setErrorMessage('');
   };
 
+  const handleSelectUsernameSuggestion = (sug) => {
+    setProfileData((prev) => ({ ...prev, username: sug }));
+  };
+
+  // Live username availability check
+  useEffect(() => {
+    const raw = (profileData.username || '').trim();
+    if (!raw || stage !== 'profile') {
+      setUsernameStatus({ checking: false, available: null, message: '', suggestions: [] });
+      return;
+    }
+
+    if (raw.length < 3) {
+      setUsernameStatus({
+        checking: false,
+        available: false,
+        message: 'Username must be at least 3 characters',
+        suggestions: [],
+      });
+      return;
+    }
+
+    setUsernameStatus((prev) => ({ ...prev, checking: true }));
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await authService.checkUsername(raw);
+        const data = res?.data || res;
+        setUsernameStatus({
+          checking: false,
+          available: Boolean(data?.available),
+          message: data?.message || (data?.available ? 'Username is available' : 'Username is already taken'),
+          suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
+        });
+      } catch {
+        setUsernameStatus({
+          checking: false,
+          available: null,
+          message: '',
+          suggestions: [],
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [profileData.username, stage]);
+
   const getPasswordStrength = (pwd) => {
     let score = 0;
     if (pwd.length >= 8) score++;
@@ -356,6 +410,11 @@ export const SignupPage = () => {
 
     if (username.trim().length < 3) {
       setErrorMessage('Username must be at least 3 characters.');
+      return;
+    }
+
+    if (usernameStatus.available === false) {
+      setErrorMessage(usernameStatus.message || 'Please choose an available username.');
       return;
     }
 
@@ -822,7 +881,53 @@ export const SignupPage = () => {
                       autoFocus
                     />
                   </div>
+                  {usernameStatus.checking && (
+                    <RefreshCw size={14} className="animate-spin" style={{ color: 'var(--text-secondary, #94a3b8)', flexShrink: 0, marginRight: '8px' }} />
+                  )}
+                  {!usernameStatus.checking && usernameStatus.available === true && (
+                    <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0, marginRight: '8px' }} />
+                  )}
+                  {!usernameStatus.checking && usernameStatus.available === false && (
+                    <AlertCircle size={16} style={{ color: '#ef4444', flexShrink: 0, marginRight: '8px' }} />
+                  )}
                 </div>
+
+                {usernameStatus.message && (
+                  <div
+                    style={{
+                      fontSize: '12px',
+                      marginTop: '-6px',
+                      marginBottom: '10px',
+                      paddingLeft: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      color: usernameStatus.available === true ? '#10b981' : '#f87171',
+                    }}
+                  >
+                    <span>{usernameStatus.message}</span>
+                  </div>
+                )}
+
+                {!usernameStatus.checking && usernameStatus.available === false && usernameStatus.suggestions.length > 0 && (
+                  <div className="ig-username-suggestions-wrap" style={{ marginTop: '-4px', marginBottom: '14px', paddingLeft: '4px' }}>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-secondary, #94a3b8)', marginBottom: '6px' }}>
+                      Suggested available usernames:
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {usernameStatus.suggestions.map((sug) => (
+                        <button
+                          key={sug}
+                          type="button"
+                          className="ig-username-pill"
+                          onClick={() => handleSelectUsernameSuggestion(sug)}
+                        >
+                          @{sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="ig-glass-field ig-auth-glass-field ig-signup-field">
                   <User size={16} className="ig-field-lead-icon" />
@@ -901,7 +1006,7 @@ export const SignupPage = () => {
                 <button
                   type="submit"
                   className="ig-neon-gradient-btn ig-signup-cta-btn"
-                  disabled={isSubmitting || !profileData.username || !profileData.password}
+                  disabled={isSubmitting || !profileData.username || !profileData.password || usernameStatus.available === false}
                 >
                   {isSubmitting ? 'Creating Account...' : 'Create Account'}
                 </button>

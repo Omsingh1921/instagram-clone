@@ -33,6 +33,12 @@ export const authService = {
     return await api.post('/auth/register', registerData);
   },
 
+  checkUsername: async (username) => {
+    return await api.get('/auth/check-username', {
+      params: { username },
+    });
+  },
+
   login: async (credentials) => {
     return await api.post('/auth/login', credentials);
   },

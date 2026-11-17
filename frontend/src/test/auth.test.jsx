@@ -20,6 +20,7 @@ vi.mock('../services/auth.service', () => ({
     verifyEmailLink: vi.fn(),
     login: vi.fn(),
     register: vi.fn(),
+    checkUsername: vi.fn().mockResolvedValue({ data: { available: true, message: 'Username is available' } }),
     refreshToken: vi.fn(),
     logout: vi.fn(),
   },
@@ -51,6 +52,11 @@ describe('Frontend Authentication & Staged Registration Suite', () => {
     vi.clearAllMocks();
     localStorage.clear();
     sessionStorage.clear();
+    if (authService.checkUsername) {
+      authService.checkUsername.mockResolvedValue({
+        data: { available: true, message: 'Username is available', suggestions: [] },
+      });
+    }
   });
 
   // 1. Signup starts with email rather than username/password
@@ -974,5 +980,72 @@ describe('Frontend Authentication & Staged Registration Suite', () => {
     });
     // Should stay on email stage and NOT advance to OTP
     expect(screen.queryByPlaceholderText(/confirmation code/i)).not.toBeInTheDocument();
+  });
+
+  // 26. Live username availability check displays warning and smart suggestions when username is taken
+  it('26. Live username availability check displays warning and smart suggestions when username is taken', async () => {
+    authService.requestSignupOtp.mockResolvedValueOnce({ success: true });
+    authService.verifySignupOtp.mockResolvedValueOnce({
+      data: {
+        signupToken: 'proof-token-avail-check',
+        expiresIn: 600,
+      },
+    });
+    authService.checkUsername.mockResolvedValueOnce({
+      data: {
+        username: 'taken_user',
+        available: false,
+        message: 'Username is already taken',
+        suggestions: ['taken_user_1', 'the_taken_user'],
+      },
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/signup']}>
+        <AuthProvider>
+          <SignupPage />
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // Advance to OTP
+    fireEvent.change(screen.getByPlaceholderText(/email address/i), {
+      target: { value: 'check@example.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    // Advance to Profile
+    await waitFor(() => expect(screen.getByPlaceholderText(/confirmation code/i)).toBeInTheDocument());
+    fireEvent.change(screen.getByPlaceholderText(/confirmation code/i), {
+      target: { value: '123456' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
+
+    // On profile stage, type a taken username
+    const usernameInput = await screen.findByPlaceholderText(/username/i);
+    fireEvent.change(usernameInput, { target: { value: 'taken_user' } });
+
+    await waitFor(() => {
+      expect(authService.checkUsername).toHaveBeenCalledWith('taken_user');
+      expect(screen.getByText('Username is already taken')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '@taken_user_1' })).toBeInTheDocument();
+    });
+
+    // Clicking the suggestion pill should update the username input
+    authService.checkUsername.mockResolvedValueOnce({
+      data: {
+        username: 'taken_user_1',
+        available: true,
+        message: 'Username is available',
+        suggestions: [],
+      },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '@taken_user_1' }));
+    expect(usernameInput.value).toBe('taken_user_1');
+
+    await waitFor(() => {
+      expect(screen.getByText('Username is available')).toBeInTheDocument();
+    });
   });
 });

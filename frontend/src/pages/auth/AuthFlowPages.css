@@ -1035,3 +1035,27 @@
   justify-content: center;
 }
 
+/* Username Availability & Suggestions Pills */
+.ig-username-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 10px;
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-radius: 9999px;
+  color: #c084fc;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ig-username-pill:hover {
+  background: rgba(168, 85, 247, 0.24);
+  border-color: #c084fc;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+

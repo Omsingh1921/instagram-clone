@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Sliders,
   Trash2,
+  BadgeCheck,
   Bell,
   HelpCircle,
   Calendar,
@@ -391,6 +392,31 @@ export const AdminDashboardPage = () => {
         }
       },
     });
+  };
+
+  const handleToggleVerify = async (u) => {
+    const isCurrentlyVerified = Boolean(u.isVerified || u.verified);
+    const nextState = !isCurrentlyVerified;
+    try {
+      setProcessingUserId(u.id);
+      await adminService.verifyUser(u.id, nextState);
+      setUsers((prev) =>
+        prev.map((item) =>
+          item.id === u.id
+            ? { ...item, isVerified: nextState, verified: nextState }
+            : item
+        )
+      );
+      showSuccess(
+        nextState
+          ? `@${u.username} verified badge activated!`
+          : `@${u.username} verified badge removed`
+      );
+    } catch (err) {
+      showError(err.message || 'Failed to update verified badge');
+    } finally {
+      setProcessingUserId(null);
+    }
   };
 
   const handleDeleteUser = (user) => {
@@ -1308,7 +1334,12 @@ export const AdminDashboardPage = () => {
                                 size="sm"
                               />
                               <div className="user-cell-meta">
-                                <span className="user-cell-username">@{u.username}</span>
+                                <span className="user-cell-username" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                  @{u.username}
+                                  {(u.isVerified || u.verified) && (
+                                    <BadgeCheck size={14} fill="#0095f6" color="#ffffff" title="Verified Account" />
+                                  )}
+                                </span>
                                 <span className="user-cell-displayname">{u.displayName || u.username}</span>
                               </div>
                             </div>
@@ -1353,6 +1384,17 @@ export const AdminDashboardPage = () => {
                               >
                                 {isActive ? <UserX size={14} /> : <UserCheck size={14} />}
                                 <span>{isAdmin ? 'Protected' : isActive ? 'Suspend' : 'Reactivate'}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                className={`table-action-btn ${(u.isVerified || u.verified) ? 'verified-active' : 'verify-btn'}`}
+                                disabled={processingUserId === u.id}
+                                onClick={() => handleToggleVerify(u)}
+                                title={(u.isVerified || u.verified) ? 'Remove Blue Badge' : 'Grant Blue Verified Badge'}
+                              >
+                                <BadgeCheck size={14} />
+                                <span>{(u.isVerified || u.verified) ? 'Verified' : 'Verify'}</span>
                               </button>
 
                               <button

@@ -16,6 +16,7 @@ vi.mock('../services/admin.service', () => ({
     getContent: vi.fn(),
     deleteContent: vi.fn(),
     updateUserStatus: vi.fn(),
+    verifyUser: vi.fn(),
     deleteUser: vi.fn(),
   },
 }));
@@ -315,5 +316,25 @@ describe('Admin Dashboard & User Management Suite', () => {
     expect(container.querySelectorAll('.kpi-delta-row .animate-pulse').length).toBe(5);
     expect(container.querySelectorAll('.admin-analytics-grid .animate-pulse').length).toBeGreaterThanOrEqual(12);
     expect(container.querySelectorAll('.engagement-metric-right .animate-pulse').length).toBe(8);
+  });
+
+  it('allows admin to toggle blue verification badge for a user', async () => {
+    adminService.verifyUser.mockResolvedValue({ success: true });
+    renderComponent();
+
+    const usersNav = screen.getAllByRole('button', { name: /Users/i });
+    fireEvent.click(usersNav[0]);
+
+    await waitFor(() => {
+      expect(screen.getByText('@john_doe')).toBeInTheDocument();
+    });
+
+    const verifyBtns = screen.getAllByRole('button', { name: /Verify/i });
+    expect(verifyBtns.length).toBeGreaterThan(0);
+    fireEvent.click(verifyBtns[0]);
+
+    await waitFor(() => {
+      expect(adminService.verifyUser).toHaveBeenCalledWith('11111111-1111-1111-1111-111111111111', true);
+    });
   });
 });

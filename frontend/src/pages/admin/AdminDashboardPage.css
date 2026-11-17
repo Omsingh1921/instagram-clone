@@ -1183,6 +1183,10 @@
 .table-action-btn.danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.16); border-color: rgba(239, 68, 68, 0.45); }
 .table-action-btn.success { color: #34d399; }
 .table-action-btn.success:hover:not(:disabled) { background: rgba(16, 185, 129, 0.16); border-color: rgba(16, 185, 129, 0.45); }
+.table-action-btn.verify-btn { color: #38bdf8; }
+.table-action-btn.verify-btn:hover:not(:disabled) { background: rgba(0, 149, 246, 0.16); border-color: rgba(0, 149, 246, 0.45); }
+.table-action-btn.verified-active { color: #0095f6; background: rgba(0, 149, 246, 0.12); border-color: rgba(0, 149, 246, 0.35); }
+.table-action-btn.verified-active:hover:not(:disabled) { background: rgba(0, 149, 246, 0.22); border-color: rgba(0, 149, 246, 0.55); }
 
 .table-pagination {
   display: flex;

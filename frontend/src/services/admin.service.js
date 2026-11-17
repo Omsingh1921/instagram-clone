@@ -20,6 +20,10 @@ export const adminService = {
     return await api.put(`/admin/users/${userId}/status`, statusData);
   },
 
+  verifyUser: async (userId, verified) => {
+    return await api.patch(`/users/${userId}/verify`, { verified });
+  },
+
   deleteUser: async (userId) => {
     return await api.delete(`/admin/users/${userId}`);
   },

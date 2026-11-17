@@ -201,6 +201,17 @@
   margin-bottom: 2px;
 }
 
+.comments-likes-count.clickable-likes {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity var(--transition-fast, 0.2s);
+}
+
+.comments-likes-count.clickable-likes:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 .comments-post-time {
   font-size: 10px;
   text-transform: uppercase;

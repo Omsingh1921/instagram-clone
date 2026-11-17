@@ -36,6 +36,7 @@ import ReportModal from '../modals/ReportModal';
 import ShareModal from '../modals/ShareModal';
 import InsightsModal from '../modals/InsightsModal';
 import EditPostModal from '../modals/EditPostModal';
+import LikesModal from '../modals/LikesModal';
 import { getFilterStyle } from '../../utils/instagramFilters';
 import ProgressiveImage from '../common/ProgressiveImage';
 import { getVideoPosterUrl, getAdaptiveVideoUrl } from '../../utils/mediaUrl';
@@ -69,6 +70,7 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
+  const [likesModalOpen, setLikesModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [quickComment, setQuickComment] = useState('');
@@ -761,7 +763,13 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
         <div className="post-likes-section">
           {hideLikeCount ? (
             isAuthor ? (
-              <span className="post-likes-count">
+              <span
+                className={`post-likes-count ${likeCount > 0 ? 'clickable-likes' : ''}`}
+                onClick={() => likeCount > 0 && setLikesModalOpen(true)}
+                role={likeCount > 0 ? 'button' : undefined}
+                tabIndex={likeCount > 0 ? 0 : undefined}
+                title={likeCount > 0 ? 'View likes' : undefined}
+              >
                 {formatCount(likeCount)} {likeCount === 1 ? 'like' : 'likes'}{' '}
                 <span className="post-hide-likes-note">(Hidden to others)</span>
               </span>
@@ -771,7 +779,13 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
               </span>
             )
           ) : (
-            <span className="post-likes-count">
+            <span
+              className={`post-likes-count ${likeCount > 0 ? 'clickable-likes' : ''}`}
+              onClick={() => likeCount > 0 && setLikesModalOpen(true)}
+              role={likeCount > 0 ? 'button' : undefined}
+              tabIndex={likeCount > 0 ? 0 : undefined}
+              title={likeCount > 0 ? 'View likes' : undefined}
+            >
               {formatCount(likeCount)} {likeCount === 1 ? 'like' : 'likes'}
             </span>
           )}
@@ -931,6 +945,15 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
             }
             if (onPostUpdated) onPostUpdated();
           }}
+        />
+      )}
+
+      {likesModalOpen && (
+        <LikesModal
+          isOpen={likesModalOpen}
+          onClose={() => setLikesModalOpen(false)}
+          targetId={post.id}
+          targetType="post"
         />
       )}
     </>

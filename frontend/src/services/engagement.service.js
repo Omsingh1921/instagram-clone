@@ -5,6 +5,18 @@ export const engagementService = {
     return await api.post(`/posts/${postId}/like`);
   },
 
+  getLikes: async (postId, page = 0, size = 20) => {
+    return await api.get(`/posts/${postId}/likes`, {
+      params: { page, size, sort: 'createdAt,desc' },
+    });
+  },
+
+  getPostLikes: async (postId, page = 0, size = 20) => {
+    return await api.get(`/posts/${postId}/likes`, {
+      params: { page, size, sort: 'createdAt,desc' },
+    });
+  },
+
   toggleSave: async (postId) => {
     return await api.post(`/posts/${postId}/save`);
   },

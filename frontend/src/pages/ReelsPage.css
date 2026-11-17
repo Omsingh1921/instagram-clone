@@ -584,6 +584,27 @@
   transition: transform 0.15s ease;
 }
 
+.reel-action-icon-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reel-action-count-label {
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+
+.reel-action-count-label:hover {
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
 .reel-action-icon-circle {
   width: 40px;
   height: 40px;

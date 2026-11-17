@@ -240,6 +240,17 @@
   padding: 2px 14px;
 }
 
+.post-likes-count.clickable-likes {
+  cursor: pointer;
+  user-select: none;
+  transition: opacity var(--transition-fast, 0.2s);
+}
+
+.post-likes-count.clickable-likes:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 .post-likes-count {
   font-size: var(--font-size-sm);
   font-weight: 600;

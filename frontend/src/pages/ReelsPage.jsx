@@ -24,6 +24,7 @@ import CommentsModal from '../components/modals/CommentsModal';
 import ShareModal from '../components/modals/ShareModal';
 import InsightsModal from '../components/modals/InsightsModal';
 import ReportModal from '../components/modals/ReportModal';
+import LikesModal from '../components/modals/LikesModal';
 import EmptyState from '../components/common/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import reelService from '../services/reel.service';
@@ -64,6 +65,7 @@ export const ReelsPage = () => {
   const [isDraggingReel, setIsDraggingReel] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReelId, setReportReelId] = useState(null);
+  const [likesModalReelId, setLikesModalReelId] = useState(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [slideDirection, setSlideDirection] = useState(null);
 
@@ -1086,20 +1088,37 @@ export const ReelsPage = () => {
 
             {/* Right Action Bar */}
             <div className="reel-actions-column">
-              <button
-                type="button"
+              <div
                 className={`reel-action-btn-item ${
                   likesMap[currentReel.id]?.liked ? 'liked' : ''
                 }`}
-                onClick={() => handleLikeToggle(currentReel.id)}
               >
-                <span className="reel-action-icon-circle">
-                  <Heart size={22} />
-                </span>
-                <span>
+                <button
+                  type="button"
+                  className="reel-action-icon-btn"
+                  onClick={() => handleLikeToggle(currentReel.id)}
+                  aria-label="Like reel"
+                >
+                  <span className="reel-action-icon-circle">
+                    <Heart size={22} />
+                  </span>
+                </button>
+                <span
+                  className="reel-action-count-label"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if ((likesMap[currentReel.id]?.count || 0) > 0) {
+                      setLikesModalReelId(currentReel.id);
+                    }
+                  }}
+                  style={{
+                    cursor: (likesMap[currentReel.id]?.count || 0) > 0 ? 'pointer' : 'default',
+                  }}
+                  title={(likesMap[currentReel.id]?.count || 0) > 0 ? 'View likes' : undefined}
+                >
                   {formatCount(likesMap[currentReel.id]?.count || 0)}
                 </span>
-              </button>
+              </div>
 
               <button
                 type="button"
@@ -1332,6 +1351,16 @@ export const ReelsPage = () => {
             </button>
           </div>
         </>
+      )}
+
+      {/* Reel Likes Modal */}
+      {likesModalReelId && (
+        <LikesModal
+          isOpen={Boolean(likesModalReelId)}
+          onClose={() => setLikesModalReelId(null)}
+          targetId={likesModalReelId}
+          targetType="reel"
+        />
       )}
 
       {/* Reel Report Modal */}

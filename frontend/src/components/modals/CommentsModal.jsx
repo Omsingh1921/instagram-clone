@@ -6,6 +6,7 @@ import Avatar from '../common/Avatar';
 import { SkeletonUserRows } from '../ui/Skeleton';
 import ReportModal from './ReportModal';
 import ShareModal from './ShareModal';
+import LikesModal from './LikesModal';
 import postService from '../../services/post.service';
 import reelService from '../../services/reel.service';
 import engagementService from '../../services/engagement.service';
@@ -27,6 +28,7 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
   const [isSaved, setIsSaved] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [likesModalOpen, setLikesModalOpen] = useState(false);
   const [repliesMap, setRepliesMap] = useState({});
   const [showTags, setShowTags] = useState(false);
 
@@ -519,7 +521,14 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
                   <Bookmark size={22} fill={isSaved ? 'var(--text-primary)' : 'none'} />
                 </button>
               </div>
-              <div className="comments-likes-count">
+              <div
+                className={`comments-likes-count ${likeCount > 0 ? 'clickable-likes' : ''}`}
+                onClick={() => likeCount > 0 && setLikesModalOpen(true)}
+                style={{ cursor: likeCount > 0 ? 'pointer' : 'default' }}
+                title={likeCount > 0 ? 'View likes' : undefined}
+                role={likeCount > 0 ? 'button' : undefined}
+                tabIndex={likeCount > 0 ? 0 : undefined}
+              >
                 <strong>{formatCount(likeCount)}</strong> {likeCount === 1 ? 'like' : 'likes'}
               </div>
               <div className="comments-post-time">
@@ -617,6 +626,15 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
           isOpen={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
           post={{ ...post, isReel }}
+        />
+      )}
+
+      {likesModalOpen && (
+        <LikesModal
+          isOpen={likesModalOpen}
+          onClose={() => setLikesModalOpen(false)}
+          targetId={postId}
+          targetType={isReel ? 'reel' : 'post'}
         />
       )}
     </>

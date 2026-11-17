@@ -10,6 +10,7 @@ import Avatar from '../../components/common/Avatar';
 import { SkeletonSettingsForm, SkeletonUserRows } from '../../components/ui/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
 import { CloseFriendsPanel } from '../../components/modals/CloseFriendsModal';
+import { StoryPrivacyPanel } from '../../components/modals/HideStoryModal';
 import UnblockUserModal from '../../components/modals/UnblockUserModal';
 import settingsService from '../../services/settings.service';
 import userService from '../../services/user.service';
@@ -227,6 +228,7 @@ export const SettingsPage = () => {
         notifications: 'How you use Instagram',
         privacy: 'Who can see your content',
         close_friends: 'Who can see your content',
+        story_privacy: 'Who can see your content',
         blocked: 'Who can see your content',
         tags_mentions: 'How others can interact with you',
         sharing: 'How others can interact with you',
@@ -682,6 +684,7 @@ export const SettingsPage = () => {
       items: [
         { id: 'privacy', label: 'Account privacy', icon: Shield },
         { id: 'close_friends', label: 'Close Friends', icon: Users },
+        { id: 'story_privacy', label: 'Hide story and live', icon: EyeOff },
         { id: 'blocked', label: 'Blocked', icon: UserX },
       ],
     },
@@ -839,7 +842,7 @@ export const SettingsPage = () => {
             </div>
           </div>
         )}
-        {loading && !['sessions', 'muted', 'password', 'close_friends'].includes(activeTab) ? (
+        {loading && !['sessions', 'muted', 'password', 'close_friends', 'story_privacy'].includes(activeTab) ? (
           <SkeletonSettingsForm />
         ) : activeTab === 'profile' ? (
           <div>
@@ -1076,6 +1079,18 @@ export const SettingsPage = () => {
                 />
                 <span className="switch-slider" />
               </label>
+            </div>
+
+            <div
+              className="settings-toggle-row"
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTab('story_privacy')}
+            >
+              <div className="toggle-info">
+                <span className="toggle-title">Hide story and live</span>
+                <span className="toggle-desc">Hide your story and live videos from specific accounts.</span>
+              </div>
+              <ChevronRight size={18} color="var(--text-secondary)" />
             </div>
 
             <div className="settings-toggle-row">
@@ -1920,6 +1935,8 @@ export const SettingsPage = () => {
           </div>
         ) : activeTab === 'close_friends' ? (
           <CloseFriendsPanel />
+        ) : activeTab === 'story_privacy' ? (
+          <StoryPrivacyPanel />
         ) : null}
       </main>
 

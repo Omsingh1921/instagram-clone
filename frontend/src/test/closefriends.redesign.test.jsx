@@ -15,6 +15,9 @@ vi.mock('../services/story.service', () => ({
     getCloseFriends: vi.fn(),
     addCloseFriend: vi.fn(),
     removeCloseFriend: vi.fn(),
+    getHiddenStoryUsers: vi.fn().mockResolvedValue({ data: [] }),
+    hideStoryFromUser: vi.fn().mockResolvedValue({}),
+    unhideStoryFromUser: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -89,7 +92,7 @@ describe('Close Friends Settings Section Redesign Suite', () => {
 
     expect(await screen.findByRole('tab', { name: /All Close Friends \(2\)/i })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: /Add to Close Friends/i })).toBeInTheDocument();
-    expect(screen.getByText('rahul_sharma')).toBeInTheDocument();
+    expect(await screen.findByText('rahul_sharma')).toBeInTheDocument();
     expect(screen.getByText('priya_verma')).toBeInTheDocument();
 
     const removeButtons = screen.getAllByRole('button', { name: 'Remove' });

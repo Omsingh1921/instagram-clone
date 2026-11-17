@@ -114,6 +114,12 @@ export const chatService = {
   updateConversationFolder: async (conversationId, folder) => {
     return await api.put(`/conversations/${conversationId}/folder`, { folder });
   },
+
+  forwardMessage: async (conversationId, messageId, targetConversationIds) => {
+    return await api.post(`/conversations/${conversationId}/messages/${messageId}/forward`, {
+      targetConversationIds: Array.isArray(targetConversationIds) ? targetConversationIds : [targetConversationIds],
+    });
+  },
 };
 
 export default chatService;

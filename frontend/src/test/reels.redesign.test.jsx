@@ -183,7 +183,7 @@ describe('ReelsPage Redesign & Controls Removal Suite', () => {
     // Open and click an interactive element on the Reel (outside menu) -> closes AND keeps Reel interactive
     fireEvent.click(topBtn);
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    const likeBtn = container.querySelector('.reel-actions-column .reel-action-btn-item');
+    const likeBtn = container.querySelector('.reel-actions-column .reel-action-btn-item button') || container.querySelector('.reel-actions-column .reel-action-btn-item');
     fireEvent.click(likeBtn);
     expect(screen.queryByRole('menu')).toBeNull();
     expect(reelService.toggleLike).toHaveBeenCalledWith('r-1');

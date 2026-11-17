@@ -20,6 +20,7 @@ import {
   Pin,
   Edit3,
   Palette,
+  Forward,
   ChevronDown,
   Phone,
   PhoneOff,
@@ -47,6 +48,7 @@ import stompClient from '../services/websocket';
 import NotesTray from '../components/notes/NotesTray';
 import VoiceNotePlayer from '../components/chat/VoiceNotePlayer';
 import SharedPostCard from '../components/chat/SharedPostCard';
+import ForwardMessageModal from '../components/modals/ForwardMessageModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useCall } from '../context/CallContext';
@@ -84,6 +86,7 @@ export const MessagesPage = () => {
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
+  const [forwardMessageTarget, setForwardMessageTarget] = useState(null);
 
   // New Chat & Group Chat Modal
   const [newChatModalOpen, setNewChatModalOpen] = useState(false);
@@ -1107,6 +1110,10 @@ export const MessagesPage = () => {
     }
   };
 
+  const handleOpenForwardModal = (msg) => {
+    setForwardMessageTarget(msg);
+  };
+
   const scrollToMessage = (msgId) => {
     const el = document.getElementById(`msg-${msgId}`);
     if (el) {
@@ -2085,6 +2092,16 @@ export const MessagesPage = () => {
                           {!isSending && (
                             <button
                               type="button"
+                              className="msg-action-btn"
+                              onClick={() => handleOpenForwardModal(msg)}
+                              title="Forward message"
+                            >
+                              <Forward size={13} />
+                            </button>
+                          )}
+                          {!isSending && (
+                            <button
+                              type="button"
                               className="msg-action-btn danger"
                               onClick={() => handleUnsendMessage(msg.id)}
                               title="Unsend message"
@@ -2096,6 +2113,12 @@ export const MessagesPage = () => {
                       )}
 
                       <div className={`message-bubble ${mine ? 'mine' : 'theirs'} ${isSharedPostOrReel && (shareId || msg.mediaUrl) ? 'has-shared-post' : ''} ${isCallMessage ? 'has-call-history' : ''} ${isStoryReply ? 'has-story-reply' : ''}`}>
+                        {msg.isForwarded && (
+                          <div className="message-forwarded-tag">
+                            <Forward size={11} />
+                            <span>Forwarded</span>
+                          </div>
+                        )}
                         {!mine && isGroup && msg.sender?.username && (
                           <div className="group-sender-header">
                             {msg.sender.username}
@@ -2354,6 +2377,14 @@ export const MessagesPage = () => {
                             title={msg.isPinnedInChat ? 'Unpin message' : 'Pin message'}
                           >
                             <Pin size={13} fill={msg.isPinnedInChat ? '#a855f7' : 'none'} color={msg.isPinnedInChat ? '#a855f7' : 'currentColor'} />
+                          </button>
+                          <button
+                            type="button"
+                            className="msg-action-btn"
+                            onClick={() => handleOpenForwardModal(msg)}
+                            title="Forward message"
+                          >
+                            <Forward size={13} />
                           </button>
                         </div>
                       )}
@@ -2955,6 +2986,17 @@ export const MessagesPage = () => {
           </div>
         </Modal>
       )}
+
+      {/* Forward Message Modal */}
+      <ForwardMessageModal
+        isOpen={Boolean(forwardMessageTarget)}
+        onClose={() => setForwardMessageTarget(null)}
+        message={forwardMessageTarget}
+        currentConversationId={activeConversation?.id}
+        onForwardSuccess={() => {
+          setForwardMessageTarget(null);
+        }}
+      />
     </div>
   );
 };

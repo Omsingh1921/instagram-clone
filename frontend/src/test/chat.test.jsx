@@ -20,6 +20,7 @@ vi.mock('../services/chat.service', () => ({
     getPinnedMessages: vi.fn().mockResolvedValue({ data: [] }),
     togglePinMessage: vi.fn().mockResolvedValue({ data: {} }),
     editMessage: vi.fn().mockResolvedValue({ data: {} }),
+    forwardMessage: vi.fn().mockResolvedValue({ data: [] }),
     markAsRead: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
@@ -310,6 +311,76 @@ describe('Chat & Messages Suite', () => {
 
     await waitFor(() => {
       expect(chatService.togglePinMessage).toHaveBeenCalledWith(mockConversation.id, 'msg-pin-1');
+    });
+  });
+
+  it('renders forwarded indicator and allows forwarding messages', async () => {
+    const forwardedMsg = {
+      id: 'msg-fwd-1',
+      conversationId: mockConversation.id,
+      sender: mockOtherUser,
+      senderId: mockOtherUser.id,
+      content: 'Important forwarded message',
+      messageType: 'TEXT',
+      isForwarded: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    const targetConv = {
+      id: 'conv-id-target-99',
+      members: [mockUser, { id: '33333333-3333-3333-3333-333333333333', username: 'target_friend', displayName: 'Target Friend' }],
+      lastMessage: { content: 'hey', createdAt: new Date().toISOString() },
+      unreadCount: 0,
+    };
+
+    chatService.getConversations.mockResolvedValue({
+      data: { content: [mockConversation, targetConv] },
+    });
+    chatService.getMessages.mockResolvedValueOnce({
+      data: { content: [forwardedMsg], last: true },
+    });
+    chatService.forwardMessage.mockResolvedValueOnce({
+      data: [{ ...forwardedMsg, id: 'msg-fwd-copy' }],
+    });
+
+    render(
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <MessagesPage />
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    );
+
+    const convItem = await screen.findByText('Test Two');
+    fireEvent.click(convItem);
+
+    expect(await screen.findByText('Important forwarded message')).toBeInTheDocument();
+    expect(screen.getByText('Forwarded')).toBeInTheDocument();
+
+    const forwardBtns = screen.getAllByTitle('Forward message');
+    expect(forwardBtns.length).toBeGreaterThan(0);
+    fireEvent.click(forwardBtns[0]);
+
+    // Modal opens
+    expect(await screen.findByText(/Forward Message/i)).toBeInTheDocument();
+    expect(await screen.findByText('target_friend')).toBeInTheDocument();
+
+    // Select target conversation
+    const targetItem = screen.getByText('target_friend');
+    fireEvent.click(targetItem);
+
+    // Click Send
+    const sendBtn = screen.getByRole('button', { name: /^Send$/i });
+    fireEvent.click(sendBtn);
+
+    await waitFor(() => {
+      expect(chatService.forwardMessage).toHaveBeenCalledWith(
+        mockConversation.id,
+        'msg-fwd-1',
+        ['conv-id-target-99']
+      );
     });
   });
 });

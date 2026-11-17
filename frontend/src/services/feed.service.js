@@ -17,6 +17,12 @@ export const feedService = {
     if (!itemIds || !itemIds.length) return;
     return await api.post('/feed/seen', { itemIds });
   },
+
+  markNotInterested: async (itemId, itemType = 'POST') => {
+    return await api.post(`/feed/items/${itemId}/not-interested`, null, {
+      params: { itemType },
+    });
+  },
 };
 
 export default feedService;

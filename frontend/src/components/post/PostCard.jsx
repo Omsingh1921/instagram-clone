@@ -42,6 +42,7 @@ import ProgressiveImage from '../common/ProgressiveImage';
 import { getVideoPosterUrl, getAdaptiveVideoUrl } from '../../utils/mediaUrl';
 import engagementService from '../../services/engagement.service';
 import postService from '../../services/post.service';
+import feedService from '../../services/feed.service';
 import settingsService from '../../services/settings.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -63,6 +64,7 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const [hideLikeCount, setHideLikeCount] = useState(Boolean(post.hideLikeCount));
   const [isArchived, setIsArchived] = useState(Boolean(post.isArchived));
   const [isAuthorMuted, setIsAuthorMuted] = useState(false);
+  const [isNotInterested, setIsNotInterested] = useState(false);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
   const [showTags, setShowTags] = useState(false);
   const [insightsModalOpen, setInsightsModalOpen] = useState(false);
@@ -284,6 +286,18 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
     }
   };
 
+  const handleNotInterested = async () => {
+    setMenuOpen(false);
+    try {
+      setIsNotInterested(true);
+      await feedService.markNotInterested(post.id, 'POST');
+      showSuccess("Thanks. We'll show fewer posts like this.");
+    } catch (err) {
+      setIsNotInterested(false);
+      showError(err.message || 'Action failed');
+    }
+  };
+
   const handleToggleMute = async () => {
     if (!post.author?.id) return;
     try {
@@ -390,6 +404,18 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
       return <React.Fragment key={idx}>{part}</React.Fragment>;
     });
   };
+
+  if (isNotInterested) {
+    return (
+      <article className="post-card not-interested-placeholder">
+        <div className="not-interested-content">
+          <EyeOff size={28} className="not-interested-icon" />
+          <p className="not-interested-title">Post hidden</p>
+          <p className="not-interested-subtitle">Thanks. We'll show fewer posts like this.</p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <>
@@ -535,6 +561,10 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
                       <span>Delete post</span>
                     </button>
                   )}
+                  <button type="button" className="post-menu-item" onClick={handleNotInterested}>
+                    <EyeOff size={14} />
+                    <span>Not interested</span>
+                  </button>
                   <button type="button" className="post-menu-item" onClick={handleToggleMute}>
                     <BellOff size={14} />
                     <span>{isAuthorMuted ? `Unmute @${post.author?.username}` : `Mute @${post.author?.username}`}</span>

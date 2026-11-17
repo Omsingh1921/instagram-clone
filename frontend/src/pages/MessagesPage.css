@@ -1803,3 +1803,137 @@
 [data-theme="light"] .message-bubble.mine .story-dm-badge-header {
   color: #ffffff;
 }
+
+/* Pinned Messages Banner */
+.chat-pinned-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  background: rgba(168, 85, 247, 0.1);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.2);
+  z-index: 2;
+  animation: slideDown 0.2s ease-out;
+}
+
+.chat-pinned-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chat-pinned-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.chat-pinned-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #c084fc;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.chat-pinned-text {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-pinned-unpin-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-pinned-unpin-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Chat Editing Banner */
+.chat-editing-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  margin-bottom: 6px;
+  background: rgba(0, 149, 246, 0.12);
+  border: 1px solid rgba(0, 149, 246, 0.25);
+  border-radius: 12px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.chat-editing-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #38bdf8;
+  overflow: hidden;
+}
+
+.chat-editing-icon {
+  flex-shrink: 0;
+}
+
+.chat-editing-info strong {
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 250px;
+}
+
+.chat-editing-cancel-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-editing-cancel-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Edited tag and highlight pulse */
+.message-edited-tag {
+  font-size: 10px;
+  opacity: 0.75;
+  margin-left: 2px;
+  font-style: italic;
+}
+
+.highlight-pulse {
+  animation: pulseMsg 1.5s ease-in-out;
+}
+
+@keyframes pulseMsg {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(168, 85, 247, 0.2);
+    border-radius: 12px;
+  }
+}

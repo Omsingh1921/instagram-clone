@@ -18,6 +18,7 @@ import {
   Mic,
   Image as ImageIcon,
   Pin,
+  Edit3,
   ChevronDown,
   Phone,
   PhoneOff,
@@ -64,6 +65,8 @@ export const MessagesPage = () => {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [editingMessage, setEditingMessage] = useState(null);
   const [convSearchTerm, setConvSearchTerm] = useState('');
   const [activeInboxTab, setActiveInboxTab] = useState('messages');
   const [loadingConvs, setLoadingConvs] = useState(true);
@@ -343,6 +346,23 @@ export const MessagesPage = () => {
     window.addEventListener('story:dm-sent', handleStoryDmSent);
     return () => window.removeEventListener('story:dm-sent', handleStoryDmSent);
   }, [loadConversations]);
+
+  // Fetch pinned messages for active conversation
+  useEffect(() => {
+    if (!activeConversation?.id) {
+      setPinnedMessages([]);
+      setEditingMessage(null);
+      return;
+    }
+    if (typeof chatService.getPinnedMessages === 'function') {
+      chatService.getPinnedMessages(activeConversation.id)
+        .then((res) => {
+          const list = res?.data || res || [];
+          setPinnedMessages(Array.isArray(list) ? list : []);
+        })
+        .catch(() => setPinnedMessages([]));
+    }
+  }, [activeConversation?.id]);
 
   // Load messages & subscribe when active conversation changes
   useEffect(() => {
@@ -693,6 +713,24 @@ export const MessagesPage = () => {
     }
     if (!inputText.trim() || !activeConversation || sending) return;
 
+    if (editingMessage) {
+      const newContent = inputText.trim();
+      setInputText('');
+      const targetMsgId = editingMessage.id;
+      setEditingMessage(null);
+      try {
+        const res = await chatService.editMessage(activeConversation.id, targetMsgId, newContent);
+        const updated = res?.data || res;
+        setMessages((prev) =>
+          prev.map((m) => (m.id === targetMsgId ? { ...m, content: updated.content, isEdited: true } : m))
+        );
+        showSuccess('Message edited');
+      } catch (err) {
+        showError(err.message || 'Failed to edit message');
+      }
+      return;
+    }
+
     const content = inputText.trim();
     setInputText('');
 
@@ -1012,6 +1050,44 @@ export const MessagesPage = () => {
 
     return () => clearTimeout(searchTimeout);
   }, [userSearchTerm, newChatModalOpen, currentUserId]);
+
+  const handleTogglePinMessage = async (messageId) => {
+    if (!activeConversation?.id || !messageId) return;
+    try {
+      const res = await chatService.togglePinMessage(activeConversation.id, messageId);
+      const updated = res?.data || res;
+      setMessages((prev) =>
+        prev.map((m) => (m.id === messageId ? { ...m, isPinnedInChat: updated.isPinnedInChat } : m))
+      );
+      if (updated.isPinnedInChat) {
+        setPinnedMessages((prev) => [...prev.filter((p) => p.id !== messageId), updated]);
+        showSuccess('Message pinned to chat');
+      } else {
+        setPinnedMessages((prev) => prev.filter((p) => p.id !== messageId));
+        showSuccess('Message unpinned');
+      }
+    } catch (err) {
+      showError(err.message || 'Failed to toggle pin');
+    }
+  };
+
+  const handleStartEditMessage = (msg) => {
+    if (!msg || msg.messageType !== 'TEXT') return;
+    setEditingMessage(msg);
+    setInputText(msg.content);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const scrollToMessage = (msgId) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('highlight-pulse');
+      setTimeout(() => el.classList.remove('highlight-pulse'), 1500);
+    }
+  };
 
   // Unsend message
   const handleUnsendMessage = async (messageId) => {
@@ -1789,6 +1865,32 @@ export const MessagesPage = () => {
               </div>
             </div>
 
+            {/* Pinned Messages Banner */}
+            {pinnedMessages.length > 0 && (
+              <div className="chat-pinned-banner">
+                <div className="chat-pinned-icon-wrap">
+                  <Pin size={14} fill="#a855f7" color="#a855f7" />
+                </div>
+                <div
+                  className="chat-pinned-body"
+                  onClick={() => scrollToMessage(pinnedMessages[0].id)}
+                  title="Jump to pinned message"
+                >
+                  <span className="chat-pinned-label">Pinned:</span>
+                  <span className="chat-pinned-text">{pinnedMessages[0].content}</span>
+                </div>
+                <button
+                  type="button"
+                  className="chat-pinned-unpin-btn"
+                  onClick={() => handleTogglePinMessage(pinnedMessages[0].id)}
+                  title="Unpin message"
+                  aria-label="Unpin message"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Messages Stream */}
             <div
               className="chat-messages-container"
@@ -1893,7 +1995,8 @@ export const MessagesPage = () => {
                         </div>
                       )}
                       <div
-                        className={`message-bubble-row ${mine ? 'mine' : 'theirs'}`}
+                        id={`msg-${msg.id}`}
+                        className={`message-bubble-row ${mine ? 'mine' : 'theirs'} ${msg.isPinnedInChat ? 'pinned-in-chat' : ''}`}
                     >
                       {/* Avatar on left for incoming (theirs) messages */}
                       {!mine && (
@@ -1925,6 +2028,24 @@ export const MessagesPage = () => {
                               color={hasMyHeart ? '#ef4444' : 'currentColor'}
                             />
                           </button>
+                          <button
+                            type="button"
+                            className={`msg-action-btn ${msg.isPinnedInChat ? 'active' : ''}`}
+                            onClick={() => handleTogglePinMessage(msg.id)}
+                            title={msg.isPinnedInChat ? 'Unpin message' : 'Pin message'}
+                          >
+                            <Pin size={13} fill={msg.isPinnedInChat ? '#a855f7' : 'none'} color={msg.isPinnedInChat ? '#a855f7' : 'currentColor'} />
+                          </button>
+                          {!isSending && msg.messageType === 'TEXT' && (
+                            <button
+                              type="button"
+                              className="msg-action-btn"
+                              onClick={() => handleStartEditMessage(msg)}
+                              title="Edit message"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+                          )}
                           {!isSending && (
                             <button
                               type="button"
@@ -2140,6 +2261,7 @@ export const MessagesPage = () => {
                         )}
                         <span className="message-time">
                           <span>{msg.createdAt ? timeAgo(msg.createdAt) : 'Just now'}</span>
+                          {msg.isEdited && <span className="message-edited-tag">· edited</span>}
                           {mine && (
                             <span
                               className="message-status-indicator"
@@ -2188,6 +2310,14 @@ export const MessagesPage = () => {
                               fill={hasMyHeart ? '#ef4444' : 'none'}
                               color={hasMyHeart ? '#ef4444' : 'currentColor'}
                             />
+                          </button>
+                          <button
+                            type="button"
+                            className={`msg-action-btn ${msg.isPinnedInChat ? 'active' : ''}`}
+                            onClick={() => handleTogglePinMessage(msg.id)}
+                            title={msg.isPinnedInChat ? 'Unpin message' : 'Pin message'}
+                          >
+                            <Pin size={13} fill={msg.isPinnedInChat ? '#a855f7' : 'none'} color={msg.isPinnedInChat ? '#a855f7' : 'currentColor'} />
                           </button>
                         </div>
                       )}
@@ -2339,6 +2469,25 @@ export const MessagesPage = () => {
               </div>
             ) : (
               <div className="chat-input-wrapper">
+                {editingMessage && (
+                  <div className="chat-editing-banner">
+                    <div className="chat-editing-info">
+                      <Edit3 size={14} className="chat-editing-icon" />
+                      <span>Editing: <strong>{editingMessage.content}</strong></span>
+                    </div>
+                    <button
+                      type="button"
+                      className="chat-editing-cancel-btn"
+                      onClick={() => {
+                        setEditingMessage(null);
+                        setInputText('');
+                      }}
+                      title="Cancel edit"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
                 <form onSubmit={handleSendMessage} className="chat-input-bar-capsule">
                   <button
                     type="button"

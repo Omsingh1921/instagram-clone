@@ -51,6 +51,18 @@ export const chatService = {
     return await api.delete(`/conversations/${conversationId}/messages/${messageId}`);
   },
 
+  editMessage: async (conversationId, messageId, content) => {
+    return await api.put(`/conversations/${conversationId}/messages/${messageId}`, { content });
+  },
+
+  togglePinMessage: async (conversationId, messageId) => {
+    return await api.post(`/conversations/${conversationId}/messages/${messageId}/pin`);
+  },
+
+  getPinnedMessages: async (conversationId) => {
+    return await api.get(`/conversations/${conversationId}/pinned-messages`);
+  },
+
   reactToMessage: async (conversationId, messageId, emoji) => {
     return await api.post(`/conversations/${conversationId}/messages/${messageId}/reactions`, { emoji });
   },

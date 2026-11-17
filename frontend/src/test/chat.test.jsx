@@ -17,6 +17,9 @@ vi.mock('../services/chat.service', () => ({
     getConversationById: vi.fn(),
     getMessages: vi.fn(),
     sendMessage: vi.fn(),
+    getPinnedMessages: vi.fn().mockResolvedValue({ data: [] }),
+    togglePinMessage: vi.fn().mockResolvedValue({ data: {} }),
+    editMessage: vi.fn().mockResolvedValue({ data: {} }),
     markAsRead: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
@@ -263,5 +266,50 @@ describe('Chat & Messages Suite', () => {
     expect(screen.getByText('Pin')).toBeInTheDocument();
     expect(screen.getByText('Mute')).toBeInTheDocument();
     expect(screen.getByText('Delete')).toBeInTheDocument();
+  });
+
+  it('renders pin and edit buttons on messages and handles pinning', async () => {
+    const pinMsg = {
+      id: 'msg-pin-1',
+      sender: mockUser,
+      content: 'Hello World',
+      messageType: 'TEXT',
+      createdAt: new Date().toISOString(),
+      isPinnedInChat: false,
+    };
+
+    chatService.getConversations.mockResolvedValueOnce({
+      data: { content: [mockConversation] },
+    });
+    chatService.getMessages.mockResolvedValueOnce({
+      data: { content: [pinMsg], last: true },
+    });
+    chatService.togglePinMessage.mockResolvedValueOnce({
+      data: { ...pinMsg, isPinnedInChat: true },
+    });
+
+    render(
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <MessagesPage />
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    );
+
+    const convItem = await screen.findByText('Test Two');
+    fireEvent.click(convItem);
+
+    expect(await screen.findByText('Hello World')).toBeInTheDocument();
+
+    const pinBtn = screen.getByTitle('Pin message');
+    expect(pinBtn).toBeInTheDocument();
+
+    fireEvent.click(pinBtn);
+
+    await waitFor(() => {
+      expect(chatService.togglePinMessage).toHaveBeenCalledWith(mockConversation.id, 'msg-pin-1');
+    });
   });
 });

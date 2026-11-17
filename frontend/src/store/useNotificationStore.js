@@ -1,4 +1,4 @@
-﻿/**
+/**
  * useNotificationStore — Zustand store for notification state.
  *
  * Responsibilities:

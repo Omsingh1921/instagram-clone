@@ -1937,3 +1937,114 @@
     border-radius: 12px;
   }
 }
+
+/* Chat Themes Modal & Bubbles */
+.chat-theme-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 4px;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.chat-theme-option-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background var(--transition-fast, 0.15s), border-color var(--transition-fast, 0.15s);
+  width: 100%;
+  text-align: left;
+}
+
+.chat-theme-option-row:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium, rgba(255, 255, 255, 0.2));
+}
+
+.chat-theme-option-row.selected {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.12);
+}
+
+.chat-theme-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.chat-theme-option-name {
+  flex: 1;
+}
+
+.chat-theme-check-dot {
+  color: #a855f7;
+  font-weight: bold;
+}
+
+/* Chat Container Themes */
+.chat-theme-cyberpunk {
+  background: radial-gradient(circle at top right, rgba(0, 240, 255, 0.08), transparent 40%),
+              radial-gradient(circle at bottom left, rgba(255, 0, 60, 0.08), transparent 40%);
+}
+.chat-theme-cyberpunk .message-bubble.mine {
+  background: linear-gradient(135deg, #00f0ff 0%, #ff003c 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(0, 240, 255, 0.25);
+}
+
+.chat-theme-lavender {
+  background: radial-gradient(circle at center, rgba(192, 132, 252, 0.09), transparent 60%);
+}
+.chat-theme-lavender .message-bubble.mine {
+  background: linear-gradient(135deg, #c084fc 0%, #e879f9 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(192, 132, 252, 0.25);
+}
+
+.chat-theme-sunset {
+  background: radial-gradient(circle at top, rgba(249, 115, 22, 0.08), transparent 50%),
+              radial-gradient(circle at bottom, rgba(236, 72, 153, 0.08), transparent 50%);
+}
+.chat-theme-sunset .message-bubble.mine {
+  background: linear-gradient(135deg, #f97316 0%, #ec4899 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(249, 115, 22, 0.25);
+}
+
+.chat-theme-ocean {
+  background: radial-gradient(circle at top left, rgba(6, 182, 212, 0.09), transparent 50%),
+              radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.09), transparent 50%);
+}
+.chat-theme-ocean .message-bubble.mine {
+  background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.25);
+}
+
+.chat-theme-neon {
+  background: radial-gradient(circle at center, rgba(16, 185, 129, 0.08), transparent 60%);
+}
+.chat-theme-neon .message-bubble.mine {
+  background: linear-gradient(135deg, #10b981 0%, #a855f7 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);
+}
+
+.chat-theme-monochrome {
+  background: rgba(0, 0, 0, 0.05);
+}
+.chat-theme-monochrome .message-bubble.mine {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+  color: #ffffff !important;
+}

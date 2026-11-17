@@ -106,6 +106,14 @@ export const chatService = {
   togglePinConversation: async (conversationId) => {
     return await api.post(`/conversations/${conversationId}/pin`);
   },
+
+  updateConversationTheme: async (conversationId, theme) => {
+    return await api.put(`/conversations/${conversationId}/theme`, { theme });
+  },
+
+  updateConversationFolder: async (conversationId, folder) => {
+    return await api.put(`/conversations/${conversationId}/folder`, { folder });
+  },
 };
 
 export default chatService;

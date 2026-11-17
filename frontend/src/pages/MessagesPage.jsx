@@ -19,6 +19,7 @@ import {
   Image as ImageIcon,
   Pin,
   Edit3,
+  Palette,
   ChevronDown,
   Phone,
   PhoneOff,
@@ -55,6 +56,16 @@ import '../components/modals/BlockUserModal.css';
 
 const MESSAGES_PAGE_SIZE = 15;
 
+const CHAT_THEMES = [
+  { id: 'DEFAULT', name: 'Default', colors: ['#a855f7', '#6366f1'] },
+  { id: 'CYBERPUNK', name: 'Cyberpunk', colors: ['#00f0ff', '#ff003c'] },
+  { id: 'LAVENDER', name: 'Lavender', colors: ['#c084fc', '#e879f9'] },
+  { id: 'SUNSET', name: 'Sunset', colors: ['#f97316', '#ec4899'] },
+  { id: 'OCEAN', name: 'Ocean', colors: ['#06b6d4', '#3b82f6'] },
+  { id: 'NEON', name: 'Neon', colors: ['#10b981', '#a855f7'] },
+  { id: 'MONOCHROME', name: 'Monochrome', colors: ['#94a3b8', '#64748b'] },
+];
+
 export const MessagesPage = () => {
   const [conversations, setConversations] = useState([]);
   const [requestConversations, setRequestConversations] = useState([]);
@@ -67,6 +78,7 @@ export const MessagesPage = () => {
   const [inputText, setInputText] = useState('');
   const [pinnedMessages, setPinnedMessages] = useState([]);
   const [editingMessage, setEditingMessage] = useState(null);
+  const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [convSearchTerm, setConvSearchTerm] = useState('');
   const [activeInboxTab, setActiveInboxTab] = useState('messages');
   const [loadingConvs, setLoadingConvs] = useState(true);
@@ -1071,6 +1083,21 @@ export const MessagesPage = () => {
     }
   };
 
+  const handleSelectTheme = async (themeId) => {
+    if (!activeConversation?.id) return;
+    try {
+      await chatService.updateConversationTheme(activeConversation.id, themeId);
+      setActiveConversation((prev) => ({ ...prev, theme: themeId }));
+      setConversations((prev) =>
+        prev.map((c) => (c.id === activeConversation.id ? { ...c, theme: themeId } : c))
+      );
+      setThemeModalOpen(false);
+      showSuccess(`Chat theme updated to ${themeId}`);
+    } catch (err) {
+      showError(err.message || 'Failed to update chat theme');
+    }
+  };
+
   const handleStartEditMessage = (msg) => {
     if (!msg || msg.messageType !== 'TEXT') return;
     setEditingMessage(msg);
@@ -1839,6 +1866,15 @@ export const MessagesPage = () => {
                 <button
                   type="button"
                   className="chat-header-action-btn"
+                  onClick={() => setThemeModalOpen(true)}
+                  title="Change chat theme"
+                  aria-label="Change chat theme"
+                >
+                  <Palette size={21} />
+                </button>
+                <button
+                  type="button"
+                  className="chat-header-action-btn"
                   onClick={() => {
                     if (!isGroup) {
                       const targetId = otherMember?.id || otherMember?.userId;
@@ -1893,7 +1929,7 @@ export const MessagesPage = () => {
 
             {/* Messages Stream */}
             <div
-              className="chat-messages-container"
+              className={`chat-messages-container chat-theme-${(activeConversation?.theme || 'DEFAULT').toLowerCase()}`}
               ref={messagesContainerRef}
               onScroll={handleMessagesScroll}
             >
@@ -2820,6 +2856,36 @@ export const MessagesPage = () => {
       )}
 
       {/* Fullscreen Story Preview Modal */}
+      {themeModalOpen && (
+        <Modal
+          isOpen={themeModalOpen}
+          onClose={() => setThemeModalOpen(false)}
+          title="Chat Theme"
+          size="sm"
+        >
+          <div className="chat-theme-picker-list">
+            {CHAT_THEMES.map((th) => {
+              const isSelected = (activeConversation?.theme || 'DEFAULT').toUpperCase() === th.id;
+              return (
+                <button
+                  key={th.id}
+                  type="button"
+                  className={`chat-theme-option-row ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleSelectTheme(th.id)}
+                >
+                  <div
+                    className="chat-theme-swatch"
+                    style={{ background: `linear-gradient(135deg, ${th.colors[0]}, ${th.colors[1]})` }}
+                  />
+                  <span className="chat-theme-option-name">{th.name}</span>
+                  {isSelected && <span className="chat-theme-check-dot">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </Modal>
+      )}
+
       {storyPreviewModalUrl && (
         <div
           className="story-dm-modal-backdrop"

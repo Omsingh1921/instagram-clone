@@ -13,6 +13,10 @@ export const collectionService = {
     const res = await api.get(`/collections/${id}/posts?page=${page}&size=${size}`);
     return res.data;
   },
+  getCollectionReels: async (id, page = 0, size = 18) => {
+    const res = await api.get(`/collections/${id}/reels?page=${page}&size=${size}`);
+    return res.data;
+  },
   addItem: async (collectionId, postId, reelId) => {
     let url = `/collections/${collectionId}/items?`;
     if (postId) url += `postId=${postId}`;

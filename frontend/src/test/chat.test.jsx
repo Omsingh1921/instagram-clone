@@ -21,6 +21,7 @@ vi.mock('../services/chat.service', () => ({
     togglePinMessage: vi.fn().mockResolvedValue({ data: {} }),
     editMessage: vi.fn().mockResolvedValue({ data: {} }),
     forwardMessage: vi.fn().mockResolvedValue({ data: [] }),
+    updateConversationFolder: vi.fn().mockResolvedValue({ success: true }),
     markAsRead: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
@@ -381,6 +382,76 @@ describe('Chat & Messages Suite', () => {
         'msg-fwd-1',
         ['conv-id-target-99']
       );
+    });
+  });
+
+  it('supports Primary and General inbox folder tabs and moving conversations between folders', async () => {
+    const primaryConv = {
+      id: 'conv-primary-1',
+      folder: 'PRIMARY',
+      members: [mockUser, { id: 'user-p', username: 'primary_friend', displayName: 'Primary Friend' }],
+      lastMessage: { content: 'hello in primary', createdAt: new Date().toISOString() },
+      unreadCount: 0,
+    };
+    const generalConv = {
+      id: 'conv-general-1',
+      folder: 'GENERAL',
+      members: [mockUser, { id: 'user-g', username: 'general_friend', displayName: 'General Friend' }],
+      lastMessage: { content: 'hello in general', createdAt: new Date().toISOString() },
+      unreadCount: 0,
+    };
+
+    chatService.getConversations.mockResolvedValue({
+      data: { content: [primaryConv, generalConv] },
+    });
+    chatService.getMessages.mockResolvedValue({
+      data: { content: [], last: true },
+    });
+    chatService.updateConversationFolder.mockResolvedValue({
+      success: true,
+    });
+
+    render(
+      <BrowserRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <MessagesPage />
+          </ToastProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    );
+
+    // Initial Primary tab should be active
+    const primaryTab = await screen.findByRole('tab', { name: 'Primary' });
+    const generalTab = screen.getByRole('tab', { name: 'General' });
+    const requestsTab = screen.getByRole('tab', { name: 'Requests' });
+
+    expect(primaryTab).toHaveClass('active');
+    expect(generalTab).toBeInTheDocument();
+    expect(requestsTab).toBeInTheDocument();
+    expect(await screen.findByText('Primary Friend')).toBeInTheDocument();
+    expect(screen.queryByText('General Friend')).toBeNull();
+
+    // Switch to General tab
+    fireEvent.click(generalTab);
+    expect(generalTab).toHaveClass('active');
+    expect(await screen.findByText('General Friend')).toBeInTheDocument();
+    expect(screen.queryByText('Primary Friend')).toBeNull();
+
+    // Switch back to Primary tab
+    fireEvent.click(primaryTab);
+    expect(await screen.findByText('Primary Friend')).toBeInTheDocument();
+
+    // Open conversation more options menu on Primary Friend
+    const moreOptionsBtns = screen.getAllByLabelText('More options');
+    fireEvent.click(moreOptionsBtns[0]);
+
+    // Click "Move to General"
+    const moveToGeneralBtn = await screen.findByText('Move to General');
+    fireEvent.click(moveToGeneralBtn);
+
+    await waitFor(() => {
+      expect(chatService.updateConversationFolder).toHaveBeenCalledWith('conv-primary-1', 'GENERAL');
     });
   });
 });

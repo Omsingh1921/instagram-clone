@@ -21,6 +21,7 @@ import {
   Edit3,
   Palette,
   Forward,
+  FolderInput,
   ChevronDown,
   Phone,
   PhoneOff,
@@ -82,7 +83,7 @@ export const MessagesPage = () => {
   const [editingMessage, setEditingMessage] = useState(null);
   const [themeModalOpen, setThemeModalOpen] = useState(false);
   const [convSearchTerm, setConvSearchTerm] = useState('');
-  const [activeInboxTab, setActiveInboxTab] = useState('messages');
+  const [activeInboxTab, setActiveInboxTab] = useState('primary');
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const [sending, setSending] = useState(false);
@@ -214,6 +215,11 @@ export const MessagesPage = () => {
           const foundRequest = !foundPrimary ? safeRequests.find((c) => c.id === targetId) : null;
           if (foundPrimary) {
             setActiveConversation(foundPrimary);
+            if (foundPrimary.folder === 'GENERAL') {
+              setActiveInboxTab('general');
+            } else {
+              setActiveInboxTab('primary');
+            }
           } else if (foundRequest) {
             setActiveConversation(foundRequest);
             setActiveInboxTab('requests');
@@ -228,10 +234,16 @@ export const MessagesPage = () => {
                     prev.some((c) => c.id === singleConv.id) ? prev : [singleConv, ...prev]
                   );
                   setActiveInboxTab('requests');
+                } else if (singleConv.folder === 'GENERAL') {
+                  setConversations((prev) =>
+                    prev.some((c) => c.id === singleConv.id) ? prev : [singleConv, ...prev]
+                  );
+                  setActiveInboxTab('general');
                 } else {
                   setConversations((prev) =>
                     prev.some((c) => c.id === singleConv.id) ? prev : [singleConv, ...prev]
                   );
+                  setActiveInboxTab('primary');
                 }
               }
             } catch {
@@ -284,7 +296,7 @@ export const MessagesPage = () => {
         prev?.id === convId ? { ...prev, folder: 'PRIMARY' } : prev
       );
       if (inReq || activeConversation?.folder === 'REQUESTS') {
-        setActiveInboxTab('messages');
+        setActiveInboxTab('primary');
       }
     },
     [requestConversations, activeConversation]
@@ -1261,6 +1273,26 @@ export const MessagesPage = () => {
     );
   };
 
+  // Move conversation to PRIMARY or GENERAL folder
+  const handleMoveConversationFolder = async (e, convId, targetFolder) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    setConvMenuOpenId(null);
+    try {
+      await chatService.updateConversationFolder(convId, targetFolder);
+      setConversations((prev) =>
+        prev.map((c) => (c.id === convId ? { ...c, folder: targetFolder } : c))
+      );
+      if (activeConversation?.id === convId) {
+        setActiveConversation((prev) => ({ ...prev, folder: targetFolder }));
+      }
+      showSuccess(
+        `Chat moved to ${targetFolder === 'GENERAL' ? 'General' : 'Primary'}`
+      );
+    } catch (err) {
+      showError(err.message || 'Failed to move conversation folder');
+    }
+  };
+
   // Toggle Mute / Unmute
   const handleToggleMute = (e, convId) => {
     if (e) e.stopPropagation();
@@ -1532,17 +1564,27 @@ export const MessagesPage = () => {
         {/* Instagram Notes Tray */}
         <NotesTray onSelectUserForChat={handleStartChatWithUser} />
 
-        {/* Messages / Requests Subheader */}
+        {/* Inbox Folder Filter Tabs (Primary / General / Requests) */}
         <div className="conversations-subheader" role="tablist" aria-label="Messages filter">
           <button
             type="button"
             role="tab"
-            aria-label="Messages"
-            aria-selected={activeInboxTab === 'messages'}
-            className={`conversations-tab-btn ${activeInboxTab === 'messages' ? 'active' : ''}`}
-            onClick={() => setActiveInboxTab('messages')}
+            aria-label="Primary"
+            aria-selected={activeInboxTab === 'primary' || activeInboxTab === 'messages'}
+            className={`conversations-tab-btn ${activeInboxTab === 'primary' || activeInboxTab === 'messages' ? 'active' : ''}`}
+            onClick={() => setActiveInboxTab('primary')}
           >
-            Messages
+            Primary
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-label="General"
+            aria-selected={activeInboxTab === 'general'}
+            className={`conversations-tab-btn ${activeInboxTab === 'general' ? 'active' : ''}`}
+            onClick={() => setActiveInboxTab('general')}
+          >
+            General
           </button>
           <button
             type="button"
@@ -1564,15 +1606,19 @@ export const MessagesPage = () => {
         <div className="conversations-list-stream">
           {(() => {
             const isRequestsTab = activeInboxTab === 'requests';
+            const isGeneralTab = activeInboxTab === 'general';
+            const hasSearchQuery = Boolean(convSearchTerm.trim());
             const visibleConversations = isRequestsTab
               ? filteredRequestConversations
-              : filteredConversations;
+              : hasSearchQuery
+              ? filteredConversations
+              : isGeneralTab
+              ? filteredConversations.filter((c) => c.folder === 'GENERAL')
+              : filteredConversations.filter((c) => !c.folder || c.folder === 'PRIMARY');
 
             if (loadingConvs) {
               return <SkeletonConversationRows count={6} />;
             }
-
-            const hasSearchQuery = Boolean(convSearchTerm.trim());
 
             if (visibleConversations.length === 0) {
               if (hasSearchQuery) {
@@ -1587,7 +1633,7 @@ export const MessagesPage = () => {
                 );
               }
 
-              const gradId = isRequestsTab ? 'msgEmptyGradReq' : 'msgEmptyGrad';
+              const gradId = isRequestsTab ? 'msgEmptyGradReq' : isGeneralTab ? 'msgEmptyGradGen' : 'msgEmptyGrad';
               return (
                 <div className="conversations-empty-msg">
                   <div className="conversations-empty-icon" aria-hidden="true">
@@ -1603,11 +1649,17 @@ export const MessagesPage = () => {
                     </svg>
                   </div>
                   <h3 className="conversations-empty-title">
-                    {isRequestsTab ? 'No message requests' : 'No messages yet'}
+                    {isRequestsTab
+                      ? 'No message requests'
+                      : isGeneralTab
+                      ? 'No general messages'
+                      : 'No messages yet'}
                   </h3>
                   <p className="conversations-empty-desc">
                     {isRequestsTab
                       ? "Messages from people you don't follow will appear here."
+                      : isGeneralTab
+                      ? 'Move messages you want to get back to later into General.'
                       : 'Send a direct message to a friend or start a group chat.'}
                   </p>
                 </div>
@@ -1660,6 +1712,11 @@ export const MessagesPage = () => {
                       {conv.isPinned && (
                         <span className="conversation-pinned-badge" title="Pinned Chat">
                           <Pin size={12} fill="#a855f7" color="#a855f7" />
+                        </span>
+                      )}
+                      {conv.folder === 'GENERAL' && (
+                        <span className="conversation-folder-badge" title="General message">
+                          General
                         </span>
                       )}
                       {mutedConvs.has(conv.id) && (
@@ -1736,6 +1793,22 @@ export const MessagesPage = () => {
                         >
                           <span>{conv.isPinned ? 'Unpin' : 'Pin'}</span>
                           <Pin size={18} />
+                        </button>
+
+                        <button
+                          type="button"
+                          className="conv-context-menu-item"
+                          onClick={(e) =>
+                            handleMoveConversationFolder(
+                              e,
+                              conv.id,
+                              conv.folder === 'GENERAL' ? 'PRIMARY' : 'GENERAL'
+                            )
+                          }
+                          title={conv.folder === 'GENERAL' ? 'Move to Primary' : 'Move to General'}
+                        >
+                          <span>{conv.folder === 'GENERAL' ? 'Move to Primary' : 'Move to General'}</span>
+                          <FolderInput size={18} />
                         </button>
 
                         <button
@@ -1905,6 +1978,31 @@ export const MessagesPage = () => {
                     color={activeConversation?.isPinned ? '#0095f6' : 'currentColor'}
                   />
                 </button>
+                {activeConversation?.folder !== 'REQUESTS' && (
+                  <button
+                    type="button"
+                    className="chat-header-action-btn"
+                    onClick={(e) =>
+                      handleMoveConversationFolder(
+                        e,
+                        activeConversation.id,
+                        activeConversation?.folder === 'GENERAL' ? 'PRIMARY' : 'GENERAL'
+                      )
+                    }
+                    title={
+                      activeConversation?.folder === 'GENERAL'
+                        ? 'Move to Primary'
+                        : 'Move to General'
+                    }
+                    aria-label={
+                      activeConversation?.folder === 'GENERAL'
+                        ? 'Move to Primary'
+                        : 'Move to General'
+                    }
+                  >
+                    <FolderInput size={20} />
+                  </button>
+                )}
               </div>
             </div>
 

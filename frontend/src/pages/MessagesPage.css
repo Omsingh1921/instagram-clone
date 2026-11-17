@@ -145,12 +145,12 @@
   padding: 2px;
 }
 
-/* Subheader Tabs: Messages / Requests */
+/* Subheader Tabs: Primary / General / Requests */
 .conversations-subheader {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   align-items: center;
-  padding: 0 16px;
+  padding: 0 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -162,13 +162,14 @@
   position: relative;
   background: transparent;
   border: none;
-  padding: 13px 8px;
-  font-size: 14px;
+  padding: 13px 4px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #8b8da4;
   cursor: pointer;
   transition: color 0.16s ease;
   text-align: center;
+  white-space: nowrap;
 }
 
 .conversations-tab-btn:hover {
@@ -182,8 +183,8 @@
 .conversations-tab-btn.active::after {
   content: '';
   position: absolute;
-  left: 14%;
-  right: 14%;
+  left: 10%;
+  right: 10%;
   bottom: -1px;
   height: 2.5px;
   border-radius: 999px;
@@ -203,16 +204,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  margin-left: 6px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  margin-left: 4px;
   border-radius: 999px;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 700;
   color: #ffffff;
   background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);
   vertical-align: middle;
+}
+
+.conversation-folder-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  background: rgba(255, 255, 255, 0.08);
+  margin-left: 6px;
+  letter-spacing: 0.2px;
 }
 
 .message-request-banner {

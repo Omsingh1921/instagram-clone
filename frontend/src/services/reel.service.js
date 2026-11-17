@@ -54,11 +54,15 @@ export const reelService = {
   },
 
   toggleSaveReel: async (reelId) => {
-    return await api.post(`/reels/${reelId}/save`);
+    return await api.put(`/reels/${reelId}/bookmark`);
+  },
+
+  bookmarkReel: async (reelId) => {
+    return await api.put(`/reels/${reelId}/bookmark`);
   },
 
   getSavedReels: async (page = 0, size = 12) => {
-    return await api.get('/reels/saved', {
+    return await api.get('/users/me/saved-reels', {
       params: { page, size },
     });
   },
@@ -112,7 +116,7 @@ export const reelService = {
   },
 
   unsaveReel: async (reelId) => {
-    return await api.delete(`/reels/${reelId}/save`);
+    return await api.delete(`/reels/${reelId}/bookmark`);
   },
 
   reportReel: async (reelId, reportData) => {

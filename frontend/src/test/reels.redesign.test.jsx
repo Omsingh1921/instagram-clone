@@ -35,7 +35,9 @@ vi.mock('../services/reel.service', () => ({
     getReelById: vi.fn(),
     recordView: vi.fn().mockResolvedValue({}),
     toggleLike: vi.fn().mockResolvedValue({}),
+    toggleSaveReel: vi.fn().mockResolvedValue({ isSaved: true }),
     saveReel: vi.fn().mockResolvedValue({}),
+    unsaveReel: vi.fn().mockResolvedValue({}),
     markNotInterested: vi.fn().mockResolvedValue({}),
   },
 }));
@@ -157,9 +159,9 @@ describe('ReelsPage Redesign & Controls Removal Suite', () => {
     expect(container.querySelector('.reel-options-backdrop')).toBeNull();
     expect(container.querySelector('.reel-options-mobile-scrim')).toBeNull();
 
-    // Verify vertical options order: Report reel, Not interested, Copy link, Cancel
+    // Verify vertical options order: Report reel, Not interested, Save reel, Copy link, Cancel
     const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
-    expect(items).toEqual(['Report reel', 'Not interested', 'Copy link', 'Cancel']);
+    expect(items).toEqual(['Report reel', 'Not interested', 'Save reel', 'Copy link', 'Cancel']);
 
     // Clicking the same three-dot button again toggles the menu closed
     fireEvent.click(topBtn);
@@ -323,6 +325,20 @@ describe('ReelsPage Redesign & Controls Removal Suite', () => {
     fireEvent.mouseMove(window, { clientY: 340, clientX: 200 });
     fireEvent.mouseUp(window, { clientY: 350, clientX: 200 });
     expect(await screen.findByText('First sunset reel')).toBeInTheDocument();
+  });
+
+  it('toggles bookmark / save on a reel using toggleSaveReel', async () => {
+    const { container } = renderReels();
+    expect(await screen.findByText('First sunset reel')).toBeInTheDocument();
+
+    const saveBtn = container.querySelector('.reel-action-btn-item button[aria-label="Save reel"]') ||
+      screen.getByLabelText('Save reel');
+    expect(saveBtn).toBeInTheDocument();
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(reelService.toggleSaveReel).toHaveBeenCalledWith('r-1');
+    });
   });
 });
 

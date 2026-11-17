@@ -1158,9 +1158,14 @@ export const ReelsPage = () => {
                   savedMap[currentReel.id] ? 'saved' : ''
                 }`}
                 onClick={() => handleSaveToggle(currentReel.id)}
+                aria-label={savedMap[currentReel.id] ? 'Remove from saved' : 'Save reel'}
+                title={savedMap[currentReel.id] ? 'Saved' : 'Save'}
               >
                 <span className="reel-action-icon-circle">
-                  <Bookmark size={21} />
+                  <Bookmark
+                    size={21}
+                    fill={savedMap[currentReel.id] ? 'currentColor' : 'none'}
+                  />
                 </span>
               </button>
 
@@ -1331,6 +1336,21 @@ export const ReelsPage = () => {
                 </button>
               </>
             )}
+            <button
+              type="button"
+              role="menuitem"
+              className="reel-option-item"
+              onClick={() => {
+                handleSaveToggle(menuState.reelId);
+                setMenuState(null);
+              }}
+            >
+              <Bookmark
+                size={16}
+                fill={savedMap[menuState.reelId] ? 'currentColor' : 'none'}
+              />
+              <span>{savedMap[menuState.reelId] ? 'Remove from saved' : 'Save reel'}</span>
+            </button>
             <button
               type="button"
               role="menuitem"

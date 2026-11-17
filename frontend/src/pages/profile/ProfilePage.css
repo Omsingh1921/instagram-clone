@@ -875,6 +875,36 @@
   pointer-events: none;
 }
 
+.profile-reel-unsave-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  z-index: 5;
+  transition: all 0.18s ease;
+  opacity: 0;
+}
+
+.profile-reel-item:hover .profile-reel-unsave-btn {
+  opacity: 1;
+}
+
+.profile-reel-unsave-btn:hover {
+  background: rgba(239, 68, 68, 0.85);
+  border-color: rgba(239, 68, 68, 0.9);
+  transform: scale(1.08);
+}
+
 /* Top-Right Corner Badges & Three-Dot Options */
 .profile-grid-top-badges {
   position: absolute;

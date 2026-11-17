@@ -9,6 +9,7 @@ import ProfilePage from '../pages/profile/ProfilePage';
 import userService from '../services/user.service';
 import storyService from '../services/story.service';
 import postService from '../services/post.service';
+import reelService from '../services/reel.service';
 
 vi.mock('../services/user.service', () => ({
   default: {
@@ -45,6 +46,7 @@ vi.mock('../services/reel.service', () => ({
   default: {
     getUserReels: vi.fn().mockResolvedValue({ content: [] }),
     getSavedReels: vi.fn().mockResolvedValue({ content: [] }),
+    unsaveReel: vi.fn().mockResolvedValue({}),
     getArchivedReels: vi.fn().mockResolvedValue({ content: [] }),
     getRecentlyDeletedReels: vi.fn().mockResolvedValue({ content: [] }),
   },
@@ -226,6 +228,47 @@ describe('ProfilePage Redesign & Existing API Integration Suite', () => {
     await waitFor(() => {
       expect(activeRender.container.querySelector('.profile-avatar-trigger.has-live-story')).toBeTruthy();
       expect(activeRender.container.querySelector('.avatar-ring-unseen')).toBeTruthy();
+    });
+  });
+
+  it('renders Saved tab with Reels subtab, loads saved reels and removes reel on unsave click', async () => {
+    const savedReel = {
+      id: 'saved-reel-101',
+      videoUrl: 'https://example.com/reel101.mp4',
+      thumbnailUrl: 'https://example.com/thumb101.jpg',
+      caption: 'Best saved reel ever',
+      likeCount: 99,
+      commentCount: 12,
+      viewCount: 1500,
+    };
+
+    reelService.getSavedReels.mockResolvedValueOnce({
+      content: [savedReel],
+    });
+    reelService.unsaveReel.mockResolvedValueOnce({});
+
+    render(
+      <MemoryRouter initialEntries={['/profile/u-1?tab=saved']}>
+        <AuthProvider>
+          <ToastProvider>
+            <ProfilePage />
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // Switch to Reels subtab in Saved
+    const reelsSubtab = await screen.findByRole('button', { name: /Reels \(/i });
+    fireEvent.click(reelsSubtab);
+
+    expect(await screen.findByText('1.5K')).toBeInTheDocument();
+
+    const unsaveBtn = screen.getByLabelText('Remove from saved');
+    expect(unsaveBtn).toBeInTheDocument();
+    fireEvent.click(unsaveBtn);
+
+    await waitFor(() => {
+      expect(reelService.unsaveReel).toHaveBeenCalledWith('saved-reel-101');
     });
   });
 });

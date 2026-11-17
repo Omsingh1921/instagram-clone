@@ -1604,6 +1604,24 @@ export const ProfilePage = () => {
                       <Play size={11} fill="#fff" strokeWidth={0} />
                       <span>{formatCount(reel.viewCount || 0)}</span>
                     </div>
+                    <button
+                      type="button"
+                      className="profile-reel-unsave-btn"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await reelService.unsaveReel(reel.id);
+                          setSavedReels((prev) => prev.filter((r) => r.id !== reel.id));
+                          showSuccess('Reel removed from saved');
+                        } catch {
+                          showError('Failed to remove saved reel');
+                        }
+                      }}
+                      title="Remove from saved"
+                      aria-label="Remove from saved"
+                    >
+                      <Bookmark size={15} fill="#fff" color="#fff" />
+                    </button>
                     <div className="profile-grid-overlay">
                       <div className="overlay-stat">
                         <Heart size={20} fill="#fff" />

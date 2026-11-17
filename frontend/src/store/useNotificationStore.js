@@ -55,6 +55,22 @@ const useNotificationStore = create((set, get) => ({
       unreadCount: 0,
     })),
 
+  /** Remove a single notification by id. */
+  removeNotification: (notificationId) =>
+    set((state) => {
+      const notifications = state.notifications.filter((n) => n.id !== notificationId);
+      return {
+        notifications,
+        unreadCount: Math.max(0, notifications.filter((n) => !n.read).length),
+      };
+    }),
+
+  /** Clear all read notifications. */
+  clearRead: () =>
+    set((state) => ({
+      notifications: state.notifications.filter((n) => !n.read),
+    })),
+
   /** Prepend a newly received real-time notification to the list. */
   addNotification: (notification) =>
     set((state) => ({

@@ -31,6 +31,8 @@ vi.mock('../services/notification.service', () => ({
     getNotifications: vi.fn(),
     markAsRead: vi.fn().mockResolvedValue({}),
     markAllAsRead: vi.fn().mockResolvedValue({}),
+    clearReadNotifications: vi.fn().mockResolvedValue({}),
+    deleteNotification: vi.fn().mockResolvedValue({}),
   },
 }));
 
@@ -176,6 +178,27 @@ describe('NotificationsPage Redesign Suite', () => {
     expect(container.querySelectorAll('.w-11.h-11.rounded-lg').length).toBe(3);
     expect(container.querySelectorAll('.w-20.h-8.rounded-lg').length).toBe(2);
     expect(container.querySelector('.instagram-spinner')).toBeNull();
+  });
+
+  it('allows clearing all read notifications and deleting single notification', async () => {
+    renderNotifications();
+    expect(await screen.findByText('alice_dev')).toBeTruthy();
+
+    const clearReadBtn = screen.getByRole('button', { name: /Clear read/i });
+    expect(clearReadBtn).toBeTruthy();
+    fireEvent.click(clearReadBtn);
+
+    await waitFor(() => {
+      expect(notificationService.clearReadNotifications).toHaveBeenCalledTimes(1);
+    });
+
+    const deleteBtn = screen.getByLabelText(/Delete notification from admin/i);
+    expect(deleteBtn).toBeTruthy();
+    fireEvent.click(deleteBtn);
+
+    await waitFor(() => {
+      expect(notificationService.deleteNotification).toHaveBeenCalledWith('n-sys');
+    });
   });
 });
 

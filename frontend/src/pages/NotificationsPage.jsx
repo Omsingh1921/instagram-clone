@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Settings,
   Send,
+  Trash2,
 } from 'lucide-react';
 import Avatar from '../components/common/Avatar';
 import CommentsModal from '../components/modals/CommentsModal';
@@ -105,6 +106,8 @@ export const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [markingAllRead, setMarkingAllRead] = useState(false);
+  const [clearingRead, setClearingRead] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [activePostId, setActivePostId] = useState(null);
 
@@ -167,6 +170,11 @@ export const NotificationsPage = () => {
     [notifications]
   );
 
+  const hasReadNotifications = useMemo(
+    () => notifications.some((n) => n.read),
+    [notifications]
+  );
+
   const handleMarkAllRead = async () => {
     if (totalUnreadCount === 0 || markingAllRead) return;
     try {
@@ -179,6 +187,37 @@ export const NotificationsPage = () => {
       showError(err.message || 'Failed to mark all as read');
     } finally {
       setMarkingAllRead(false);
+    }
+  };
+
+  const handleClearRead = async () => {
+    if (!hasReadNotifications || clearingRead) return;
+    try {
+      setClearingRead(true);
+      await notificationService.clearReadNotifications();
+      setNotifications((prev) => prev.filter((n) => !n.read));
+      useNotificationStore.getState().clearRead();
+      showSuccess('Read notifications cleared');
+    } catch (err) {
+      showError(err.message || 'Failed to clear read notifications');
+    } finally {
+      setClearingRead(false);
+    }
+  };
+
+  const handleDeleteNotification = async (e, notifId) => {
+    e.stopPropagation();
+    if (!notifId || deletingId === notifId) return;
+    try {
+      setDeletingId(notifId);
+      await notificationService.deleteNotification(notifId);
+      setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+      useNotificationStore.getState().removeNotification(notifId);
+      showSuccess('Notification deleted');
+    } catch (err) {
+      showError(err.message || 'Failed to delete notification');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -414,6 +453,17 @@ export const NotificationsPage = () => {
             />
           ) : null}
 
+          <button
+            type="button"
+            className="notif-delete-icon-btn"
+            disabled={deletingId === notif.id}
+            onClick={(e) => handleDeleteNotification(e, notif.id)}
+            title="Delete notification"
+            aria-label={`Delete notification from ${actorName}`}
+          >
+            <Trash2 size={13} />
+          </button>
+
           {isUnread && <span className="notification-unread-dot" aria-label="Unread" />}
         </div>
       </div>
@@ -437,6 +487,20 @@ export const NotificationsPage = () => {
               >
                 <Check size={15} strokeWidth={2.5} />
                 <span>Mark all as read</span>
+              </button>
+            )}
+
+            {hasReadNotifications && (
+              <button
+                type="button"
+                className="clear-read-btn"
+                onClick={handleClearRead}
+                disabled={clearingRead}
+                title="Clear all read notifications"
+                aria-label="Clear read notifications"
+              >
+                <Trash2 size={14} />
+                <span>Clear read</span>
               </button>
             )}
 

@@ -18,6 +18,14 @@ export const notificationService = {
   markAllAsRead: async () => {
     return await api.put('/notifications/read-all');
   },
+
+  deleteNotification: async (notificationId) => {
+    return await api.delete(`/notifications/${notificationId}`);
+  },
+
+  clearReadNotifications: async () => {
+    return await api.delete('/notifications/clear-read');
+  },
 };
 
 export default notificationService;

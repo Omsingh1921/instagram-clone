@@ -167,6 +167,9 @@ export const ProfilePage = () => {
   const [selectedCollection, setSelectedCollection] = useState(null);
   const [collectionPosts, setCollectionPosts] = useState([]);
   const [loadingCollectionPosts, setLoadingCollectionPosts] = useState(false);
+  const [collectionTab, setCollectionTab] = useState('posts'); // 'posts' | 'reels'
+  const [collectionReels, setCollectionReels] = useState([]);
+  const [loadingCollectionReels, setLoadingCollectionReels] = useState(false);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
 
   // Modals
@@ -391,6 +394,8 @@ export const ProfilePage = () => {
   const handleSelectCollection = async (coll) => {
     try {
       setSelectedCollection(coll);
+      setCollectionTab('posts');
+      setCollectionReels([]);
       setLoadingCollectionPosts(true);
       const res = await collectionService.getCollectionPosts(coll.id);
       const list = res?.data?.content || res?.content || res?.data || [];
@@ -399,6 +404,23 @@ export const ProfilePage = () => {
       setCollectionPosts([]);
     } finally {
       setLoadingCollectionPosts(false);
+    }
+  };
+
+  const handleSwitchCollectionTab = async (tab) => {
+    setCollectionTab(tab);
+    if (!selectedCollection?.id) return;
+    if (tab === 'reels' && collectionReels.length === 0) {
+      try {
+        setLoadingCollectionReels(true);
+        const res = await collectionService.getCollectionReels(selectedCollection.id);
+        const list = res?.data?.content || res?.content || res?.data || (Array.isArray(res) ? res : []);
+        setCollectionReels(Array.isArray(list) ? list : []);
+      } catch {
+        setCollectionReels([]);
+      } finally {
+        setLoadingCollectionReels(false);
+      }
     }
   };
 
@@ -1359,7 +1381,28 @@ export const ProfilePage = () => {
                 <span>{selectedCollection.name}</span>
               </button>
             </div>
-            {loadingCollectionPosts ? (
+
+            <div className="collection-subtab-bar" style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
+              <button
+                type="button"
+                className={`saved-subtab-btn ${collectionTab === 'posts' ? 'active' : ''}`}
+                onClick={() => handleSwitchCollectionTab('posts')}
+              >
+                <Grid size={15} />
+                <span>Posts ({collectionPosts.length})</span>
+              </button>
+              <button
+                type="button"
+                className={`saved-subtab-btn ${collectionTab === 'reels' ? 'active' : ''}`}
+                onClick={() => handleSwitchCollectionTab('reels')}
+              >
+                <Film size={15} />
+                <span>Reels ({collectionReels.length})</span>
+              </button>
+            </div>
+
+            {collectionTab === 'posts' ? (
+              loadingCollectionPosts ? (
               <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
                 <SkeletonMediaGrid count={6} />
               </div>
@@ -1409,6 +1452,49 @@ export const ProfilePage = () => {
                     </div>
                   );
                 })}
+              </div>
+            )) : loadingCollectionReels ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                <SkeletonMediaGrid count={6} />
+              </div>
+            ) : collectionReels.length === 0 ? (
+              <EmptyState
+                icon={Film}
+                title="No reels in this collection"
+                description="Save reels from the reels feed into this collection to see them here."
+              />
+            ) : (
+              <div className="profile-reels-grid">
+                {collectionReels.map((reel) => (
+                  <div
+                    key={reel.id}
+                    className="profile-reel-item"
+                    onClick={() => navigate(`/reels/${reel.id}`)}
+                  >
+                    <video
+                      src={reel.videoUrl}
+                      poster={getVideoPosterUrl(reel.videoUrl, reel.thumbnailUrl)}
+                      className="profile-reel-media"
+                      muted
+                      playsInline
+                      preload="none"
+                    />
+                    <div className="profile-reel-view-count">
+                      <Play size={11} fill="#fff" strokeWidth={0} />
+                      <span>{formatCount(reel.viewCount || 0)}</span>
+                    </div>
+                    <div className="profile-grid-overlay">
+                      <div className="overlay-stat">
+                        <Heart size={20} fill="#fff" />
+                        <span>{formatCount(reel.likeCount || 0)}</span>
+                      </div>
+                      <div className="overlay-stat">
+                        <MessageCircle size={20} fill="#fff" />
+                        <span>{formatCount(reel.commentCount || 0)}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

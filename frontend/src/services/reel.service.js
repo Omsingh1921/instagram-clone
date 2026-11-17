@@ -48,7 +48,7 @@ export const reelService = {
   },
 
   getArchivedReels: async (page = 0, size = 12) => {
-    return await api.get('/reels/archived', {
+    return await api.get('/users/me/archived-reels', {
       params: { page, size, sort: 'archivedAt,desc' },
     });
   },

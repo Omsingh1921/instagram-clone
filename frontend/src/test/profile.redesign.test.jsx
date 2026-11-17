@@ -48,6 +48,7 @@ vi.mock('../services/reel.service', () => ({
     getSavedReels: vi.fn().mockResolvedValue({ content: [] }),
     unsaveReel: vi.fn().mockResolvedValue({}),
     getArchivedReels: vi.fn().mockResolvedValue({ content: [] }),
+    unarchiveReel: vi.fn().mockResolvedValue({}),
     getRecentlyDeletedReels: vi.fn().mockResolvedValue({ content: [] }),
   },
 }));
@@ -269,6 +270,48 @@ describe('ProfilePage Redesign & Existing API Integration Suite', () => {
 
     await waitFor(() => {
       expect(reelService.unsaveReel).toHaveBeenCalledWith('saved-reel-101');
+    });
+  });
+
+  it('renders Archived tab with Reels subtab, loads archived reels and unarchives reel on click', async () => {
+    const archivedReel = {
+      id: 'archived-reel-202',
+      videoUrl: 'https://example.com/archived202.mp4',
+      thumbnailUrl: 'https://example.com/thumb202.jpg',
+      caption: 'My hidden memory reel',
+      likeCount: 45,
+      commentCount: 8,
+      viewCount: 820,
+      isArchived: true,
+    };
+
+    reelService.getArchivedReels.mockResolvedValueOnce({
+      content: [archivedReel],
+    });
+    reelService.unarchiveReel.mockResolvedValueOnce({});
+
+    render(
+      <MemoryRouter initialEntries={['/profile/u-1?tab=archived']}>
+        <AuthProvider>
+          <ToastProvider>
+            <ProfilePage />
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // Switch to Reels subtab in Archived
+    const reelsSubtab = await screen.findByRole('button', { name: /Reels \(/i });
+    fireEvent.click(reelsSubtab);
+
+    expect(await screen.findByText('820')).toBeInTheDocument();
+
+    const showOnProfileBtn = screen.getByRole('button', { name: /Show on profile/i });
+    expect(showOnProfileBtn).toBeInTheDocument();
+    fireEvent.click(showOnProfileBtn);
+
+    await waitFor(() => {
+      expect(reelService.unarchiveReel).toHaveBeenCalledWith('archived-reel-202');
     });
   });
 });

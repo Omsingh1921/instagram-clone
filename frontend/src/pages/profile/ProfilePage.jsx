@@ -126,14 +126,14 @@ export const ProfilePage = () => {
   const [followingCount, setFollowingCount] = useState(0);
   const [activeTab, setActiveTab] = useState(() => {
     const tabParam = searchParams.get('tab');
-    return tabParam && ['posts', 'reels', 'saved', 'tagged'].includes(tabParam.toLowerCase())
+    return tabParam && ['posts', 'reels', 'saved', 'tagged', 'archived', 'recently_deleted'].includes(tabParam.toLowerCase())
       ? tabParam.toLowerCase()
       : 'posts';
   });
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['posts', 'reels', 'saved', 'tagged'].includes(tabParam.toLowerCase())) {
+    if (tabParam && ['posts', 'reels', 'saved', 'tagged', 'archived', 'recently_deleted'].includes(tabParam.toLowerCase())) {
       setActiveTab(tabParam.toLowerCase());
     }
   }, [searchParams]);
@@ -546,7 +546,7 @@ export const ProfilePage = () => {
   const handleUnarchiveReel = async (e, reelId) => {
     e.stopPropagation();
     try {
-      await reelService.toggleArchiveReel(reelId);
+      await reelService.unarchiveReel(reelId);
       showSuccess('Reel unarchived and restored to your profile');
       loadArchivedReels();
       loadUserReels();

@@ -1684,6 +1684,9 @@ export const MessagesPage = () => {
 
   const otherMember = activeConversation ? getOtherMember(activeConversation) : null;
   const isGroup = activeConversation?.type === 'GROUP';
+  const isInRequests =
+    activeConversation?.folder === 'REQUESTS' ||
+    requestConversations.some((c) => c.id === activeConversation?.id);
   const groupDisplayName = isGroup
     ? (activeConversation.name || (activeConversation.members || []).map((m) => m.username).join(', ') || 'Group Chat')
     : ((otherMember?.displayName && otherMember.displayName.toLowerCase() !== currentUsername?.toLowerCase())
@@ -2123,6 +2126,10 @@ export const MessagesPage = () => {
                   type="button"
                   className="chat-header-action-btn"
                   onClick={() => {
+                    if (isInRequests) {
+                      showError(isGroup ? 'Please accept the group invitation first' : 'Please accept the message request first');
+                      return;
+                    }
                     if (isGroup) {
                       startGroupCall(activeConversation, 'AUDIO');
                     } else if (otherMember) {
@@ -2138,6 +2145,10 @@ export const MessagesPage = () => {
                   type="button"
                   className="chat-header-action-btn"
                   onClick={() => {
+                    if (isInRequests) {
+                      showError(isGroup ? 'Please accept the group invitation first' : 'Please accept the message request first');
+                      return;
+                    }
                     if (isGroup) {
                       startGroupCall(activeConversation, 'VIDEO');
                     } else if (otherMember) {
@@ -2849,15 +2860,18 @@ export const MessagesPage = () => {
             )}
 
             {/* Message Request Accept / Decline Banner */}
-            {(activeConversation?.folder === 'REQUESTS' ||
-              requestConversations.some((c) => c.id === activeConversation?.id)) && (
+            {isInRequests && (
               <div className="message-request-banner" role="region" aria-label="Message request actions">
                 <div className="message-request-banner-copy">
                   <span className="message-request-banner-title">
-                    Accept message request from {otherMember?.displayName || otherMember?.username || 'this user'}?
+                    {isGroup
+                      ? `Accept group invitation to join "${activeConversation?.name || 'this group'}"?`
+                      : `Accept message request from ${otherMember?.displayName || otherMember?.username || 'this user'}?`}
                   </span>
                   <span className="message-request-banner-subtitle">
-                    Replying will also accept the request and move this chat to Messages.
+                    {isGroup
+                      ? 'You must accept this invitation before you can send messages or receive calls.'
+                      : 'Replying will also accept the request and move this chat to Messages.'}
                   </span>
                 </div>
                 <div className="message-request-banner-actions">
@@ -2882,7 +2896,19 @@ export const MessagesPage = () => {
             )}
 
             {/* Input Bar or Voice Recording Bar */}
-            {isRecording ? (
+            {isInRequests && isGroup ? (
+              <div className="chat-request-locked-input-bar">
+                <span>Accept this group invitation to send messages and join calls.</span>
+                <button
+                  type="button"
+                  className="message-request-btn accept"
+                  onClick={handleAcceptMessageRequest}
+                  disabled={handlingRequestAction}
+                >
+                  Accept
+                </button>
+              </div>
+            ) : isRecording ? (
               <div className="chat-input-bar recording-active">
                 <span className="voice-recording-timer">
                   <span className="rec-dot"></span> {Math.floor(recordingTime / 60)}:{(recordingTime % 60).toString().padStart(2, '0')}

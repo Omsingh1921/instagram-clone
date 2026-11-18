@@ -77,9 +77,10 @@ public class CallServiceImpl implements ICallService {
         Conversation conversation = conversationRepository.findById(request.getConversationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
-        boolean isMember = conversationMemberRepository.existsByConversationIdAndUserId(conversation.getId(), callerId);
-        if (!isMember) {
-            throw new UnauthorizedException("You are not a member of this group");
+        ConversationMember callerMember = conversationMemberRepository.findByConversationIdAndUserId(conversation.getId(), callerId)
+                .orElseThrow(() -> new UnauthorizedException("You are not a member of this group"));
+        if (callerMember.getFolder() == com.instagramclone.chat.enums.InboxFolder.REQUESTS) {
+            throw new BadRequestException("You must accept the group invitation before starting a call");
         }
 
         // If an active group call already exists for this conversation, join it seamlessly
@@ -118,10 +119,13 @@ public class CallServiceImpl implements ICallService {
         UserSummaryResponse callerSummary = userMapper.toUserSummaryResponse(caller);
         List<UserSummaryResponse> initialParticipants = List.of(callerSummary);
 
-        // Broadcast incoming call to all other members in the group
+        // Broadcast incoming call to all other members in the group who have accepted (not in REQUESTS)
         List<ConversationMember> members = conversationMemberRepository.findByConversationId(conversation.getId());
         for (ConversationMember m : members) {
             if (!m.getUser().getId().equals(callerId)) {
+                if (m.getFolder() == com.instagramclone.chat.enums.InboxFolder.REQUESTS) {
+                    continue; // Skip pending invitees so they are not rung
+                }
                 sendCallEvent(m.getUser().getId(), CallEventMessage.builder()
                         .eventType(CallConstants.EVENT_INCOMING_CALL)
                         .callId(session.getId())
@@ -474,9 +478,10 @@ public class CallServiceImpl implements ICallService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (session.getConversationId() != null) {
-            boolean isMember = conversationMemberRepository.existsByConversationIdAndUserId(session.getConversationId(), userId);
-            if (!isMember) {
-                throw new UnauthorizedException("You are not a member of this conversation");
+            ConversationMember cm = conversationMemberRepository.findByConversationIdAndUserId(session.getConversationId(), userId)
+                    .orElseThrow(() -> new UnauthorizedException("You are not a member of this conversation"));
+            if (cm.getFolder() == com.instagramclone.chat.enums.InboxFolder.REQUESTS) {
+                throw new BadRequestException("You must accept the group invitation before joining calls");
             }
         }
 

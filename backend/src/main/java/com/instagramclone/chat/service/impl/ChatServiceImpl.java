@@ -180,7 +180,7 @@ public class ChatServiceImpl implements IChatService {
                     .conversation(savedConversation)
                     .user(memberUser)
                     .role(ConversationRole.MEMBER)
-                    .folder(InboxFolder.PRIMARY)
+                    .folder(InboxFolder.REQUESTS)
                     .build();
             conversationMemberRepository.save(member);
         }
@@ -266,7 +266,7 @@ public class ChatServiceImpl implements IChatService {
                     .conversation(conversation)
                     .user(newMemberUser)
                     .role(ConversationRole.MEMBER)
-                    .folder(InboxFolder.PRIMARY)
+                    .folder(InboxFolder.REQUESTS)
                     .build();
             conversationMemberRepository.save(cm);
         }
@@ -409,8 +409,11 @@ public class ChatServiceImpl implements IChatService {
                 .orElseThrow(
                         () -> new ResourceNotFoundException(ChatConstants.ERR_CONVERSATION_NOT_FOUND + conversationId));
 
-        if (!conversationMemberRepository.existsByConversationIdAndUserId(conversationId, currentUserId)) {
-            throw new ForbiddenException(ChatConstants.ERR_UNAUTHORIZED_SEND);
+        ConversationMember senderMember = conversationMemberRepository.findByConversationIdAndUserId(conversationId, currentUserId)
+                .orElseThrow(() -> new ForbiddenException(ChatConstants.ERR_UNAUTHORIZED_SEND));
+
+        if (conversation.getType() == ConversationType.GROUP && senderMember.getFolder() == InboxFolder.REQUESTS) {
+            throw new ForbiddenException("You must accept the group invitation before sending messages");
         }
 
         if (conversation.getType() == ConversationType.DIRECT) {
@@ -473,7 +476,7 @@ public class ChatServiceImpl implements IChatService {
             List<UUID> recipientIds = new java.util.ArrayList<>();
             for (ConversationMember cm : members) {
                 if (cm.getUser() != null && cm.getUser().getId() != null) {
-                    if (cm.getUser().getId().equals(currentUserId) && cm.getFolder() == InboxFolder.REQUESTS) {
+                    if (conversation.getType() == ConversationType.DIRECT && cm.getUser().getId().equals(currentUserId) && cm.getFolder() == InboxFolder.REQUESTS) {
                         cm.setFolder(InboxFolder.PRIMARY);
                         conversationMemberRepository.save(cm);
                     }
@@ -922,6 +925,16 @@ public class ChatServiceImpl implements IChatService {
 
         member.setFolder(InboxFolder.PRIMARY);
         conversationMemberRepository.save(member);
+
+        try {
+            messagingTemplate.convertAndSend("/topic/conversations/" + conversationId, Map.of(
+                    "eventType", "MEMBER_ACCEPTED_INVITE",
+                    "conversationId", conversationId,
+                    "userId", currentUserId
+            ));
+        } catch (Exception ex) {
+            log.error("Failed to broadcast member accepted invite", ex);
+        }
     }
 
     @Override
@@ -933,6 +946,16 @@ public class ChatServiceImpl implements IChatService {
                 .orElseThrow(() -> new ForbiddenException(ChatConstants.ERR_NOT_MEMBER));
 
         conversationMemberRepository.delete(member);
+
+        try {
+            messagingTemplate.convertAndSend("/topic/conversations/" + conversationId, Map.of(
+                    "eventType", "MEMBER_DECLINED_INVITE",
+                    "conversationId", conversationId,
+                    "userId", currentUserId
+            ));
+        } catch (Exception ex) {
+            log.error("Failed to broadcast member declined invite", ex);
+        }
     }
 
     @Override

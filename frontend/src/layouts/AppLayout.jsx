@@ -817,21 +817,23 @@ export const AppLayout = () => {
             {unreadNotifications > 0 && <span className="nav-badge-dot" />}
           </NavLink>
 
-          <NavLink
-            to="/messages"
-            className="mobile-icon-btn"
-            aria-label="Messages"
-            title="Direct Messages"
-          >
-            <div className="nav-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <MessageCircle size={22} />
-              {unreadChatCount > 0 && (
-                <span className="nav-badge-count">
-                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                </span>
-              )}
-            </div>
-          </NavLink>
+          {!isMessagesRoute && (
+            <NavLink
+              to="/messages"
+              className="mobile-icon-btn"
+              aria-label="Messages"
+              title="Direct Messages"
+            >
+              <div className="nav-icon-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MessageCircle size={22} />
+                {unreadChatCount > 0 && (
+                  <span className="nav-badge-count">
+                    {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                  </span>
+                )}
+              </div>
+            </NavLink>
+          )}
 
           <button
             type="button"

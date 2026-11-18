@@ -323,6 +323,17 @@ export const MessagesPage = () => {
   );
 
   useEffect(() => {
+    if (activeConversation) {
+      document.body.classList.add('in-active-chat');
+    } else {
+      document.body.classList.remove('in-active-chat');
+    }
+    return () => {
+      document.body.classList.remove('in-active-chat');
+    };
+  }, [activeConversation]);
+
+  useEffect(() => {
     loadConversations();
   }, [loadConversations]);
 

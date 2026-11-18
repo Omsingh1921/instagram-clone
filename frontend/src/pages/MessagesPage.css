@@ -2111,3 +2111,261 @@
 .message-bubble.mine .message-forwarded-tag {
   color: rgba(255, 255, 255, 0.75);
 }
+
+/* Group Details Modal */
+.group-details-modal-content {
+  padding: 10px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.group-details-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: 8px 0 4px;
+}
+
+.group-avatar-icon-bubble.large {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0095f6 0%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 18px rgba(0, 149, 246, 0.35);
+}
+
+.group-name-display-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.group-details-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.group-rename-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: #0095f6;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.group-rename-icon-btn:hover {
+  background: rgba(0, 149, 246, 0.1);
+}
+
+.group-name-edit-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.group-rename-input {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.group-name-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.group-details-quick-actions {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 8px 0 12px;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.group-quick-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--text-primary, #efefef);
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.group-quick-action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.group-action-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-primary, #ffffff);
+  transition: all 0.18s ease;
+}
+
+.group-quick-action-btn:hover .group-action-icon-circle {
+  background: var(--bg-hover-strong, rgba(255, 255, 255, 0.15));
+  color: #0095f6;
+}
+
+.group-quick-action-btn.danger {
+  color: #ef4444;
+}
+
+.group-action-icon-circle.danger {
+  color: #ef4444;
+}
+
+.group-quick-action-btn.danger:hover .group-action-icon-circle.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+.group-add-people-section {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.group-add-member-results {
+  max-height: 180px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.group-members-list-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.group-members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-members-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, #efefef);
+}
+
+.group-members-count {
+  color: var(--text-secondary, #94a3b8);
+  font-weight: 500;
+}
+
+.group-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.group-member-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.group-member-item:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.05));
+}
+
+.group-member-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.group-member-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.group-member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.group-member-username {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+}
+
+.group-admin-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #00ba7c;
+  background: rgba(0, 186, 124, 0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.group-you-pill {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0095f6;
+  background: rgba(0, 149, 246, 0.15);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+.group-member-display {
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+}
+
+.group-remove-member-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.group-remove-member-btn:hover {
+  background: rgba(239, 68, 68, 0.12);
+}

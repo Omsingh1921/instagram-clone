@@ -19,6 +19,10 @@ vi.mock('../services/chat.service', () => ({
     markAsRead: vi.fn().mockResolvedValue({ success: true }),
     acceptMessageRequest: vi.fn().mockResolvedValue({ success: true }),
     declineMessageRequest: vi.fn().mockResolvedValue({ success: true }),
+    updateGroupConversation: vi.fn().mockResolvedValue({ data: { name: 'Trip Squad Updated' } }),
+    addGroupMembers: vi.fn().mockResolvedValue({ data: { members: [] } }),
+    removeGroupMember: vi.fn().mockResolvedValue({ success: true }),
+    leaveGroup: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -336,6 +340,56 @@ describe('MessagesPage Redesign Suite', () => {
       expect(storyService.shareMentionedStory).toHaveBeenCalledWith('story-999');
     });
     expect((await screen.findAllByText(/Added to your story/i)).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders Group Details modal on clicking Info and displays members and actions', async () => {
+    chatService.getConversations.mockResolvedValue({
+      data: {
+        content: [
+          {
+            id: 'group-100',
+            type: 'GROUP',
+            name: 'Trip Squad',
+            folder: 'PRIMARY',
+            creatorId: '11111111-1111-1111-1111-111111111111',
+            members: [
+              { id: '11111111-1111-1111-1111-111111111111', username: 'test', displayName: 'Test User' },
+              { id: '22222222-2222-2222-2222-222222222222', username: 'ram', displayName: 'Ram' },
+              { id: '33333333-3333-3333-3333-333333333333', username: 'shyam', displayName: 'Shyam' },
+            ],
+            unreadCount: 0,
+            lastMessage: null,
+          },
+        ],
+      },
+    });
+
+    chatService.getMessages.mockResolvedValue({
+      data: {
+        content: [],
+        totalPages: 1,
+        last: true,
+      },
+    });
+
+    renderMessages();
+    await screen.findByText('Trip Squad');
+    fireEvent.click(screen.getByText('Trip Squad'));
+
+    // Verify group subtext showing 3 members
+    expect(await screen.findByText('3 members')).toBeTruthy();
+
+    // Click Conversation details (Info button)
+    const infoBtn = screen.getByTitle('Conversation details');
+    fireEvent.click(infoBtn);
+
+    // Modal opens with Details, members, and quick actions
+    expect(await screen.findByText('Details')).toBeTruthy();
+    expect(screen.getByText('Change name')).toBeTruthy();
+    expect(screen.getByText('Add people')).toBeTruthy();
+    expect(screen.getByText('Leave')).toBeTruthy();
+    expect(screen.getByText('ram')).toBeTruthy();
+    expect(screen.getByText('shyam')).toBeTruthy();
   });
 });
 

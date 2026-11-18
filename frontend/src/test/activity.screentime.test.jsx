@@ -111,14 +111,16 @@ describe('Real Screen Time Tracking & Break Reminder Suite', () => {
     expect(screen.getByTitle('Thu (2026-11-12): 25m')).toBeInTheDocument();
 
     const reminderSelect = screen.getByLabelText('Set reminder to take breaks');
-    expect(reminderSelect).toHaveValue('10');
+    await waitFor(() => {
+      expect(reminderSelect).toHaveValue('10');
+    });
 
     fireEvent.change(reminderSelect, { target: { value: '20' } });
 
     await waitFor(() => {
       expect(settingsService.updateSettings).toHaveBeenCalledWith({ breakReminderMinutes: 20 });
+      expect(localStorage.getItem('break_reminder_mins')).toBe('20');
     });
-    expect(localStorage.getItem('break_reminder_mins')).toBe('20');
     expect(breakEventSpy).toHaveBeenCalled();
 
     window.removeEventListener('app:break-reminder-updated', breakEventSpy);

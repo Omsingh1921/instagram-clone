@@ -16,7 +16,7 @@ import java.util.UUID;
 @Repository
 public interface CallSessionRepository extends JpaRepository<CallSession, UUID> {
 
-    @Query("SELECT c FROM CallSession c WHERE c.caller.id = :userId OR c.recipient.id = :userId ORDER BY c.startedAt DESC")
+    @Query("SELECT c FROM CallSession c WHERE c.caller.id = :userId OR (c.recipient IS NOT NULL AND c.recipient.id = :userId) ORDER BY c.startedAt DESC")
     Page<CallSession> findAllUserCalls(@Param("userId") UUID userId, Pageable pageable);
 
     @Query("SELECT c FROM CallSession c WHERE (c.caller.id = :userId OR (c.recipient IS NOT NULL AND c.recipient.id = :userId)) AND c.status IN (:statuses)")

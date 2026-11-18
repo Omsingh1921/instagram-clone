@@ -1,0 +1,10 @@
+export { default as ProfilePostsTab } from './ProfilePostsTab';
+export { default as ProfileReelsTab } from './ProfileReelsTab';
+export { default as ProfileSavedTab } from './ProfileSavedTab';
+export { default as ProfileTaggedTab } from './ProfileTaggedTab';
+export { default as ProfileArchivedTab } from './ProfileArchivedTab';
+export { default as ProfileRecentlyDeletedTab } from './ProfileRecentlyDeletedTab';
+export { default as ProfileHeader } from './ProfileHeader';
+export { default as ProfileHighlights } from './ProfileHighlights';
+export { default as ProfileNavTabs } from './ProfileNavTabs';
+export { default as ProfileEditForm } from './ProfileEditForm';

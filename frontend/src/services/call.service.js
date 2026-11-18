@@ -38,6 +38,41 @@ export const callService = {
   },
 
   /**
+   * Initiate a new audio or video group call
+   */
+  initiateGroupCall: async (conversationId, callType = 'VIDEO') => {
+    const response = await api.post('/calls/group/initiate', {
+      conversationId,
+      callType,
+    });
+    return response.data || response;
+  },
+
+  /**
+   * Join an ongoing group call
+   */
+  joinCall: async (callId) => {
+    const response = await api.post(`/calls/${callId}/join`);
+    return response.data || response;
+  },
+
+  /**
+   * Leave an ongoing group call
+   */
+  leaveCall: async (callId) => {
+    const response = await api.post(`/calls/${callId}/leave`);
+    return response.data || response;
+  },
+
+  /**
+   * Get active group call for a conversation
+   */
+  getActiveGroupCall: async (conversationId) => {
+    const response = await api.get(`/calls/group/${conversationId}/active`);
+    return response.data || response;
+  },
+
+  /**
    * Get call history for the current user
    */
   getCallHistory: async (page = 0, size = 20) => {

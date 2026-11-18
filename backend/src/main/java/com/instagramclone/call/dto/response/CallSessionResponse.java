@@ -27,6 +27,10 @@ public class CallSessionResponse {
     private LocalDateTime connectedAt;
     private LocalDateTime endedAt;
     private Integer durationSeconds;
+    private Boolean isGroup;
+    private String groupName;
+    private String groupAvatarUrl;
+    private java.util.List<UserSummaryResponse> participants;
     private LocalDateTime createdAt;
 }
 

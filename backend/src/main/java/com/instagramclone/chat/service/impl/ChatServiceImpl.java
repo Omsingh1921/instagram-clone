@@ -355,28 +355,6 @@ public class ChatServiceImpl implements IChatService {
     }
 
     @Override
-    @Transactional
-    public void deleteConversation(UUID conversationId) {
-        UUID currentUserId = SecurityUtils.getCurrentUserId();
-
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException(ChatConstants.ERR_CONVERSATION_NOT_FOUND + conversationId));
-
-        if (!conversationMemberRepository.existsByConversationIdAndUserId(conversationId, currentUserId)) {
-            throw new ForbiddenException(ChatConstants.ERR_NOT_PARTICIPANT);
-        }
-
-        conversationMemberRepository.deleteByConversationIdAndUserId(conversationId, currentUserId);
-
-        long remainingMembers = conversationMemberRepository.countByConversationId(conversationId);
-        if (remainingMembers == 0) {
-            conversationRepository.delete(conversation);
-        }
-
-        log.info("User {} deleted conversation {}", currentUserId, conversationId);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public PageResponse<ConversationResponse> getConversations(Pageable pageable) {
         return getConversations(null, pageable);
@@ -588,7 +566,7 @@ public class ChatServiceImpl implements IChatService {
 
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException(ChatConstants.ERR_MESSAGE_NOT_FOUND + messageId));
-,/
+
         if (!message.getConversation().getId().equals(conversationId)) {
             throw new BadRequestException("Message does not belong to this conversation");
         }

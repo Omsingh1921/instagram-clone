@@ -31,6 +31,12 @@ public class WebSocketCallController {
         callService.initiateCall(userId, request);
     }
 
+    @MessageMapping(CallConstants.WS_CALL_INITIATE_GROUP)
+    public void handleInitiateGroupCall(@Payload @Valid com.instagramclone.call.dto.request.InitiateGroupCallRequest request, Principal principal) {
+        UUID userId = extractUserId(principal);
+        callService.initiateGroupCall(userId, request);
+    }
+
     @MessageMapping(CallConstants.WS_CALL_ANSWER)
     public void handleAnswerCall(@Payload @Valid CallActionRequest request, Principal principal) {
         UUID userId = extractUserId(principal);
@@ -47,6 +53,18 @@ public class WebSocketCallController {
     public void handleEndCall(@Payload @Valid CallActionRequest request, Principal principal) {
         UUID userId = extractUserId(principal);
         callService.endCall(userId, request.getCallId());
+    }
+
+    @MessageMapping(CallConstants.WS_CALL_JOIN)
+    public void handleJoinCall(@Payload @Valid CallActionRequest request, Principal principal) {
+        UUID userId = extractUserId(principal);
+        callService.joinGroupCall(userId, request.getCallId());
+    }
+
+    @MessageMapping(CallConstants.WS_CALL_LEAVE)
+    public void handleLeaveCall(@Payload @Valid CallActionRequest request, Principal principal) {
+        UUID userId = extractUserId(principal);
+        callService.leaveGroupCall(userId, request.getCallId());
     }
 
     @MessageMapping(CallConstants.WS_CALL_SIGNAL)

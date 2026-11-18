@@ -28,4 +28,6 @@ public class InitiateCallRequest {
 
     @NotNull(message = CallConstants.VALIDATION_CALL_TYPE_REQUIRED)
     private CallType callType;
+
+    private Boolean isGroup;
 }

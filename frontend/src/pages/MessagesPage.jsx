@@ -56,6 +56,7 @@ import ForwardMessageModal from '../components/modals/ForwardMessageModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { useCall } from '../context/CallContext';
+import callService from '../services/call.service';
 import { timeAgo } from '../utils';
 import './MessagesPage.css';
 import '../components/modals/BlockUserModal.css';
@@ -160,7 +161,8 @@ export const MessagesPage = () => {
 
   const { user: currentUser } = useAuth();
   const { showSuccess, showError } = useToast();
-  const { startCall } = useCall();
+  const { startCall, startGroupCall } = useCall();
+  const [activeGroupCallBanner, setActiveGroupCallBanner] = useState(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const isInitialLoadRef = useRef(true);
@@ -593,6 +595,46 @@ export const MessagesPage = () => {
       if (unsubscribe) unsubscribe();
     };
   }, [activeConversation?.id, showError, isMyMessage, currentUserId, currentUsername]);
+
+  // Group active call status checker and real-time subscriber
+  useEffect(() => {
+    if (!activeConversation?.id || activeConversation.type !== 'GROUP') {
+      setActiveGroupCallBanner(null);
+      return;
+    }
+
+    const convId = activeConversation.id;
+
+    // Check if there is an active call right now
+    callService.getActiveGroupCall(convId)
+      .then((res) => {
+        const data = res?.data || res;
+        if (data && data.status !== 'ENDED') {
+          setActiveGroupCallBanner(data);
+        } else {
+          setActiveGroupCallBanner(null);
+        }
+      })
+      .catch(() => setActiveGroupCallBanner(null));
+
+    // Subscribe to group call status events on this conversation
+    const unsub = stompClient.subscribe(`/topic/conversations/${convId}/call`, (event) => {
+      if (!event) return;
+      if (event.eventType === 'GROUP_CALL_STARTED' || event.eventType === 'PARTICIPANT_JOINED') {
+        setActiveGroupCallBanner(event);
+      } else if (event.eventType === 'CALL_ENDED' || event.eventType === 'PARTICIPANT_LEFT') {
+        if (event.eventType === 'CALL_ENDED' || (event.participants && event.participants.length === 0)) {
+          setActiveGroupCallBanner(null);
+        } else {
+          setActiveGroupCallBanner(event);
+        }
+      }
+    });
+
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [activeConversation?.id, activeConversation?.type]);
 
     // Helper to scroll chat to bottom when user explicitly sends a message
   const scrollToBottom = useCallback((instant = true) => {
@@ -2082,12 +2124,12 @@ export const MessagesPage = () => {
                   className="chat-header-action-btn"
                   onClick={() => {
                     if (isGroup) {
-                      showSuccess('Group calling is available for 1:1 direct chats');
+                      startGroupCall(activeConversation, 'AUDIO');
                     } else if (otherMember) {
                       startCall(otherMember, 'AUDIO', activeConversation?.id);
                     }
                   }}
-                  title="Start audio call"
+                  title={isGroup ? 'Start group audio call' : 'Start audio call'}
                   aria-label="Audio call"
                 >
                   <Phone size={22} />
@@ -2097,12 +2139,12 @@ export const MessagesPage = () => {
                   className="chat-header-action-btn"
                   onClick={() => {
                     if (isGroup) {
-                      showSuccess('Group calling is available for 1:1 direct chats');
+                      startGroupCall(activeConversation, 'VIDEO');
                     } else if (otherMember) {
                       startCall(otherMember, 'VIDEO', activeConversation?.id);
                     }
                   }}
-                  title="Start video call"
+                  title={isGroup ? 'Start group video call' : 'Start video call'}
                   aria-label="Video call"
                 >
                   <Video size={24} />
@@ -2194,6 +2236,31 @@ export const MessagesPage = () => {
                   aria-label="Unpin message"
                 >
                   <X size={14} />
+                </button>
+              </div>
+            )}
+
+            {/* Live Active Group Call Banner */}
+            {isGroup && activeGroupCallBanner && (
+              <div className="active-group-call-banner">
+                <div className="active-group-call-banner-left">
+                  <span className="live-call-pulse-dot" />
+                  <span className="live-call-label">
+                    Group {activeGroupCallBanner.callType === 'AUDIO' ? 'Audio' : 'Video'} Call in progress
+                  </span>
+                  {activeGroupCallBanner.participants && activeGroupCallBanner.participants.length > 0 && (
+                    <span className="live-call-participants-pill">
+                      {activeGroupCallBanner.participants.length} in call
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  className="join-group-call-banner-btn"
+                  onClick={() => startGroupCall(activeConversation, activeGroupCallBanner.callType || 'VIDEO')}
+                >
+                  <Phone size={14} />
+                  <span>Join Call</span>
                 </button>
               </div>
             )}

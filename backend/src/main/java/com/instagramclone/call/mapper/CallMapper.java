@@ -14,11 +14,22 @@ public class CallMapper {
 
     public CallSessionResponse toResponse(CallSession session) {
         if (session == null) return null;
+
+        java.util.List<com.instagramclone.user.dto.response.UserSummaryResponse> participantList = null;
+        if (session.getParticipants() != null && !session.getParticipants().isEmpty()) {
+            participantList = session.getParticipants().stream()
+                    .filter(p -> p.getStatus() == com.instagramclone.call.enums.CallParticipantStatus.JOINED)
+                    .map(p -> userMapper.toUserSummaryResponse(p.getUser()))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
         return CallSessionResponse.builder()
                 .id(session.getId())
                 .conversationId(session.getConversationId())
                 .caller(userMapper.toUserSummaryResponse(session.getCaller()))
-                .recipient(userMapper.toUserSummaryResponse(session.getRecipient()))
+                .recipient(session.getRecipient() != null ? userMapper.toUserSummaryResponse(session.getRecipient()) : null)
+                .isGroup(session.getIsGroup())
+                .participants(participantList)
                 .callType(session.getCallType())
                 .status(session.getStatus())
                 .startedAt(session.getStartedAt())

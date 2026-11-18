@@ -105,6 +105,46 @@ describe('WebRTC Call Module Tests', () => {
         params: { page: 0, size: 10, sort: 'startedAt,desc' },
       });
     });
+
+    it('initiateGroupCall sends POST /calls/group/initiate with conversationId and callType', async () => {
+      api.post.mockResolvedValueOnce({
+        data: { id: 'group-call-101', callType: 'VIDEO', isGroup: true, status: 'CONNECTED' },
+      });
+
+      const res = await callService.initiateGroupCall('conv-group-999', 'VIDEO');
+      expect(api.post).toHaveBeenCalledWith('/calls/group/initiate', {
+        conversationId: 'conv-group-999',
+        callType: 'VIDEO',
+      });
+      expect(res.id).toBe('group-call-101');
+      expect(res.isGroup).toBe(true);
+    });
+
+    it('joinCall sends POST /calls/{callId}/join and leaveCall sends POST /calls/{callId}/leave', async () => {
+      api.post.mockResolvedValueOnce({
+        data: { id: 'group-call-101', status: 'CONNECTED' },
+      });
+      const joinRes = await callService.joinCall('group-call-101');
+      expect(api.post).toHaveBeenCalledWith('/calls/group-call-101/join');
+      expect(joinRes.status).toBe('CONNECTED');
+
+      api.post.mockResolvedValueOnce({
+        data: { id: 'group-call-101', status: 'ENDED' },
+      });
+      const leaveRes = await callService.leaveCall('group-call-101');
+      expect(api.post).toHaveBeenCalledWith('/calls/group-call-101/leave');
+      expect(leaveRes.status).toBe('ENDED');
+    });
+
+    it('getActiveGroupCall sends GET /calls/group/{conversationId}/active', async () => {
+      api.get.mockResolvedValueOnce({
+        data: { id: 'group-call-101', isGroup: true },
+      });
+
+      const res = await callService.getActiveGroupCall('conv-group-999');
+      expect(api.get).toHaveBeenCalledWith('/calls/group/conv-group-999/active');
+      expect(res.id).toBe('group-call-101');
+    });
   });
 
   describe('WebRTC Service Utilities', () => {
@@ -222,6 +262,71 @@ describe('WebRTC Call Module Tests', () => {
       expect(screen.getByLabelText('Toggle Camera')).toBeInTheDocument();
       expect(screen.getByLabelText('Toggle Microphone')).toBeInTheDocument();
       expect(screen.getByLabelText('End Call')).toBeInTheDocument();
+    });
+
+    it('ActiveCallModal supports Group Audio & Video calls with multi-participant grid', async () => {
+      vi.spyOn(webrtcService, 'getLocalMedia').mockResolvedValue({
+        getTracks: () => [],
+        getVideoTracks: () => [],
+      });
+      api.post.mockResolvedValue({
+        data: {
+          id: 'group-call-xyz',
+          callType: 'VIDEO',
+          isGroup: true,
+          status: 'CONNECTED',
+          participants: [
+            { id: 'user-123', username: 'current_user', displayName: 'Current User' },
+          ],
+        },
+      });
+      vi.spyOn(callService, 'initiateGroupCall').mockResolvedValue({
+        id: 'group-call-xyz',
+        callType: 'VIDEO',
+        isGroup: true,
+        status: 'CONNECTED',
+        participants: [
+          { id: 'user-123', username: 'current_user', displayName: 'Current User' },
+        ],
+      });
+
+      const MockGroupCallWrapper = () => {
+        const { startGroupCall } = useCall();
+        return (
+          <div>
+            <ActiveCallModal />
+            <button
+              data-testid="start-group-test-call"
+              onClick={async () => {
+                await startGroupCall({ id: 'group-conv-1', name: 'Trip Squad', type: 'GROUP' }, 'VIDEO');
+              }}
+            >
+              Start Group Call
+            </button>
+          </div>
+        );
+      };
+
+      render(
+        <CallProvider>
+          <MockGroupCallWrapper />
+        </CallProvider>
+      );
+
+      fireEvent.click(screen.getByTestId('start-group-test-call'));
+
+      await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+      });
+
+      // Renders group name in header
+      expect(screen.getByText('Trip Squad')).toBeInTheDocument();
+      // Displays participant count
+      expect(screen.getByText(/1 in call/i)).toBeInTheDocument();
+      // Displays Leave Call button
+      expect(screen.getByLabelText('Leave Call')).toBeInTheDocument();
+      // Displays waiting placeholder when alone in group call
+      expect(screen.getByText('Waiting for others to join...')).toBeInTheDocument();
     });
   });
 });

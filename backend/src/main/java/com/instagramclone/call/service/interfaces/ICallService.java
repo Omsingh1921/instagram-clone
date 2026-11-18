@@ -13,6 +13,8 @@ public interface ICallService {
 
     CallSessionResponse initiateCall(UUID callerId, InitiateCallRequest request);
 
+    CallSessionResponse initiateGroupCall(UUID callerId, com.instagramclone.call.dto.request.InitiateGroupCallRequest request);
+
     CallSessionResponse answerCall(UUID userId, UUID callId);
 
     CallSessionResponse rejectCall(UUID userId, UUID callId);
@@ -26,5 +28,11 @@ public interface ICallService {
     Optional<CallSessionResponse> getActiveCall(UUID userId);
 
     CallSessionResponse getCallById(UUID callId, UUID requestingUserId);
+
+    CallSessionResponse joinGroupCall(UUID userId, UUID callId);
+
+    CallSessionResponse leaveGroupCall(UUID userId, UUID callId);
+
+    Optional<CallSessionResponse> getActiveGroupCall(UUID conversationId);
 }
 

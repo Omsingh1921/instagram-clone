@@ -19,10 +19,16 @@ public interface CallSessionRepository extends JpaRepository<CallSession, UUID> 
     @Query("SELECT c FROM CallSession c WHERE c.caller.id = :userId OR c.recipient.id = :userId ORDER BY c.startedAt DESC")
     Page<CallSession> findAllUserCalls(@Param("userId") UUID userId, Pageable pageable);
 
-    @Query("SELECT c FROM CallSession c WHERE (c.caller.id = :userId OR c.recipient.id = :userId) AND c.status IN (:statuses)")
+    @Query("SELECT c FROM CallSession c WHERE (c.caller.id = :userId OR (c.recipient IS NOT NULL AND c.recipient.id = :userId)) AND c.status IN (:statuses)")
     List<CallSession> findActiveCallsByUserId(@Param("userId") UUID userId, @Param("statuses") List<CallStatus> statuses);
 
     @Query("SELECT c FROM CallSession c WHERE c.conversationId = :conversationId ORDER BY c.startedAt DESC")
     Page<CallSession> findByConversationId(@Param("conversationId") UUID conversationId, Pageable pageable);
+
+    @Query("SELECT c FROM CallSession c WHERE c.conversationId = :conversationId AND c.isGroup = true AND c.status IN (:statuses) ORDER BY c.startedAt DESC")
+    List<CallSession> findActiveGroupCallsByConversationId(
+            @Param("conversationId") UUID conversationId,
+            @Param("statuses") List<CallStatus> statuses
+    );
 }
 

@@ -5,10 +5,14 @@ import com.instagramclone.call.dto.request.CallSignalRequest;
 import com.instagramclone.call.dto.request.InitiateCallRequest;
 import com.instagramclone.call.dto.response.CallEventMessage;
 import com.instagramclone.call.dto.response.CallSessionResponse;
+import com.instagramclone.call.entity.CallParticipant;
 import com.instagramclone.call.entity.CallSession;
+import com.instagramclone.call.enums.CallParticipantRole;
+import com.instagramclone.call.enums.CallParticipantStatus;
 import com.instagramclone.call.enums.CallStatus;
 import com.instagramclone.call.enums.CallType;
 import com.instagramclone.call.mapper.CallMapper;
+import com.instagramclone.call.repository.CallParticipantRepository;
 import com.instagramclone.call.repository.CallSessionRepository;
 import com.instagramclone.call.service.interfaces.ICallService;
 import com.instagramclone.chat.constants.ChatConstants;
@@ -41,9 +45,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,6 +57,7 @@ import java.util.UUID;
 public class CallServiceImpl implements ICallService {
 
     private final CallSessionRepository callSessionRepository;
+    private final CallParticipantRepository callParticipantRepository;
     private final UserRepository userRepository;
     private final UserBlockRepository userBlockRepository;
     private final SimpMessagingTemplate messagingTemplate;
@@ -62,7 +69,122 @@ public class CallServiceImpl implements ICallService {
 
     @Override
     @Transactional
+    public CallSessionResponse initiateGroupCall(UUID callerId, com.instagramclone.call.dto.request.InitiateGroupCallRequest request) {
+        if (request.getConversationId() == null) {
+            throw new BadRequestException("Conversation ID is required for group calls");
+        }
+
+        Conversation conversation = conversationRepository.findById(request.getConversationId())
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+
+        boolean isMember = conversationMemberRepository.existsByConversationIdAndUserId(conversation.getId(), callerId);
+        if (!isMember) {
+            throw new UnauthorizedException("You are not a member of this group");
+        }
+
+        // If an active group call already exists for this conversation, join it seamlessly
+        List<CallSession> activeGroupCalls = callSessionRepository.findActiveGroupCallsByConversationId(
+                conversation.getId(), List.of(CallStatus.RINGING, CallStatus.CONNECTED));
+        if (!activeGroupCalls.isEmpty()) {
+            CallSession existing = activeGroupCalls.get(0);
+            return joinGroupCall(callerId, existing.getId());
+        }
+
+        User caller = userRepository.findById(callerId)
+                .orElseThrow(() -> new ResourceNotFoundException("Caller not found"));
+
+        CallSession session = CallSession.builder()
+                .conversationId(conversation.getId())
+                .caller(caller)
+                .recipient(null)
+                .isGroup(true)
+                .callType(request.getCallType())
+                .status(CallStatus.CONNECTED)
+                .startedAt(LocalDateTime.now())
+                .connectedAt(LocalDateTime.now())
+                .durationSeconds(0)
+                .build();
+        session = callSessionRepository.save(session);
+
+        CallParticipant initiator = CallParticipant.builder()
+                .callSession(session)
+                .user(caller)
+                .role(CallParticipantRole.INITIATOR)
+                .status(CallParticipantStatus.JOINED)
+                .joinedAt(LocalDateTime.now())
+                .build();
+        callParticipantRepository.save(initiator);
+
+        UserSummaryResponse callerSummary = userMapper.toUserSummaryResponse(caller);
+        List<UserSummaryResponse> initialParticipants = List.of(callerSummary);
+
+        // Broadcast incoming call to all other members in the group
+        List<ConversationMember> members = conversationMemberRepository.findByConversationId(conversation.getId());
+        for (ConversationMember m : members) {
+            if (!m.getUser().getId().equals(callerId)) {
+                sendCallEvent(m.getUser().getId(), CallEventMessage.builder()
+                        .eventType(CallConstants.EVENT_INCOMING_CALL)
+                        .callId(session.getId())
+                        .conversationId(conversation.getId())
+                        .caller(callerSummary)
+                        .isGroup(true)
+                        .groupName(conversation.getName())
+                        .groupAvatarUrl(conversation.getAvatarUrl())
+                        .callType(request.getCallType())
+                        .participants(initialParticipants)
+                        .build());
+            }
+        }
+
+        // Broadcast to conversation topic for in-chat active call banner
+        messagingTemplate.convertAndSend(
+                "/topic/conversations/" + conversation.getId() + "/call",
+                CallEventMessage.builder()
+                        .eventType(CallConstants.EVENT_GROUP_CALL_STARTED)
+                        .callId(session.getId())
+                        .conversationId(conversation.getId())
+                        .caller(callerSummary)
+                        .isGroup(true)
+                        .groupName(conversation.getName())
+                        .callType(request.getCallType())
+                        .participants(initialParticipants)
+                        .build()
+        );
+
+        log.info("Group call initiated: ID={}, Type={}, Group={}, Caller={}",
+                session.getId(), session.getCallType(), conversation.getName(), caller.getUsername());
+
+        CallSessionResponse response = callMapper.toResponse(session);
+        response.setIsGroup(true);
+        response.setGroupName(conversation.getName());
+        response.setGroupAvatarUrl(conversation.getAvatarUrl());
+        response.setParticipants(initialParticipants);
+        return response;
+    }
+
+    @Override
+    @Transactional
     public CallSessionResponse initiateCall(UUID callerId, InitiateCallRequest request) {
+        boolean isGroupCall = Boolean.TRUE.equals(request.getIsGroup());
+        if (!isGroupCall && request.getConversationId() != null) {
+            Optional<Conversation> convOpt = conversationRepository.findById(request.getConversationId());
+            if (convOpt.isPresent() && convOpt.get().getType() == ConversationType.GROUP) {
+                isGroupCall = true;
+            }
+        }
+
+        if (isGroupCall) {
+            return initiateGroupCall(callerId, com.instagramclone.call.dto.request.InitiateGroupCallRequest.builder()
+                    .conversationId(request.getConversationId())
+                    .callType(request.getCallType())
+                    .build());
+        }
+
+        // ==================== 1:1 DIRECT CALL FLOW ====================
+        if (request.getRecipientId() == null) {
+            throw new BadRequestException(CallConstants.VALIDATION_RECIPIENT_ID_REQUIRED);
+        }
+
         if (callerId.equals(request.getRecipientId())) {
             throw new BadRequestException(CallConstants.ERR_CANNOT_CALL_SELF);
         }
@@ -87,8 +209,8 @@ public class CallServiceImpl implements ICallService {
 
         boolean isRecipientBusyWithOther = activeRecipientCalls.stream()
                 .anyMatch(c -> {
-                    // Prior calls between caller and recipient do NOT block new calls
-                    boolean isBetweenSameUsers = (c.getCaller().getId().equals(callerId) || c.getRecipient().getId().equals(callerId));
+                    boolean isBetweenSameUsers = (c.getCaller().getId().equals(callerId) ||
+                            (c.getRecipient() != null && c.getRecipient().getId().equals(callerId)));
                     if (isBetweenSameUsers) {
                         return false;
                     }
@@ -106,6 +228,7 @@ public class CallServiceImpl implements ICallService {
                     .conversationId(request.getConversationId())
                     .caller(caller)
                     .recipient(recipient)
+                    .isGroup(false)
                     .callType(request.getCallType())
                     .status(CallStatus.BUSY)
                     .startedAt(LocalDateTime.now())
@@ -114,10 +237,8 @@ public class CallServiceImpl implements ICallService {
                     .build();
             busyRecord = callSessionRepository.save(busyRecord);
 
-            // Record missed call (busy) in conversation history
             recordCallInChat(busyRecord);
 
-            // Notify caller that recipient is busy
             sendCallEvent(caller.getId(), CallEventMessage.builder()
                     .eventType(CallConstants.EVENT_CALL_BUSY)
                     .callId(busyRecord.getId())
@@ -125,6 +246,7 @@ public class CallServiceImpl implements ICallService {
                     .caller(userMapper.toUserSummaryResponse(caller))
                     .recipient(userMapper.toUserSummaryResponse(recipient))
                     .callType(request.getCallType())
+                    .isGroup(false)
                     .reason(CallConstants.ERR_USER_BUSY)
                     .build());
 
@@ -132,12 +254,12 @@ public class CallServiceImpl implements ICallService {
         }
 
         // Auto-close any previous active calls between caller and recipient
-        List<CallSession> allPriorCalls = new java.util.ArrayList<>(activeRecipientCalls);
+        List<CallSession> allPriorCalls = new ArrayList<>(activeRecipientCalls);
         allPriorCalls.addAll(callSessionRepository.findActiveCallsByUserId(
                 callerId, List.of(CallStatus.RINGING, CallStatus.CONNECTED)));
         for (CallSession c : allPriorCalls) {
-            boolean isBetweenSameUsers = (c.getCaller().getId().equals(callerId) || c.getRecipient().getId().equals(callerId))
-                    && (c.getCaller().getId().equals(recipient.getId()) || c.getRecipient().getId().equals(recipient.getId()));
+            boolean isBetweenSameUsers = (c.getCaller().getId().equals(callerId) || (c.getRecipient() != null && c.getRecipient().getId().equals(callerId)))
+                    && (c.getCaller().getId().equals(recipient.getId()) || (c.getRecipient() != null && c.getRecipient().getId().equals(recipient.getId())));
             if (isBetweenSameUsers && c.getStatus() != CallStatus.ENDED && c.getStatus() != CallStatus.MISSED) {
                 c.setStatus(c.getStatus() == CallStatus.CONNECTED ? CallStatus.ENDED : CallStatus.MISSED);
                 c.setEndedAt(LocalDateTime.now());
@@ -150,6 +272,7 @@ public class CallServiceImpl implements ICallService {
                 .conversationId(request.getConversationId())
                 .caller(caller)
                 .recipient(recipient)
+                .isGroup(false)
                 .callType(request.getCallType())
                 .status(CallStatus.RINGING)
                 .startedAt(LocalDateTime.now())
@@ -165,9 +288,10 @@ public class CallServiceImpl implements ICallService {
                 .caller(userMapper.toUserSummaryResponse(caller))
                 .recipient(userMapper.toUserSummaryResponse(recipient))
                 .callType(request.getCallType())
+                .isGroup(false)
                 .build());
 
-        log.info("Call initiated: ID={}, Type={}, Caller={}, Recipient={}",
+        log.info("Direct call initiated: ID={}, Type={}, Caller={}, Recipient={}",
                 session.getId(), session.getCallType(), caller.getUsername(), recipient.getUsername());
 
         return callMapper.toResponse(session);
@@ -179,7 +303,11 @@ public class CallServiceImpl implements ICallService {
         CallSession session = callSessionRepository.findById(callId)
                 .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
 
-        if (!session.getRecipient().getId().equals(userId)) {
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            return joinGroupCall(userId, callId);
+        }
+
+        if (session.getRecipient() == null || !session.getRecipient().getId().equals(userId)) {
             throw new UnauthorizedException("Only the recipient can answer this call");
         }
 
@@ -200,9 +328,10 @@ public class CallServiceImpl implements ICallService {
                 .caller(userMapper.toUserSummaryResponse(session.getCaller()))
                 .recipient(userMapper.toUserSummaryResponse(session.getRecipient()))
                 .callType(session.getCallType())
+                .isGroup(false)
                 .build());
 
-        log.info("Call connected: ID={}", session.getId());
+        log.info("Direct call connected: ID={}", session.getId());
         return callMapper.toResponse(session);
     }
 
@@ -212,8 +341,29 @@ public class CallServiceImpl implements ICallService {
         CallSession session = callSessionRepository.findById(callId)
                 .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
 
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            // In group call, declining simply records participant declined without stopping the call for others
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            Optional<CallParticipant> participantOpt = callParticipantRepository.findByCallSessionIdAndUserId(session.getId(), userId);
+            CallParticipant participant;
+            if (participantOpt.isPresent()) {
+                participant = participantOpt.get();
+            } else {
+                participant = CallParticipant.builder()
+                        .callSession(session)
+                        .user(user)
+                        .role(CallParticipantRole.PARTICIPANT)
+                        .build();
+            }
+            participant.setStatus(CallParticipantStatus.DECLINED);
+            participant.setLeftAt(LocalDateTime.now());
+            callParticipantRepository.save(participant);
+            return callMapper.toResponse(session);
+        }
+
         boolean isCaller = session.getCaller().getId().equals(userId);
-        boolean isRecipient = session.getRecipient().getId().equals(userId);
+        boolean isRecipient = session.getRecipient() != null && session.getRecipient().getId().equals(userId);
 
         if (!isCaller && !isRecipient) {
             throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
@@ -232,18 +382,21 @@ public class CallServiceImpl implements ICallService {
         recordCallInChat(session);
 
         // Notify other party
-        UUID notifyTarget = isCaller ? session.getRecipient().getId() : session.getCaller().getId();
-        sendCallEvent(notifyTarget, CallEventMessage.builder()
-                .eventType(CallConstants.EVENT_CALL_REJECTED)
-                .callId(session.getId())
-                .conversationId(session.getConversationId())
-                .caller(userMapper.toUserSummaryResponse(session.getCaller()))
-                .recipient(userMapper.toUserSummaryResponse(session.getRecipient()))
-                .callType(session.getCallType())
-                .reason(isRecipient ? "Call declined" : "Call cancelled by caller")
-                .build());
+        UUID notifyTarget = isCaller ? (session.getRecipient() != null ? session.getRecipient().getId() : null) : session.getCaller().getId();
+        if (notifyTarget != null) {
+            sendCallEvent(notifyTarget, CallEventMessage.builder()
+                    .eventType(CallConstants.EVENT_CALL_REJECTED)
+                    .callId(session.getId())
+                    .conversationId(session.getConversationId())
+                    .caller(userMapper.toUserSummaryResponse(session.getCaller()))
+                    .recipient(session.getRecipient() != null ? userMapper.toUserSummaryResponse(session.getRecipient()) : null)
+                    .callType(session.getCallType())
+                    .isGroup(false)
+                    .reason(isRecipient ? "Call declined" : "Call cancelled by caller")
+                    .build());
+        }
 
-        log.info("Call rejected/cancelled: ID={}, by={}", session.getId(), userId);
+        log.info("Direct call rejected/cancelled: ID={}, by={}", session.getId(), userId);
         return callMapper.toResponse(session);
     }
 
@@ -253,8 +406,12 @@ public class CallServiceImpl implements ICallService {
         CallSession session = callSessionRepository.findById(callId)
                 .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
 
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            return leaveGroupCall(userId, callId);
+        }
+
         boolean isCaller = session.getCaller().getId().equals(userId);
-        boolean isRecipient = session.getRecipient().getId().equals(userId);
+        boolean isRecipient = session.getRecipient() != null && session.getRecipient().getId().equals(userId);
 
         if (!isCaller && !isRecipient) {
             throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
@@ -284,17 +441,202 @@ public class CallServiceImpl implements ICallService {
                 .callId(session.getId())
                 .conversationId(session.getConversationId())
                 .caller(userMapper.toUserSummaryResponse(session.getCaller()))
-                .recipient(userMapper.toUserSummaryResponse(session.getRecipient()))
+                .recipient(session.getRecipient() != null ? userMapper.toUserSummaryResponse(session.getRecipient()) : null)
                 .callType(session.getCallType())
+                .isGroup(false)
                 .durationSeconds(session.getDurationSeconds())
                 .build();
 
-        // Broadcast to both parties so UI resets immediately
         sendCallEvent(session.getCaller().getId(), endEvent);
-        sendCallEvent(session.getRecipient().getId(), endEvent);
+        if (session.getRecipient() != null) {
+            sendCallEvent(session.getRecipient().getId(), endEvent);
+        }
 
-        log.info("Call ended: ID={}, Duration={}s", session.getId(), session.getDurationSeconds());
+        log.info("Direct call ended: ID={}, Duration={}s", session.getId(), session.getDurationSeconds());
         return callMapper.toResponse(session);
+    }
+
+    @Override
+    @Transactional
+    public CallSessionResponse joinGroupCall(UUID userId, UUID callId) {
+        CallSession session = callSessionRepository.findById(callId)
+                .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
+
+        if (!Boolean.TRUE.equals(session.getIsGroup())) {
+            throw new BadRequestException("Call is not a group call");
+        }
+
+        if (session.getStatus() == CallStatus.ENDED) {
+            throw new BadRequestException("Group call has already ended");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        if (session.getConversationId() != null) {
+            boolean isMember = conversationMemberRepository.existsByConversationIdAndUserId(session.getConversationId(), userId);
+            if (!isMember) {
+                throw new UnauthorizedException("You are not a member of this conversation");
+            }
+        }
+
+        Optional<CallParticipant> participantOpt = callParticipantRepository.findByCallSessionIdAndUserId(session.getId(), userId);
+        CallParticipant participant;
+        if (participantOpt.isPresent()) {
+            participant = participantOpt.get();
+        } else {
+            participant = CallParticipant.builder()
+                    .callSession(session)
+                    .user(user)
+                    .role(CallParticipantRole.PARTICIPANT)
+                    .build();
+        }
+
+        participant.setStatus(CallParticipantStatus.JOINED);
+        participant.setJoinedAt(LocalDateTime.now());
+        participant.setLeftAt(null);
+        callParticipantRepository.save(participant);
+
+        if (session.getStatus() == CallStatus.RINGING) {
+            session.setStatus(CallStatus.CONNECTED);
+            session.setConnectedAt(LocalDateTime.now());
+            callSessionRepository.save(session);
+        }
+
+        List<CallParticipant> activeParticipants = callParticipantRepository.findByCallSessionIdAndStatusWithUser(
+                session.getId(), CallParticipantStatus.JOINED);
+
+        List<UserSummaryResponse> participantSummaries = activeParticipants.stream()
+                .map(p -> userMapper.toUserSummaryResponse(p.getUser()))
+                .collect(Collectors.toList());
+
+        UserSummaryResponse joinedUserSummary = userMapper.toUserSummaryResponse(user);
+
+        // Broadcast PARTICIPANT_JOINED to all active members in the call
+        for (CallParticipant p : activeParticipants) {
+            sendCallEvent(p.getUser().getId(), CallEventMessage.builder()
+                    .eventType(CallConstants.EVENT_PARTICIPANT_JOINED)
+                    .callId(session.getId())
+                    .conversationId(session.getConversationId())
+                    .caller(userMapper.toUserSummaryResponse(session.getCaller()))
+                    .isGroup(true)
+                    .participant(joinedUserSummary)
+                    .participants(participantSummaries)
+                    .callType(session.getCallType())
+                    .build());
+        }
+
+        log.info("User {} joined group call {}", user.getUsername(), session.getId());
+
+        CallSessionResponse resp = callMapper.toResponse(session);
+        resp.setIsGroup(true);
+        resp.setParticipants(participantSummaries);
+        if (session.getConversationId() != null) {
+            conversationRepository.findById(session.getConversationId()).ifPresent(c -> {
+                resp.setGroupName(c.getName());
+                resp.setGroupAvatarUrl(c.getAvatarUrl());
+            });
+        }
+        return resp;
+    }
+
+    @Override
+    @Transactional
+    public CallSessionResponse leaveGroupCall(UUID userId, UUID callId) {
+        CallSession session = callSessionRepository.findById(callId)
+                .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
+
+        if (!Boolean.TRUE.equals(session.getIsGroup())) {
+            return endCall(userId, callId);
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Optional<CallParticipant> participantOpt = callParticipantRepository.findByCallSessionIdAndUserId(session.getId(), userId);
+        if (participantOpt.isPresent()) {
+            CallParticipant p = participantOpt.get();
+            p.setStatus(CallParticipantStatus.LEFT);
+            p.setLeftAt(LocalDateTime.now());
+            callParticipantRepository.save(p);
+        }
+
+        List<CallParticipant> remainingParticipants = callParticipantRepository.findByCallSessionIdAndStatusWithUser(
+                session.getId(), CallParticipantStatus.JOINED);
+
+        UserSummaryResponse leftUserSummary = userMapper.toUserSummaryResponse(user);
+        List<UserSummaryResponse> remainingSummaries = remainingParticipants.stream()
+                .map(p -> userMapper.toUserSummaryResponse(p.getUser()))
+                .collect(Collectors.toList());
+
+        // If no active participants remain in the group call, close session and record in chat
+        if (remainingParticipants.isEmpty()) {
+            LocalDateTime now = LocalDateTime.now();
+            session.setStatus(CallStatus.ENDED);
+            session.setEndedAt(now);
+            if (session.getConnectedAt() != null) {
+                long seconds = Duration.between(session.getConnectedAt(), now).getSeconds();
+                session.setDurationSeconds((int) Math.max(0, seconds));
+            }
+            session = callSessionRepository.save(session);
+            recordCallInChat(session);
+
+            CallEventMessage endMsg = CallEventMessage.builder()
+                    .eventType(CallConstants.EVENT_CALL_ENDED)
+                    .callId(session.getId())
+                    .conversationId(session.getConversationId())
+                    .isGroup(true)
+                    .durationSeconds(session.getDurationSeconds())
+                    .callType(session.getCallType())
+                    .build();
+            sendCallEvent(userId, endMsg);
+        } else {
+            // Notify remaining participants
+            for (CallParticipant p : remainingParticipants) {
+                sendCallEvent(p.getUser().getId(), CallEventMessage.builder()
+                        .eventType(CallConstants.EVENT_PARTICIPANT_LEFT)
+                        .callId(session.getId())
+                        .conversationId(session.getConversationId())
+                        .isGroup(true)
+                        .participant(leftUserSummary)
+                        .participants(remainingSummaries)
+                        .callType(session.getCallType())
+                        .build());
+            }
+        }
+
+        log.info("User {} left group call {}", user.getUsername(), session.getId());
+
+        CallSessionResponse resp = callMapper.toResponse(session);
+        resp.setIsGroup(true);
+        resp.setParticipants(remainingSummaries);
+        return resp;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<CallSessionResponse> getActiveGroupCall(UUID conversationId) {
+        LocalDateTime ringingThreshold = LocalDateTime.now().minusSeconds(60);
+        List<CallSession> active = callSessionRepository.findActiveGroupCallsByConversationId(
+                conversationId, List.of(CallStatus.RINGING, CallStatus.CONNECTED));
+
+        return active.stream()
+                .filter(c -> !(c.getStatus() == CallStatus.RINGING && c.getStartedAt() != null && c.getStartedAt().isBefore(ringingThreshold)))
+                .findFirst()
+                .map(session -> {
+                    CallSessionResponse resp = callMapper.toResponse(session);
+                    resp.setIsGroup(true);
+                    List<CallParticipant> activeParticipants = callParticipantRepository.findByCallSessionIdAndStatusWithUser(
+                            session.getId(), CallParticipantStatus.JOINED);
+                    resp.setParticipants(activeParticipants.stream()
+                            .map(p -> userMapper.toUserSummaryResponse(p.getUser()))
+                            .collect(Collectors.toList()));
+                    conversationRepository.findById(conversationId).ifPresent(c -> {
+                        resp.setGroupName(c.getName());
+                        resp.setGroupAvatarUrl(c.getAvatarUrl());
+                    });
+                    return resp;
+                });
     }
 
     @Override
@@ -303,51 +645,41 @@ public class CallServiceImpl implements ICallService {
         CallSession session = callSessionRepository.findById(signalRequest.getCallId())
                 .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
 
-        boolean isCaller = session.getCaller().getId().equals(senderId);
-        boolean isRecipient = session.getRecipient().getId().equals(senderId);
-
-        if (!isCaller && !isRecipient) {
-            throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            boolean isSenderParticipant = callParticipantRepository.existsByCallSessionIdAndUserIdAndStatus(
+                    session.getId(), senderId, CallParticipantStatus.JOINED) || session.getCaller().getId().equals(senderId);
+            if (!isSenderParticipant) {
+                throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+            }
+        } else {
+            boolean isCaller = session.getCaller().getId().equals(senderId);
+            boolean isRecipient = session.getRecipient() != null && session.getRecipient().getId().equals(senderId);
+            if (!isCaller && !isRecipient) {
+                throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+            }
         }
 
-        UserSummaryResponse callerSummary = UserSummaryResponse.builder()
-                .id(session.getCaller().getId())
-                .username(session.getCaller().getUsername())
-                .displayName(session.getCaller().getUsername())
-                .build();
+        User sender = userRepository.findById(senderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Sender not found"));
+        User recipient = userRepository.findById(signalRequest.getRecipientId())
+                .orElseThrow(() -> new ResourceNotFoundException("Recipient not found"));
 
-        UserSummaryResponse recipientSummary = UserSummaryResponse.builder()
-                .id(session.getRecipient().getId())
-                .username(session.getRecipient().getUsername())
-                .displayName(session.getRecipient().getUsername())
-                .build();
-
-        try {
-            if (session.getCaller().getProfile() != null) {
-                callerSummary.setDisplayName(session.getCaller().getProfile().getDisplayName());
-                callerSummary.setAvatarUrl(session.getCaller().getProfile().getAvatarUrl());
-            }
-            if (session.getRecipient().getProfile() != null) {
-                recipientSummary.setDisplayName(session.getRecipient().getProfile().getDisplayName());
-                recipientSummary.setAvatarUrl(session.getRecipient().getProfile().getAvatarUrl());
-            }
-        } catch (Exception ex) {
-            log.debug("Proxy profile resolution bypassed during signal relay: {}", ex.getMessage());
-        }
+        UserSummaryResponse senderSummary = userMapper.toUserSummaryResponse(sender);
+        UserSummaryResponse recipientSummary = userMapper.toUserSummaryResponse(recipient);
 
         log.info("Relaying call signal: type={} for callId={} from={} to={}",
                 signalRequest.getSignalType(), session.getId(), senderId, signalRequest.getRecipientId());
 
-        // Relay signaling packet to recipient's private call topic
         sendCallEvent(signalRequest.getRecipientId(), CallEventMessage.builder()
                 .eventType(CallConstants.EVENT_SIGNAL)
                 .callId(session.getId())
                 .conversationId(session.getConversationId())
-                .caller(callerSummary)
+                .caller(senderSummary)
                 .recipient(recipientSummary)
                 .callType(session.getCallType())
                 .signalType(signalRequest.getSignalType())
                 .signalData(signalRequest.getData())
+                .isGroup(session.getIsGroup())
                 .build());
     }
 
@@ -364,7 +696,7 @@ public class CallServiceImpl implements ICallService {
         LocalDateTime ringingThreshold = LocalDateTime.now().minusSeconds(60);
         List<CallSession> active = callSessionRepository.findActiveCallsByUserId(
                 userId, List.of(CallStatus.RINGING, CallStatus.CONNECTED));
-        
+
         return active.stream()
                 .filter(c -> !(c.getStatus() == CallStatus.RINGING && c.getStartedAt() != null && c.getStartedAt().isBefore(ringingThreshold)))
                 .findFirst()
@@ -377,14 +709,29 @@ public class CallServiceImpl implements ICallService {
         CallSession session = callSessionRepository.findById(callId)
                 .orElseThrow(() -> new ResourceNotFoundException(CallConstants.ERR_CALL_NOT_FOUND));
 
-        boolean isCaller = session.getCaller().getId().equals(requestingUserId);
-        boolean isRecipient = session.getRecipient().getId().equals(requestingUserId);
-
-        if (!isCaller && !isRecipient) {
-            throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            boolean isMember = session.getConversationId() != null &&
+                    conversationMemberRepository.existsByConversationIdAndUserId(session.getConversationId(), requestingUserId);
+            if (!isMember) {
+                throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+            }
+        } else {
+            boolean isCaller = session.getCaller().getId().equals(requestingUserId);
+            boolean isRecipient = session.getRecipient() != null && session.getRecipient().getId().equals(requestingUserId);
+            if (!isCaller && !isRecipient) {
+                throw new UnauthorizedException(CallConstants.ERR_UNAUTHORIZED_CALL);
+            }
         }
 
-        return callMapper.toResponse(session);
+        CallSessionResponse resp = callMapper.toResponse(session);
+        if (Boolean.TRUE.equals(session.getIsGroup())) {
+            List<CallParticipant> activeParticipants = callParticipantRepository.findByCallSessionIdAndStatusWithUser(
+                    session.getId(), CallParticipantStatus.JOINED);
+            resp.setParticipants(activeParticipants.stream()
+                    .map(p -> userMapper.toUserSummaryResponse(p.getUser()))
+                    .collect(Collectors.toList()));
+        }
+        return resp;
     }
 
     private void recordCallInChat(CallSession session) {
@@ -394,15 +741,14 @@ public class CallServiceImpl implements ICallService {
             if (conversationId != null) {
                 conversation = conversationRepository.findById(conversationId).orElse(null);
             }
-            if (conversation == null) {
+            if (conversation == null && !Boolean.TRUE.equals(session.getIsGroup()) && session.getRecipient() != null) {
                 // Find direct 1-to-1 conversation between caller and recipient
                 conversation = conversationRepository.findDirectConversationBetweenUsers(
                         ConversationType.DIRECT, session.getCaller().getId(), session.getRecipient().getId())
                         .orElse(null);
             }
 
-            if (conversation == null) {
-                // Auto-create direct conversation so history is preserved
+            if (conversation == null && !Boolean.TRUE.equals(session.getIsGroup()) && session.getRecipient() != null) {
                 conversation = Conversation.builder()
                         .type(ConversationType.DIRECT)
                         .createdAt(LocalDateTime.now())
@@ -425,10 +771,21 @@ public class CallServiceImpl implements ICallService {
                 conversationMemberRepository.saveAll(List.of(m1, m2));
             }
 
+            if (conversation == null) {
+                return;
+            }
+
             session.setConversationId(conversation.getId());
             callSessionRepository.save(session);
 
-            String callTypeLabel = session.getCallType() == CallType.VIDEO ? "Video call" : "Audio call";
+            boolean isGroup = Boolean.TRUE.equals(session.getIsGroup());
+            String callTypeLabel;
+            if (isGroup) {
+                callTypeLabel = session.getCallType() == CallType.VIDEO ? "Group video call" : "Group audio call";
+            } else {
+                callTypeLabel = session.getCallType() == CallType.VIDEO ? "Video call" : "Audio call";
+            }
+
             String content;
             int duration = session.getDurationSeconds() != null ? session.getDurationSeconds() : 0;
 
@@ -437,7 +794,7 @@ public class CallServiceImpl implements ICallService {
                     int mins = duration / 60;
                     int secs = duration % 60;
                     String formattedDur = mins > 0 ? String.format("%d:%02d", mins, secs) : String.format("0:%02d", secs);
-                    content = callTypeLabel + " · " + formattedDur;
+                    content = callTypeLabel + " • " + formattedDur;
                 } else {
                     content = callTypeLabel + " ended";
                 }
@@ -466,7 +823,6 @@ public class CallServiceImpl implements ICallService {
             conversation.setUpdatedAt(LocalDateTime.now());
             conversationRepository.save(conversation);
 
-            // Construct MessageResponse for WebSocket broadcast
             User caller = session.getCaller();
             MessageResponse response = MessageResponse.builder()
                     .id(savedMessage.getId())
@@ -490,12 +846,11 @@ public class CallServiceImpl implements ICallService {
                     .createdAt(savedMessage.getCreatedAt())
                     .build();
 
-            // Broadcast to conversation topic
             messagingTemplate.convertAndSend(ChatConstants.WEBSOCKET_TOPIC_CONVER + conversation.getId(), response);
-
-            // Broadcast to both users' private message feeds
             messagingTemplate.convertAndSend("/topic/users/" + session.getCaller().getId() + "/messages", response);
-            messagingTemplate.convertAndSend("/topic/users/" + session.getRecipient().getId() + "/messages", response);
+            if (session.getRecipient() != null) {
+                messagingTemplate.convertAndSend("/topic/users/" + session.getRecipient().getId() + "/messages", response);
+            }
 
             log.info("Recorded call in chat: conversation={}, messageId={}, content='{}'",
                     conversation.getId(), savedMessage.getId(), content);

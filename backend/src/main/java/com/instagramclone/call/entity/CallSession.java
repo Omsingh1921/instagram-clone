@@ -47,8 +47,16 @@ public class CallSession extends BaseCreatedEntity {
     private User caller;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recipient_id", nullable = false)
+    @JoinColumn(name = "recipient_id", nullable = true)
     private User recipient;
+
+    @Column(name = "is_group", nullable = false)
+    @Builder.Default
+    private Boolean isGroup = false;
+
+    @jakarta.persistence.OneToMany(mappedBy = "callSession", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private java.util.List<CallParticipant> participants = new java.util.ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(name = "call_type", length = 20, nullable = false)

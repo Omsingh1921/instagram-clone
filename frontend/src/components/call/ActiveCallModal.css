@@ -460,3 +460,184 @@
     height: 34px;
   }
 }
+
+/* ==========================================================================
+   GROUP CALL MULTI-PARTICIPANT GRID & TILES
+   ========================================================================== */
+
+.active-call-group-header-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0095f6, #833ab4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.active-call-group-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.active-call-group-count {
+  font-size: 11px;
+  color: #a8a8a8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.docked-pill-group-bubble {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0095f6, #833ab4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Grid Layout */
+.active-call-group-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  padding: 88px 24px 108px 24px;
+  gap: 16px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+}
+
+.active-call-group-grid.group-cols-1 {
+  grid-template-columns: minmax(320px, 850px);
+  grid-template-rows: minmax(280px, 1fr);
+}
+
+.active-call-group-grid.group-cols-2 {
+  grid-template-columns: repeat(2, minmax(260px, 1fr));
+  grid-auto-rows: minmax(240px, 1fr);
+}
+
+.active-call-group-grid.group-cols-3 {
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  grid-auto-rows: minmax(200px, 1fr);
+}
+
+/* Participant Tile */
+.group-participant-tile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  max-height: 70vh;
+  background: #141416;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.group-participant-tile:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.group-tile-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+.group-tile-audio-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 20px;
+}
+
+.group-tile-avatar {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.group-tile-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+/* Tile Bottom Badge Pill */
+.group-tile-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(18, 18, 18, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #f5f5f5;
+  z-index: 5;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Waiting Tile */
+.group-waiting-tile {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px dashed rgba(255, 255, 255, 0.15);
+}
+
+.group-waiting-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  padding: 24px;
+}
+
+.group-waiting-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.group-waiting-sub {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 768px) {
+  .active-call-group-grid {
+    padding: 76px 12px 96px 12px;
+    gap: 10px;
+  }
+  .active-call-group-grid.group-cols-2,
+  .active-call-group-grid.group-cols-3 {
+    grid-template-columns: 1fr;
+    grid-auto-rows: minmax(180px, 1fr);
+  }
+  .group-participant-tile {
+    min-height: 180px;
+    border-radius: 16px;
+  }
+}

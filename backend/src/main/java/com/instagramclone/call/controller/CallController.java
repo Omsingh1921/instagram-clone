@@ -49,6 +49,17 @@ public class CallController {
                 .body(ApiResponse.success("Call initiated", response));
     }
 
+    @RateLimit(category = "call-initiate", limit = 15, windowSeconds = 60)
+    @PostMapping("/group/initiate")
+    @Operation(summary = "Initiate an audio or video group call")
+    public ResponseEntity<ApiResponse<CallSessionResponse>> initiateGroupCall(
+            @Valid @RequestBody com.instagramclone.call.dto.request.InitiateGroupCallRequest request) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        CallSessionResponse response = callService.initiateGroupCall(currentUserId, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Group call initiated", response));
+    }
+
     @PostMapping("/{callId}/answer")
     @Operation(summary = "Answer an incoming call")
     public ResponseEntity<ApiResponse<CallSessionResponse>> answerCall(
@@ -100,6 +111,32 @@ public class CallController {
         UUID currentUserId = SecurityUtils.getCurrentUserId();
         CallSessionResponse response = callService.getCallById(callId, currentUserId);
         return ResponseEntity.ok(ApiResponse.success("Call details retrieved", response));
+    }
+
+    @PostMapping("/{callId}/join")
+    @Operation(summary = "Join an ongoing group call")
+    public ResponseEntity<ApiResponse<CallSessionResponse>> joinGroupCall(
+            @PathVariable UUID callId) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        CallSessionResponse response = callService.joinGroupCall(currentUserId, callId);
+        return ResponseEntity.ok(ApiResponse.success("Joined group call", response));
+    }
+
+    @PostMapping("/{callId}/leave")
+    @Operation(summary = "Leave an ongoing group call")
+    public ResponseEntity<ApiResponse<CallSessionResponse>> leaveGroupCall(
+            @PathVariable UUID callId) {
+        UUID currentUserId = SecurityUtils.getCurrentUserId();
+        CallSessionResponse response = callService.leaveGroupCall(currentUserId, callId);
+        return ResponseEntity.ok(ApiResponse.success("Left group call", response));
+    }
+
+    @GetMapping("/group/{conversationId}/active")
+    @Operation(summary = "Get active group call for a conversation")
+    public ResponseEntity<ApiResponse<CallSessionResponse>> getActiveGroupCall(
+            @PathVariable UUID conversationId) {
+        Optional<CallSessionResponse> active = callService.getActiveGroupCall(conversationId);
+        return ResponseEntity.ok(ApiResponse.success("Active group call retrieved", active.orElse(null)));
     }
 }
 

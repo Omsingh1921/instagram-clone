@@ -66,7 +66,7 @@ vi.mock('../services/user.service', () => ({
 vi.mock('../services/websocket', () => ({
   default: {
     connect: vi.fn(),
-    subscribe: vi.fn(() => () => {}),
+    subscribe: vi.fn(() => () => { }),
     send: vi.fn(),
   },
 }));

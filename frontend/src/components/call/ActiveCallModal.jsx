@@ -12,6 +12,7 @@ import {
   Headphones,
   ScreenShare,
   X,
+  Users,
 } from 'lucide-react';
 import { useCall } from '../../context/CallContext';
 import { useAuth } from '../../context/AuthContext';
@@ -29,6 +30,8 @@ export const ActiveCallModal = () => {
     activeCall,
     localStream,
     remoteStream,
+    remoteStreams = {},
+    groupParticipants = [],
     isMuted,
     isVideoOff,
     isScreenSharing,
@@ -80,6 +83,14 @@ export const ActiveCallModal = () => {
   };
 
   const isCaller = activeCall?.isCaller;
+  const isGroupCall = !!activeCall?.isGroup;
+  const groupName = activeCall?.groupName || 'Group Call';
+  const groupAvatarUrl = activeCall?.groupAvatarUrl;
+  const currentUserId = currentUser?.id || currentUser?.userId;
+  const otherParticipants = (groupParticipants || []).filter(
+    (p) => (p.id || p.userId) !== currentUserId
+  );
+
   const peer = isCaller ? (activeCall?.recipient || {}) : (activeCall?.caller || {});
   const peerName = peer.displayName || peer.fullName || peer.username || 'Instagram User';
   const currentUserName = currentUser?.fullName || currentUser?.displayName || currentUser?.username || 'You';
@@ -128,16 +139,23 @@ export const ActiveCallModal = () => {
       return (
         <div className="active-call-docked-pill" onClick={toggleMinimize} title="Click to maximize call">
           <div className="docked-pill-avatar">
-            <Avatar
-              src={peer.avatarUrl || peer.profilePictureUrl}
-              alt={peerName}
-              size="xs"
-            />
+            {isGroupCall && !groupAvatarUrl ? (
+              <div className="docked-pill-group-bubble">
+                <Users size={16} color="#fff" />
+              </div>
+            ) : (
+              <Avatar
+                src={isGroupCall ? groupAvatarUrl : (peer.avatarUrl || peer.profilePictureUrl)}
+                alt={isGroupCall ? groupName : peerName}
+                size="xs"
+              />
+            )}
           </div>
           <div className="docked-pill-info">
-            <span className="docked-pill-name">{peerName}</span>
+            <span className="docked-pill-name">{isGroupCall ? groupName : peerName}</span>
             <span className="docked-pill-timer">
               {callDuration > 0 ? formatDuration(callDuration) : (callStatusText || 'Connected')}
+              {isGroupCall && ` • ${groupParticipants.length} in call`}
             </span>
           </div>
           <button
@@ -158,7 +176,7 @@ export const ActiveCallModal = () => {
               e.stopPropagation();
               endCall();
             }}
-            title="End Call"
+            title={isGroupCall ? 'Leave Call' : 'End Call'}
           >
             <PhoneOff size={16} />
           </button>
@@ -171,15 +189,35 @@ export const ActiveCallModal = () => {
         <div className="active-call-viewport">
           {/* Top Header Bar */}
           <div className="active-call-header">
-            {/* Current User Identity (Top Left) */}
+            {/* Identity / Title (Top Left) */}
             <div className="active-call-caller-identity">
-              <Avatar
-                src={currentUser?.avatarUrl || currentUser?.profilePictureUrl}
-                alt={currentUserName}
-                size="xs"
-                className="active-call-caller-avatar"
-              />
-              <span className="active-call-caller-name">{currentUserName}</span>
+              {isGroupCall ? (
+                <>
+                  {groupAvatarUrl ? (
+                    <Avatar src={groupAvatarUrl} alt={groupName} size="xs" className="active-call-caller-avatar" />
+                  ) : (
+                    <div className="active-call-group-header-avatar">
+                      <Users size={16} color="#fff" />
+                    </div>
+                  )}
+                  <div className="active-call-group-header-text">
+                    <span className="active-call-caller-name">{groupName}</span>
+                    <span className="active-call-group-count">
+                      <Users size={12} /> {groupParticipants.length} in call • {formatDuration(callDuration)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Avatar
+                    src={currentUser?.avatarUrl || currentUser?.profilePictureUrl}
+                    alt={currentUserName}
+                    size="xs"
+                    className="active-call-caller-avatar"
+                  />
+                  <span className="active-call-caller-name">{currentUserName}</span>
+                </>
+              )}
             </div>
 
             {/* Top Right Controls & Device Status */}
@@ -252,7 +290,9 @@ export const ActiveCallModal = () => {
                 </div>
                 <div className="settings-device-row">
                   <span className="settings-label">Status</span>
-                  <span className="settings-status-online">● P2P WebRTC Connected</span>
+                  <span className="settings-status-online">
+                    {isGroupCall ? `● Mesh Connected (${groupParticipants.length} members)` : '● P2P WebRTC Connected'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -260,65 +300,169 @@ export const ActiveCallModal = () => {
 
           {/* Video / Media Canvas Area */}
           <div className="active-call-media-stage">
-            {/* Main Remote Video or Audio Avatar Canvas */}
-            {hasRemoteVideo ? (
-              <video
-                ref={(el) => {
-                  remoteVideoRef.current = el;
-                  if (el && remoteStream && el.srcObject !== remoteStream) {
-                    el.srcObject = remoteStream;
-                    el.muted = true;
-                    el.play?.().catch(() => {});
-                  }
-                }}
-                autoPlay
-                playsInline
-                muted
-                className="active-call-remote-video"
-              />
-            ) : (
-              <div className="active-call-audio-stage">
-                <Avatar
-                  src={peer.avatarUrl || peer.profilePictureUrl}
-                  alt={peerName}
-                  size="xl"
-                  className="audio-stage-avatar"
-                />
-                <span className="audio-stage-name">{peerName}</span>
-                <span className="audio-stage-sub">
-                  {callDuration > 0 ? formatDuration(callDuration) : (callStatusText || 'Calling...')}
-                </span>
-              </div>
-            )}
+            {isGroupCall ? (
+              /* Group Call Grid Layout */
+              <div className={`active-call-group-grid group-cols-${Math.min(3, Math.max(1, otherParticipants.length + 1))}`}>
+                {/* Local User Tile */}
+                <div className="group-participant-tile local-tile">
+                  {hasLocalVideo ? (
+                    <video
+                      ref={(el) => {
+                        localVideoRef.current = el;
+                        if (el && localStream && el.srcObject !== localStream) {
+                          el.srcObject = localStream;
+                          el.play?.().catch(() => {});
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="group-tile-video"
+                    />
+                  ) : (
+                    <div className="group-tile-audio-placeholder">
+                      <Avatar
+                        src={currentUser?.avatarUrl || currentUser?.profilePictureUrl}
+                        alt={currentUserName}
+                        size="lg"
+                        className="group-tile-avatar"
+                      />
+                      <span className="group-tile-name">{currentUserName}</span>
+                    </div>
+                  )}
+                  <div className="group-tile-badge">
+                    <span>{currentUserName} (You)</span>
+                    {isMuted ? <MicOff size={14} color="#ed4956" /> : <Mic size={14} color="#4ade80" />}
+                  </div>
+                </div>
 
-            {/* Picture-in-Picture Local Video Feed (Bottom Right) */}
-            {isVideoCall && (
-              <div className={`active-call-pip-container ${!hasLocalVideo ? 'pip-video-off' : ''}`}>
-                {hasLocalVideo ? (
+                {/* Remote Participant Tiles */}
+                {otherParticipants.map((p) => {
+                  const pId = p.id || p.userId;
+                  const pName = p.displayName || p.fullName || p.username || 'Member';
+                  const pStream = remoteStreams[pId];
+                  const pHasVideo = pStream && pStream.getVideoTracks().length > 0 &&
+                    pStream.getVideoTracks().some((t) => t.enabled && t.readyState !== 'ended');
+
+                  return (
+                    <div key={pId} className="group-participant-tile remote-tile">
+                      {pHasVideo ? (
+                        <video
+                          ref={(el) => {
+                            if (el && pStream && el.srcObject !== pStream) {
+                              el.srcObject = pStream;
+                              el.play?.().catch(() => {});
+                            }
+                          }}
+                          autoPlay
+                          playsInline
+                          className="group-tile-video"
+                        />
+                      ) : (
+                        <div className="group-tile-audio-placeholder">
+                          <Avatar
+                            src={p.avatarUrl || p.profilePictureUrl}
+                            alt={pName}
+                            size="lg"
+                            className="group-tile-avatar pulsing-avatar"
+                          />
+                          <span className="group-tile-name">{pName}</span>
+                        </div>
+                      )}
+                      <div className="group-tile-badge">
+                        <span>{pName}</span>
+                        <Mic size={14} color="#4ade80" />
+                      </div>
+                      {pStream && (
+                        <audio
+                          ref={(el) => {
+                            if (el && el.srcObject !== pStream) {
+                              el.srcObject = pStream;
+                              el.play?.().catch(() => {});
+                            }
+                          }}
+                          autoPlay
+                          playsInline
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* If only local user is in the group call */}
+                {otherParticipants.length === 0 && (
+                  <div className="group-participant-tile group-waiting-tile">
+                    <div className="group-waiting-content">
+                      <Users size={32} color="rgba(255, 255, 255, 0.4)" />
+                      <span className="group-waiting-text">Waiting for others to join...</span>
+                      <span className="group-waiting-sub">Group members can join anytime</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* 1:1 Direct Call Canvas */
+              <>
+                {hasRemoteVideo ? (
                   <video
                     ref={(el) => {
-                      localVideoRef.current = el;
-                      if (el && localStream && el.srcObject !== localStream) {
-                        el.srcObject = localStream;
+                      remoteVideoRef.current = el;
+                      if (el && remoteStream && el.srcObject !== remoteStream) {
+                        el.srcObject = remoteStream;
+                        el.muted = true;
                         el.play?.().catch(() => {});
                       }
                     }}
                     autoPlay
                     playsInline
                     muted
-                    className="active-call-pip-video"
+                    className="active-call-remote-video"
                   />
                 ) : (
-                  <div className="active-call-pip-placeholder">
-                    <VideoOff size={18} color="#8e8e8e" />
-                    <span>Camera off</span>
+                  <div className="active-call-audio-stage">
+                    <Avatar
+                      src={peer.avatarUrl || peer.profilePictureUrl}
+                      alt={peerName}
+                      size="xl"
+                      className="audio-stage-avatar"
+                    />
+                    <span className="audio-stage-name">{peerName}</span>
+                    <span className="audio-stage-sub">
+                      {callDuration > 0 ? formatDuration(callDuration) : (callStatusText || 'Calling...')}
+                    </span>
                   </div>
                 )}
-              </div>
+
+                {/* Picture-in-Picture Local Video Feed (Bottom Right) */}
+                {isVideoCall && (
+                  <div className={`active-call-pip-container ${!hasLocalVideo ? 'pip-video-off' : ''}`}>
+                    {hasLocalVideo ? (
+                      <video
+                        ref={(el) => {
+                          localVideoRef.current = el;
+                          if (el && localStream && el.srcObject !== localStream) {
+                            el.srcObject = localStream;
+                            el.play?.().catch(() => {});
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        muted
+                        className="active-call-pip-video"
+                      />
+                    ) : (
+                      <div className="active-call-pip-placeholder">
+                        <VideoOff size={18} color="#8e8e8e" />
+                        <span>Camera off</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
-          {/* Floating Call Control Action Bar (Instagram Web Parity) */}
+          {/* Floating Call Control Action Bar */}
           <div className="active-call-controls-bar">
             {/* Screen Share / Window Share */}
             <button
@@ -353,13 +497,13 @@ export const ActiveCallModal = () => {
               {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
             </button>
 
-            {/* End Call Button */}
+            {/* End / Leave Call Button */}
             <button
               type="button"
               className="call-control-btn end-call-btn"
               onClick={endCall}
-              title="End Call"
-              aria-label="End Call"
+              title={isGroupCall ? 'Leave Call' : 'End Call'}
+              aria-label={isGroupCall ? 'Leave Call' : 'End Call'}
             >
               <PhoneOff size={24} />
             </button>

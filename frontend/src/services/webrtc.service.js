@@ -36,6 +36,7 @@ class WebRtcService {
     this.onRemoteStreamCallback = null;
     this.onIceCandidateCallback = null;
     this.onConnectionStateChangeCallback = null;
+    this.peers = new Map(); // userId -> { pc, remoteStream, iceCandidatesQueue, onRemoteStream, onConnectionStateChange }
   }
 
   /**
@@ -310,6 +311,19 @@ class WebRtcService {
         }
       }
 
+      // Also replace track across mesh peers in group calls
+      this.peers.forEach(({ pc }) => {
+        try {
+          const senders = pc.getSenders();
+          const videoSender = senders.find((s) => s.track && s.track.kind === 'video');
+          if (videoSender) {
+            videoSender.replaceTrack(screenTrack);
+          }
+        } catch {
+          // ignore
+        }
+      });
+
       screenTrack.onended = () => {
         this.stopScreenShare();
       };
@@ -325,14 +339,182 @@ class WebRtcService {
    * Stop screen share and revert to webcam
    */
   async stopScreenShare() {
-    if (this.localStream && this.peerConnection) {
+    if (this.localStream) {
       const videoTrack = this.localStream.getVideoTracks()[0];
-      const senders = this.peerConnection.getSenders();
-      const videoSender = senders.find((s) => s.track && s.track.kind === 'video');
-      if (videoSender && videoTrack) {
-        videoSender.replaceTrack(videoTrack);
+      if (this.peerConnection && videoTrack) {
+        const senders = this.peerConnection.getSenders();
+        const videoSender = senders.find((s) => s.track && s.track.kind === 'video');
+        if (videoSender) {
+          videoSender.replaceTrack(videoTrack);
+        }
+      }
+
+      this.peers.forEach(({ pc }) => {
+        try {
+          const senders = pc.getSenders();
+          const videoSender = senders.find((s) => s.track && s.track.kind === 'video');
+          if (videoSender && videoTrack) {
+            videoSender.replaceTrack(videoTrack);
+          }
+        } catch {
+          // ignore
+        }
+      });
+    }
+  }
+
+  // ==================== MULTI-PEER MESH FOR GROUP CALLS ====================
+
+  /**
+   * Create or retrieve peer connection for a specific group member
+   */
+  createPeerForUser(userId, onIceCandidate, onRemoteStream, onConnectionStateChange) {
+    if (this.peers.has(userId)) {
+      this.closePeer(userId);
+    }
+
+    const pc = new RTCPeerConnection(RTC_CONFIG);
+    const peerData = {
+      pc,
+      remoteStream: new MediaStream(),
+      iceCandidatesQueue: [],
+      onRemoteStream,
+      onConnectionStateChange,
+    };
+
+    if (this.localStream) {
+      this.localStream.getTracks().forEach((track) => {
+        try {
+          pc.addTrack(track, this.localStream);
+        } catch (e) {
+          console.warn(`[WebRTC] AddTrack notice for peer ${userId}:`, e);
+        }
+      });
+    }
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate && onIceCandidate) {
+        onIceCandidate(userId, event.candidate);
+      }
+    };
+
+    pc.ontrack = (event) => {
+      if (event.streams && event.streams[0]) {
+        peerData.remoteStream = event.streams[0];
+      } else {
+        if (!peerData.remoteStream) peerData.remoteStream = new MediaStream();
+        peerData.remoteStream.addTrack(event.track);
+      }
+      const streamInstance = new MediaStream(peerData.remoteStream.getTracks());
+      if (onRemoteStream) {
+        onRemoteStream(userId, streamInstance);
+      }
+    };
+
+    const checkState = () => {
+      const connState = pc.connectionState;
+      const iceState = pc.iceConnectionState;
+      if (connState === 'connected' || iceState === 'connected' || iceState === 'completed') {
+        onConnectionStateChange?.(userId, 'connected');
+      } else if (connState === 'failed' || iceState === 'failed') {
+        onConnectionStateChange?.(userId, 'failed');
+      } else if (connState === 'disconnected' || iceState === 'disconnected') {
+        onConnectionStateChange?.(userId, 'disconnected');
+      }
+    };
+
+    pc.onconnectionstatechange = checkState;
+    pc.oniceconnectionstatechange = checkState;
+
+    this.peers.set(userId, peerData);
+    return pc;
+  }
+
+  async createOfferForUser(userId) {
+    const peerData = this.peers.get(userId);
+    if (!peerData) throw new Error(`Peer not found: ${userId}`);
+    const offer = await peerData.pc.createOffer({
+      offerToReceiveAudio: true,
+      offerToReceiveVideo: true,
+    });
+    await peerData.pc.setLocalDescription(offer);
+    return offer;
+  }
+
+  async handleOfferAndCreateAnswerForUser(userId, offer) {
+    const peerData = this.peers.get(userId);
+    if (!peerData) throw new Error(`Peer not found: ${userId}`);
+    await peerData.pc.setRemoteDescription(new RTCSessionDescription(offer));
+    await this.drainIceCandidatesQueueForUser(userId);
+    const answer = await peerData.pc.createAnswer();
+    await peerData.pc.setLocalDescription(answer);
+    return answer;
+  }
+
+  async handleAnswerForUser(userId, answer) {
+    const peerData = this.peers.get(userId);
+    if (!peerData) return;
+    await peerData.pc.setRemoteDescription(new RTCSessionDescription(answer));
+    await this.drainIceCandidatesQueueForUser(userId);
+  }
+
+  async addIceCandidateForUser(userId, candidate) {
+    if (!candidate) return;
+    const peerData = this.peers.get(userId);
+    if (!peerData) return;
+    try {
+      const candidateInit = candidate.candidate ? {
+        candidate: candidate.candidate,
+        sdpMid: candidate.sdpMid,
+        sdpMLineIndex: candidate.sdpMLineIndex,
+        usernameFragment: candidate.usernameFragment,
+      } : candidate;
+
+      const rtcCandidate = new RTCIceCandidate(candidateInit);
+      if (peerData.pc.remoteDescription && peerData.pc.remoteDescription.type) {
+        await peerData.pc.addIceCandidate(rtcCandidate);
+      } else {
+        peerData.iceCandidatesQueue.push(rtcCandidate);
+      }
+    } catch (err) {
+      console.warn(`[WebRTC] Failed to add candidate for ${userId}:`, err);
+    }
+  }
+
+  async drainIceCandidatesQueueForUser(userId) {
+    const peerData = this.peers.get(userId);
+    if (!peerData || !peerData.pc.remoteDescription) return;
+    while (peerData.iceCandidatesQueue.length > 0) {
+      const candidate = peerData.iceCandidatesQueue.shift();
+      try {
+        await peerData.pc.addIceCandidate(candidate);
+      } catch (err) {
+        console.warn(`[WebRTC] Failed to drain candidate for ${userId}:`, err);
       }
     }
+  }
+
+  closePeer(userId) {
+    const peerData = this.peers.get(userId);
+    if (peerData) {
+      try {
+        peerData.pc.close();
+      } catch {
+        // ignore
+      }
+      this.peers.delete(userId);
+    }
+  }
+
+  closeAllPeers() {
+    this.peers.forEach((peerData) => {
+      try {
+        peerData.pc.close();
+      } catch {
+        // ignore
+      }
+    });
+    this.peers.clear();
   }
 
   /**
@@ -399,6 +581,7 @@ class WebRtcService {
    */
   closePeerConnection() {
     this.stopRingtone();
+    this.closeAllPeers();
 
     if (this.peerConnection) {
       try {

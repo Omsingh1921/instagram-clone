@@ -15,6 +15,8 @@ export const CallProvider = ({ children }) => {
   const [activeCall, setActiveCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [remoteStreams, setRemoteStreams] = useState({});
+  const [groupParticipants, setGroupParticipants] = useState([]);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -49,6 +51,8 @@ export const CallProvider = ({ children }) => {
     setActiveCall(null);
     setLocalStream(null);
     setRemoteStream(null);
+    setRemoteStreams({});
+    setGroupParticipants([]);
     setIsMuted(false);
     setIsVideoOff(false);
     setIsScreenSharing(false);
@@ -175,7 +179,62 @@ export const CallProvider = ({ children }) => {
     }
   }, [currentUser, handleLocalIceCandidate, handleRemoteStream, handleConnectionStateChange, showError, cleanupCallState]);
 
-  // Accept Call (Callee flow)
+  // Start Group Call (Audio or Video)
+  const startGroupCall = useCallback(async (conversation, callType = 'VIDEO') => {
+    if (!conversation || !conversation.id) {
+      showError('Please select a valid group conversation');
+      return;
+    }
+
+    try {
+      setCallStatusText('Starting group call...');
+      setIsMinimized(false);
+
+      const stream = await webrtcService.getLocalMedia(callType);
+      setLocalStream(stream);
+
+      const res = await callService.initiateGroupCall(conversation.id, callType);
+      const callData = res.data || res;
+
+      const mySummary = {
+        id: currentUserId,
+        userId: currentUserId,
+        username: currentUser?.username,
+        displayName: currentUser?.displayName || currentUser?.fullName || currentUser?.username,
+        avatarUrl: currentUser?.avatarUrl || currentUser?.profilePictureUrl,
+      };
+
+      const initialParticipants = callData.participants && callData.participants.length > 0
+        ? callData.participants
+        : [mySummary];
+
+      setActiveCall({
+        callId: callData.id,
+        conversationId: conversation.id,
+        isGroup: true,
+        groupName: conversation.name || 'Group Call',
+        groupAvatarUrl: conversation.avatarUrl,
+        caller: currentUser,
+        callType,
+        isCaller: true,
+        participants: initialParticipants,
+      });
+      setGroupParticipants(initialParticipants);
+      setCallStatusText('In call');
+
+      if (!timerRef.current) {
+        timerRef.current = setInterval(() => {
+          setCallDuration((prev) => prev + 1);
+        }, 1000);
+      }
+    } catch (err) {
+      console.error('[CallContext] Failed to start group call:', err);
+      showError(err.message || 'Failed to start group call. Please check microphone/camera permissions.');
+      cleanupCallState();
+    }
+  }, [currentUser, currentUserId, showError, cleanupCallState]);
+
+  // Accept Call (Callee flow - supports both 1:1 and Group Calls)
   const acceptCall = useCallback(async () => {
     if (!incomingCall) return;
 
@@ -188,14 +247,77 @@ export const CallProvider = ({ children }) => {
       const stream = await webrtcService.getLocalMedia(callType);
       setLocalStream(stream);
 
-      // 2. Setup RTCPeerConnection
+      // Group Call flow
+      if (incomingCall.isGroup) {
+        const res = await callService.joinCall(incomingCall.callId);
+        const callData = res.data || res;
+
+        const mySummary = {
+          id: currentUserId,
+          userId: currentUserId,
+          username: currentUser?.username,
+          displayName: currentUser?.displayName || currentUser?.fullName || currentUser?.username,
+          avatarUrl: currentUser?.avatarUrl || currentUser?.profilePictureUrl,
+        };
+
+        const existingList = (callData.participants && callData.participants.length > 0)
+          ? callData.participants
+          : (incomingCall.participants || []);
+
+        const dedupedList = existingList.some((p) => (p.id || p.userId) === currentUserId)
+          ? existingList
+          : [...existingList, mySummary];
+
+        setActiveCall({
+          callId: incomingCall.callId,
+          conversationId: incomingCall.conversationId,
+          isGroup: true,
+          groupName: incomingCall.groupName || 'Group Call',
+          groupAvatarUrl: incomingCall.groupAvatarUrl,
+          caller: incomingCall.caller,
+          callType,
+          isCaller: false,
+          participants: dedupedList,
+        });
+        setGroupParticipants(dedupedList);
+        setIncomingCall(null);
+        setCallStatusText('Connected');
+
+        if (!timerRef.current) {
+          timerRef.current = setInterval(() => {
+            setCallDuration((prev) => prev + 1);
+          }, 1000);
+        }
+
+        // Establish WebRTC mesh connections to all members already in the call
+        for (const peer of existingList) {
+          const peerId = peer.id || peer.userId;
+          if (peerId && peerId !== currentUserId) {
+            try {
+              webrtcService.createPeerForUser(
+                peerId,
+                (targetId, candidate) => sendSignal(incomingCall.callId, targetId, 'ice-candidate', candidate),
+                (targetId, rStream) => setRemoteStreams((prev) => ({ ...prev, [targetId]: rStream })),
+                (targetId, state) => console.log(`[GroupCall] Peer ${targetId} state:`, state)
+              );
+              const offer = await webrtcService.createOfferForUser(peerId);
+              sendSignal(incomingCall.callId, peerId, 'offer', offer);
+            } catch (e) {
+              console.warn('[GroupCall] Peer connection notice:', e);
+            }
+          }
+        }
+        return;
+      }
+
+      // 1:1 Direct Call flow
       webrtcService.createPeerConnection(
         handleLocalIceCandidate,
         handleRemoteStream,
         handleConnectionStateChange
       );
 
-      // 3. Inform backend via REST/STOMP
+      // Inform backend via REST/STOMP
       await callService.answerCall(incomingCall.callId);
 
       const ongoing = {
@@ -209,7 +331,7 @@ export const CallProvider = ({ children }) => {
       setActiveCall(ongoing);
       setIncomingCall(null);
 
-      // 4. If an SDP offer was already queued, process it and send answer back
+      // If an SDP offer was already queued, process it and send answer back
       if (pendingOfferRef.current) {
         const answer = await webrtcService.handleOfferAndCreateAnswer(pendingOfferRef.current);
         const callerId = incomingCall.caller?.id || incomingCall.caller?.userId;
@@ -221,7 +343,7 @@ export const CallProvider = ({ children }) => {
       showError('Failed to connect call: ' + (err.message || 'Unknown error'));
       cleanupCallState();
     }
-  }, [incomingCall, currentUser, handleLocalIceCandidate, handleRemoteStream, handleConnectionStateChange, sendSignal, showError, cleanupCallState]);
+  }, [incomingCall, currentUser, currentUserId, handleLocalIceCandidate, handleRemoteStream, handleConnectionStateChange, sendSignal, showError, cleanupCallState]);
 
   // Reject / Decline incoming call
   const rejectCall = useCallback(async () => {
@@ -235,14 +357,18 @@ export const CallProvider = ({ children }) => {
     setIncomingCall(null);
   }, [incomingCall]);
 
-  // End active call
+  // End active call (or Leave if group call)
   const endCall = useCallback(async () => {
     const current = activeCall;
     if (current?.callId) {
       try {
-        await callService.endCall(current.callId);
+        if (current.isGroup) {
+          await callService.leaveCall(current.callId);
+        } else {
+          await callService.endCall(current.callId);
+        }
       } catch (e) {
-        console.warn('[CallContext] End call API notice:', e);
+        console.warn('[CallContext] End/Leave call notice:', e);
       }
     }
     cleanupCallState();
@@ -322,6 +448,10 @@ export const CallProvider = ({ children }) => {
             conversationId: msg.conversationId,
             caller: msg.caller,
             callType: msg.callType,
+            isGroup: !!msg.isGroup,
+            groupName: msg.groupName,
+            groupAvatarUrl: msg.groupAvatarUrl,
+            participants: msg.participants || [],
           });
           webrtcService.playRingtone();
           if (ringingTimeoutRef.current) clearTimeout(ringingTimeoutRef.current);
@@ -329,6 +459,54 @@ export const CallProvider = ({ children }) => {
             webrtcService.stopRingtone();
             setIncomingCall((prev) => (prev?.callId === msg.callId ? null : prev));
           }, 45000);
+          break;
+        }
+
+        case 'PARTICIPANT_JOINED': {
+          console.log('[CallContext] Participant joined group call:', msg.participant);
+          const joinedUser = msg.participant;
+          const joinedUserId = joinedUser?.id || joinedUser?.userId;
+
+          if (joinedUserId && joinedUserId !== currentUserId) {
+            setGroupParticipants((prev) => {
+              const exists = prev.some((p) => (p.id || p.userId) === joinedUserId);
+              return exists ? prev : [...prev, joinedUser];
+            });
+
+            // When an active group member sees a new peer join, initiate WebRTC connection
+            if (activeCallRef.current?.isGroup) {
+              try {
+                webrtcService.createPeerForUser(
+                  joinedUserId,
+                  (targetId, candidate) => sendSignal(msg.callId, targetId, 'ice-candidate', candidate),
+                  (targetId, rStream) => setRemoteStreams((prev) => ({ ...prev, [targetId]: rStream })),
+                  (targetId, state) => console.log(`[GroupCall] Peer ${targetId} state:`, state)
+                );
+                webrtcService.createOfferForUser(joinedUserId).then((offer) => {
+                  sendSignal(msg.callId, joinedUserId, 'offer', offer);
+                }).catch((e) => {
+                  console.warn('[CallContext] Error creating offer for joined peer:', e);
+                });
+              } catch (e) {
+                console.warn('[CallContext] Failed to setup peer for joined user:', e);
+              }
+            }
+          }
+          break;
+        }
+
+        case 'PARTICIPANT_LEFT': {
+          console.log('[CallContext] Participant left group call:', msg.participant);
+          const leftUserId = msg.participant?.id || msg.participant?.userId;
+          if (leftUserId) {
+            webrtcService.closePeer(leftUserId);
+            setRemoteStreams((prev) => {
+              const copy = { ...prev };
+              delete copy[leftUserId];
+              return copy;
+            });
+            setGroupParticipants((prev) => prev.filter((p) => (p.id || p.userId) !== leftUserId));
+          }
           break;
         }
 
@@ -370,6 +548,32 @@ export const CallProvider = ({ children }) => {
 
         case 'SIGNAL': {
           const { signalType, signalData } = msg;
+          const peerId = msg.caller?.id || msg.caller?.userId;
+
+          // Multi-peer group call signaling
+          if (activeCallRef.current?.isGroup && peerId) {
+            if (signalType === 'offer') {
+              try {
+                webrtcService.createPeerForUser(
+                  peerId,
+                  (targetId, candidate) => sendSignal(msg.callId, targetId, 'ice-candidate', candidate),
+                  (targetId, rStream) => setRemoteStreams((prev) => ({ ...prev, [targetId]: rStream })),
+                  (targetId, state) => console.log(`[GroupCall] Peer ${targetId} state:`, state)
+                );
+                const answer = await webrtcService.handleOfferAndCreateAnswerForUser(peerId, signalData);
+                sendSignal(msg.callId, peerId, 'answer', answer);
+              } catch (e) {
+                console.error('[CallContext] Failed to handle group offer:', e);
+              }
+            } else if (signalType === 'answer') {
+              await webrtcService.handleAnswerForUser(peerId, signalData);
+            } else if (signalType === 'ice-candidate') {
+              await webrtcService.addIceCandidateForUser(peerId, signalData);
+            }
+            break;
+          }
+
+          // 1:1 Direct Call Signaling
           if (signalType === 'offer') {
             if (activeCallRef.current) {
               const answer = await webrtcService.handleOfferAndCreateAnswer(signalData);
@@ -427,6 +631,8 @@ export const CallProvider = ({ children }) => {
     activeCall,
     localStream,
     remoteStream,
+    remoteStreams,
+    groupParticipants,
     isMuted,
     isVideoOff,
     isScreenSharing,
@@ -434,6 +640,7 @@ export const CallProvider = ({ children }) => {
     isMinimized,
     callStatusText,
     startCall,
+    startGroupCall,
     acceptCall,
     rejectCall,
     endCall,
@@ -454,6 +661,8 @@ export const useCall = () => {
       activeCall: null,
       localStream: null,
       remoteStream: null,
+      remoteStreams: {},
+      groupParticipants: [],
       isMuted: false,
       isVideoOff: false,
       isScreenSharing: false,
@@ -461,6 +670,7 @@ export const useCall = () => {
       isMinimized: false,
       callStatusText: '',
       startCall: () => {},
+      startGroupCall: () => {},
       acceptCall: () => {},
       rejectCall: () => {},
       endCall: () => {},

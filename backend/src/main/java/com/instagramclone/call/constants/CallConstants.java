@@ -9,10 +9,13 @@ public final class CallConstants {
 
     // STOMP WebSocket Application Destination paths
     public static final String WS_CALL_INITIATE = "/call/initiate";
+    public static final String WS_CALL_INITIATE_GROUP = "/call/group/initiate";
     public static final String WS_CALL_ANSWER = "/call/answer";
     public static final String WS_CALL_REJECT = "/call/reject";
     public static final String WS_CALL_END = "/call/end";
     public static final String WS_CALL_SIGNAL = "/call/signal";
+    public static final String WS_CALL_JOIN = "/call/join";
+    public static final String WS_CALL_LEAVE = "/call/leave";
 
     // Event Types sent over WebSocket to clients
     public static final String EVENT_INCOMING_CALL = "INCOMING_CALL";
@@ -21,6 +24,9 @@ public final class CallConstants {
     public static final String EVENT_CALL_ENDED = "CALL_ENDED";
     public static final String EVENT_CALL_BUSY = "CALL_BUSY";
     public static final String EVENT_SIGNAL = "SIGNAL";
+    public static final String EVENT_PARTICIPANT_JOINED = "PARTICIPANT_JOINED";
+    public static final String EVENT_PARTICIPANT_LEFT = "PARTICIPANT_LEFT";
+    public static final String EVENT_GROUP_CALL_STARTED = "GROUP_CALL_STARTED";
 
     // Errors
     public static final String ERR_CALL_NOT_FOUND = "Call session not found";

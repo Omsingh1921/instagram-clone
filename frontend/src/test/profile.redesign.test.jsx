@@ -39,6 +39,7 @@ vi.mock('../services/post.service', () => ({
     getUserTaggedPosts: vi.fn().mockResolvedValue({ content: [] }),
     getArchivedPosts: vi.fn().mockResolvedValue({ content: [] }),
     getRecentlyDeletedPosts: vi.fn().mockResolvedValue({ content: [] }),
+    togglePinPost: vi.fn().mockResolvedValue({ data: { isPinned: true } }),
   },
 }));
 
@@ -50,6 +51,7 @@ vi.mock('../services/reel.service', () => ({
     getArchivedReels: vi.fn().mockResolvedValue({ content: [] }),
     unarchiveReel: vi.fn().mockResolvedValue({}),
     getRecentlyDeletedReels: vi.fn().mockResolvedValue({ content: [] }),
+    togglePinReel: vi.fn().mockResolvedValue({ data: { isPinned: true } }),
   },
 }));
 
@@ -312,6 +314,47 @@ describe('ProfilePage Redesign & Existing API Integration Suite', () => {
 
     await waitFor(() => {
       expect(reelService.unarchiveReel).toHaveBeenCalledWith('archived-reel-202');
+    });
+  });
+
+  it('pins post to profile and displays corner pin badge', async () => {
+    let isPinnedState = false;
+    postService.getUserPosts.mockImplementation(() =>
+      Promise.resolve({
+        content: [
+          {
+            id: 'post-pin-1',
+            caption: 'My top memory',
+            userId: 'uuid-user-1',
+            media: [{ id: 'm-pin', mediaUrl: 'https://example.com/pin.jpg', mediaType: 'IMAGE' }],
+            likeCount: 50,
+            commentCount: 10,
+            isPinned: isPinnedState,
+          },
+        ],
+      })
+    );
+    postService.togglePinPost.mockImplementation(() => {
+      isPinnedState = !isPinnedState;
+      return Promise.resolve({ data: { isPinned: isPinnedState } });
+    });
+
+    renderProfile();
+
+    const optsBtn = await screen.findByRole('button', { name: /Post options/i });
+    expect(optsBtn).toBeInTheDocument();
+    fireEvent.click(optsBtn);
+
+    const pinBtn = await screen.findByRole('button', { name: /Pin to your profile/i });
+    expect(pinBtn).toBeInTheDocument();
+    fireEvent.click(pinBtn);
+
+    await waitFor(() => {
+      expect(postService.togglePinPost).toHaveBeenCalledWith('post-pin-1');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Pinned to profile')).toBeInTheDocument();
     });
   });
 });

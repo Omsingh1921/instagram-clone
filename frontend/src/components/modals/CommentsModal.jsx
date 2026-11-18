@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Bookmark, Send, Trash2, MessageSquare, MoreHorizontal, User, RotateCw } from 'lucide-react';
+import { Heart, Bookmark, Send, Trash2, MessageSquare, MoreHorizontal, User, RotateCw, Pin } from 'lucide-react';
 import Modal from '../common/Modal';
 import Avatar from '../common/Avatar';
 import { SkeletonUserRows } from '../ui/Skeleton';
@@ -76,6 +76,29 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
       if (onPostUpdated) onPostUpdated();
     } catch (err) {
       showError(err.message || `Failed to delete ${itemType}`);
+    }
+  };
+
+  const handleTogglePin = async () => {
+    try {
+      if (isReel) {
+        const res = await reelService.togglePinReel(postId);
+        const pinned = Boolean(res?.data?.isPinned ?? res?.isPinned ?? !post?.isPinned);
+        setPost((prev) => (prev ? { ...prev, isPinned: pinned } : prev));
+        showSuccess(pinned ? 'Reel pinned to your profile' : 'Reel unpinned from your profile');
+        window.dispatchEvent(new CustomEvent('reel:refresh'));
+      } else {
+        const res = await postService.togglePinPost(postId);
+        const pinned = Boolean(res?.data?.isPinned ?? res?.isPinned ?? !post?.isPinned);
+        setPost((prev) => (prev ? { ...prev, isPinned: pinned } : prev));
+        showSuccess(pinned ? 'Post pinned to your profile' : 'Post unpinned from your profile');
+        window.dispatchEvent(new CustomEvent('post:refresh'));
+        window.dispatchEvent(new CustomEvent('feed:refresh'));
+      }
+      setOptionsOpen(false);
+      if (onPostUpdated) onPostUpdated();
+    } catch (err) {
+      showError(err.message || 'Failed to update pin status');
     }
   };
 
@@ -569,6 +592,16 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
       {optionsOpen && (
         <div className="comments-options-backdrop" onClick={() => setOptionsOpen(false)}>
           <div className="comments-options-dialog" onClick={(e) => e.stopPropagation()}>
+            {isPostAuthor && (
+              <button
+                type="button"
+                className="comments-option-item"
+                onClick={handleTogglePin}
+              >
+                <Pin size={16} />
+                <span>{post?.isPinned ? 'Unpin from your profile' : 'Pin to your profile'}</span>
+              </button>
+            )}
             {canDeletePost && (
               <button
                 type="button"

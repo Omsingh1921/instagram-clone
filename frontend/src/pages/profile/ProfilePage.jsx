@@ -817,6 +817,45 @@ export const ProfilePage = () => {
     }
   };
 
+  const handleTogglePinGridPost = async (postId) => {
+    try {
+      const res = await postService.togglePinPost(postId);
+      const isPinned = Boolean(res?.data?.isPinned ?? res?.isPinned);
+      showSuccess(isPinned ? 'Post pinned to your profile' : 'Post unpinned from your profile');
+      setGridMenuPost(null);
+      setPosts((prev) => {
+        const updated = prev.map((p) => (p.id === postId ? { ...p, isPinned } : p));
+        return [...updated].sort((a, b) => {
+          if (Boolean(a.isPinned) === Boolean(b.isPinned)) return 0;
+          return a.isPinned ? -1 : 1;
+        });
+      });
+      window.dispatchEvent(new CustomEvent('post:refresh'));
+      window.dispatchEvent(new CustomEvent('feed:refresh'));
+    } catch (err) {
+      showError(err.message || 'Failed to toggle pin post');
+    }
+  };
+
+  const handleTogglePinGridReel = async (reelId) => {
+    try {
+      const res = await reelService.togglePinReel(reelId);
+      const isPinned = Boolean(res?.data?.isPinned ?? res?.isPinned);
+      showSuccess(isPinned ? 'Reel pinned to your profile' : 'Reel unpinned from your profile');
+      setGridMenuReel(null);
+      setReels((prev) => {
+        const updated = prev.map((r) => (r.id === reelId ? { ...r, isPinned } : r));
+        return [...updated].sort((a, b) => {
+          if (Boolean(a.isPinned) === Boolean(b.isPinned)) return 0;
+          return a.isPinned ? -1 : 1;
+        });
+      });
+      window.dispatchEvent(new CustomEvent('reel:refresh'));
+    } catch (err) {
+      showError(err.message || 'Failed to toggle pin reel');
+    }
+  };
+
   const handleToggleArchiveGridPost = async (postId) => {
     try {
       const res = await postService.toggleArchivePost(postId);
@@ -1188,6 +1227,14 @@ export const ProfilePage = () => {
                         <div className="profile-grid-dropdown-menu" onClick={(e) => e.stopPropagation()}>
                           <button
                             type="button"
+                            className="profile-dropdown-item"
+                            onClick={() => handleTogglePinGridPost(post.id)}
+                          >
+                            <Pin size={14} />
+                            <span>{post.isPinned ? 'Unpin from your profile' : 'Pin to your profile'}</span>
+                          </button>
+                          <button
+                            type="button"
                             className="profile-dropdown-item danger"
                             onClick={() => handleDeleteGridPost(post.id)}
                           >
@@ -1292,9 +1339,14 @@ export const ProfilePage = () => {
                 playsInline
                 preload="none"
               />
-              {/* Top-Right Badges Bar: Reel Options */}
-              {isReelOwner && (
-                <div className="profile-grid-top-badges" onClick={(e) => e.stopPropagation()}>
+              {/* Top-Right Badges Bar: Reel Options & Pin badge */}
+              <div className="profile-grid-top-badges" onClick={(e) => e.stopPropagation()}>
+                {reel.isPinned && (
+                  <div className="profile-corner-badge pinned" title="Pinned to profile">
+                    <Pin size={13} color="#fff" />
+                  </div>
+                )}
+                {isReelOwner && (
                   <div className="profile-grid-opts-wrapper" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
@@ -1311,6 +1363,14 @@ export const ProfilePage = () => {
 
                     {gridMenuReel?.id === reel.id && (
                       <div className="profile-grid-dropdown-menu" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="profile-dropdown-item"
+                          onClick={() => handleTogglePinGridReel(reel.id)}
+                        >
+                          <Pin size={14} />
+                          <span>{reel.isPinned ? 'Unpin from your profile' : 'Pin to your profile'}</span>
+                        </button>
                         <button
                           type="button"
                           className="profile-dropdown-item danger"
@@ -1343,8 +1403,8 @@ export const ProfilePage = () => {
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
 
               <div className="profile-reel-view-count">
                 <Play size={11} fill="#fff" strokeWidth={0} />

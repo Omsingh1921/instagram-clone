@@ -34,6 +34,10 @@ vi.mock('../services/adminConfig.service', () => ({
     updateDynamicConfig: vi.fn(),
     resetDynamicConfig: vi.fn(),
     resetAllDynamicConfigs: vi.fn(),
+
+    getFeedConfig: vi.fn(),
+    updateFeedConfig: vi.fn(),
+    resetFeedConfig: vi.fn(),
   },
 }));
 
@@ -108,6 +112,23 @@ const mockDynamicConfigs = [
   },
 ];
 
+const mockFeedConfig = {
+  weightShare: 4.0,
+  weightSave: 3.0,
+  weightComment: 2.5,
+  weightLike: 1.0,
+  authorAffinityWeight: 25.0,
+  topicAffinityWeight: 20.0,
+  followingBonus: 15.0,
+  recencyGravityDecay: 0.8,
+  antiClusteringWindow: 4,
+  postsPerReel: 3,
+  seenPostPenaltyMultiplier: 0.25,
+  suggestedCreatorsInterval: 7,
+  allCaughtUpHoursThreshold: 72,
+  isActive: true,
+};
+
 describe('AdminConfigHubPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -117,6 +138,7 @@ describe('AdminConfigHubPage Component', () => {
     adminConfigService.getFeatureFlagConfig.mockResolvedValue({ data: mockFeatures });
     adminConfigService.getModerationConfig.mockResolvedValue({ data: mockModeration });
     adminConfigService.getDynamicConfigs.mockResolvedValue({ data: mockDynamicConfigs });
+    adminConfigService.getFeedConfig.mockResolvedValue({ data: mockFeedConfig });
   });
 
   const renderComponent = () => {
@@ -299,6 +321,70 @@ describe('AdminConfigHubPage Component', () => {
 
     await waitFor(() => {
       expect(adminConfigService.resetAllDynamicConfigs).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('switches to Feed Algorithm & Ranking tab and renders all tuning controls', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('auth.signup_otp_expiry_minutes')).toBeInTheDocument();
+    });
+
+    const feedTabBtn = screen.getByRole('button', { name: /Feed Algorithm & Ranking/i });
+    fireEvent.click(feedTabBtn);
+
+    expect(screen.getByText('Feed Ranking Algorithm & Pacing Controls')).toBeInTheDocument();
+    expect(screen.getByText(/Share Weight/i)).toBeInTheDocument();
+    expect(screen.getByText(/Save \/ Bookmark Weight/i)).toBeInTheDocument();
+    expect(screen.getByText(/Comment Weight/i)).toBeInTheDocument();
+    expect(screen.getByText(/Like Weight/i)).toBeInTheDocument();
+    expect(screen.getByText(/Author Affinity Weight/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recency Decay Gravity/i)).toBeInTheDocument();
+    expect(screen.getByText(/Posts Per Reel Injected/i)).toBeInTheDocument();
+  });
+
+  it('updates feed algorithm weights and saves configuration', async () => {
+    adminConfigService.updateFeedConfig.mockResolvedValue({
+      data: { ...mockFeedConfig, weightShare: 5.5 },
+    });
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('auth.signup_otp_expiry_minutes')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Feed Algorithm & Ranking/i }));
+
+    const saveBtn = screen.getByRole('button', { name: /Save Feed Algorithm Configuration/i });
+    expect(saveBtn).toBeInTheDocument();
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(adminConfigService.updateFeedConfig).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('resets feed algorithm configuration to factory defaults when requested', async () => {
+    adminConfigService.resetFeedConfig.mockResolvedValue({
+      data: mockFeedConfig,
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('auth.signup_otp_expiry_minutes')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Feed Algorithm & Ranking/i }));
+
+    const resetTabBtn = screen.getByRole('button', { name: /Reset Tab to Default/i });
+    fireEvent.click(resetTabBtn);
+
+    await waitFor(() => {
+      expect(adminConfigService.resetFeedConfig).toHaveBeenCalledTimes(1);
     });
   });
 });

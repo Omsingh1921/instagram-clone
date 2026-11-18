@@ -18,6 +18,7 @@ import {
   Sun,
   ArrowLeftRight,
   X,
+  Sparkles,
 } from 'lucide-react';
 import { InstagramGlyph } from '../common/InstagramLogo';
 import Avatar from '../common/Avatar';
@@ -297,11 +298,19 @@ export const AdminConsoleSidebar = ({
             <div className="admin-subnav-list">
               <button
                 type="button"
-                className={`admin-subnav-item ${location.pathname === '/admin/configs' ? 'active' : ''}`}
+                className={`admin-subnav-item ${location.pathname === '/admin/configs' && !location.search.includes('tab=FEED_ALGORITHM') ? 'active' : ''}`}
                 onClick={() => handleNav('/admin/configs')}
               >
                 <Sliders size={14} />
                 <span>System Configs</span>
+              </button>
+              <button
+                type="button"
+                className={`admin-subnav-item ${location.pathname === '/admin/configs' && location.search.includes('tab=FEED_ALGORITHM') ? 'active' : ''}`}
+                onClick={() => handleNav('/admin/configs?tab=FEED_ALGORITHM')}
+              >
+                <Sparkles size={14} />
+                <span>Feed Algorithm</span>
               </button>
               <button
                 type="button"

@@ -100,6 +100,19 @@ export const adminConfigService = {
   getPublicDynamicConfigs: async () => {
     return await api.get('/dynamic-config/public');
   },
+
+  // ==================== 7. FEED ALGORITHM & RANKING CONFIG ====================
+  getFeedConfig: async () => {
+    return await api.get('/admin/feed/config');
+  },
+
+  updateFeedConfig: async (configData) => {
+    return await api.put('/admin/feed/config', configData);
+  },
+
+  resetFeedConfig: async () => {
+    return await api.post('/admin/feed/config/reset');
+  },
 };
 
 export default adminConfigService;

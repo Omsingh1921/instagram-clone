@@ -22,6 +22,7 @@ vi.mock('../services/story.service', () => ({
     getStoryArchive: vi.fn().mockResolvedValue({ data: { content: [] } }),
     sharePostToStory: vi.fn().mockResolvedValue({ data: { id: 'story-new' } }),
     shareReelToStory: vi.fn().mockResolvedValue({ data: { id: 'story-new-2' } }),
+    shareMentionedStory: vi.fn().mockResolvedValue({ data: { id: 'story-reshared' } }),
     reportStory: vi.fn().mockResolvedValue({ success: true }),
     getStoryInsights: vi.fn().mockResolvedValue({
       data: {
@@ -51,6 +52,7 @@ describe('Stories Comprehensive Frontend Features', () => {
     expect(typeof storyService.getStoryArchive).toBe('function');
     expect(typeof storyService.sharePostToStory).toBe('function');
     expect(typeof storyService.shareReelToStory).toBe('function');
+    expect(typeof storyService.shareMentionedStory).toBe('function');
     expect(typeof storyService.reportStory).toBe('function');
     expect(typeof storyService.getStoryInsights).toBe('function');
   });
@@ -151,5 +153,60 @@ describe('Stories Comprehensive Frontend Features', () => {
     // Check for close friends ring class
     const cfRing = container.querySelector('.avatar-ring-close-friends');
     expect(cfRing).toBeInTheDocument();
+  });
+
+  it('4. StoryViewerModal renders "Add this to your story" button when current user is mentioned and reshares successfully', async () => {
+    localStorage.setItem(
+      'user',
+      JSON.stringify({ id: 'user-me-123', username: 'testuser' })
+    );
+
+    const mockGroups = [
+      {
+        author: { id: 'other-user-999', username: 'best_friend', avatarUrl: 'https://example.com/pic.jpg' },
+        stories: [
+          {
+            id: 'story-mention-1',
+            mediaUrl: 'https://example.com/story.jpg',
+            mediaType: 'IMAGE',
+            createdAt: new Date().toISOString(),
+            mentions: [
+              { userId: 'user-me-123', username: 'testuser', xPercent: 50, yPercent: 40 }
+            ],
+          },
+        ],
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <StoryViewerModal
+              isOpen={true}
+              storyGroups={mockGroups}
+              initialGroupIdx={0}
+              onClose={vi.fn()}
+            />
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // Verify mention sticker on canvas
+    expect(screen.getByText('@testuser')).toBeInTheDocument();
+
+    // Verify "Add this to your story" button is present
+    const addStoryBtn = screen.getByRole('button', { name: /Add this to your story/i });
+    expect(addStoryBtn).toBeInTheDocument();
+
+    // Click "Add this to your story"
+    fireEvent.click(addStoryBtn);
+    expect(storyService.shareMentionedStory).toHaveBeenCalledWith('story-mention-1');
+
+    // Wait for the button state to update
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Added to your story/i })).toBeInTheDocument();
+    });
   });
 });

@@ -1004,4 +1004,118 @@
   transition: width 0.3s ease;
 }
 
+/* ==========================================================================
+   Story Mentions & Resharing ("Add to Your Story")
+   ========================================================================== */
+.story-add-mention-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 8px;
+  z-index: 22;
+}
+
+.story-add-mention-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: rgba(18, 18, 18, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.story-add-mention-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.96);
+  color: #111111;
+  border-color: transparent;
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.5);
+}
+
+.story-add-mention-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.story-add-mention-btn:disabled {
+  opacity: 0.75;
+  cursor: default;
+}
+
+.story-add-mention-btn.is-shared {
+  background: rgba(16, 185, 129, 0.88);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #ffffff;
+}
+
+.story-add-mention-check {
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.story-mentions-container {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 21;
+}
+
+.story-mention-badge {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 5px 11px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+  transition: transform 0.16s ease, background 0.16s ease;
+  user-select: none;
+}
+
+.story-mention-badge:hover {
+  background: rgba(0, 0, 0, 0.88);
+  transform: scale(1.06);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.story-repost-tag {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-left: 6px;
+  letter-spacing: -0.2px;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
 

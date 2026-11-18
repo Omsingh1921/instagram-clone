@@ -12,6 +12,7 @@ import {
   Settings,
   Send,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import Avatar from '../components/common/Avatar';
 import CommentsModal from '../components/modals/CommentsModal';
@@ -20,6 +21,7 @@ import { SkeletonNotificationSections } from '../components/ui/Skeleton';
 import notificationService from '../services/notification.service';
 import followService from '../services/follow.service';
 import chatService from '../services/chat.service';
+import storyService from '../services/story.service';
 import useNotificationStore from '../store/useNotificationStore';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -84,7 +86,9 @@ const renderNotifText = (n) => {
       return 'accepted your follow request.';
     case 'MENTION':
     case 'USER_MENTIONED':
-      return 'mentioned you in a post.';
+      return n.storyId || n.referenceType === 'STORY'
+        ? 'mentioned you in their story.'
+        : 'mentioned you in a post.';
     case 'USER_TAGGED':
       return 'tagged you in a post.';
     case 'CONTENT_REMOVED':
@@ -110,6 +114,8 @@ export const NotificationsPage = () => {
   const [deletingId, setDeletingId] = useState(null);
   const [processingRequestId, setProcessingRequestId] = useState(null);
   const [activePostId, setActivePostId] = useState(null);
+  const [processingMentionStoryId, setProcessingMentionStoryId] = useState(null);
+  const [addedMentionStories, setAddedMentionStories] = useState({});
 
   const { isFollowing, toggleFollow } = useAuth();
   const { showSuccess, showError } = useToast();
@@ -309,6 +315,30 @@ export const NotificationsPage = () => {
     }
   };
 
+  const handleAddMentionedStory = async (e, storyId, notifId = null) => {
+    e.stopPropagation();
+    if (!storyId || processingMentionStoryId === storyId || addedMentionStories[storyId]) return;
+    try {
+      setProcessingMentionStoryId(storyId);
+      await storyService.shareMentionedStory(storyId);
+      setAddedMentionStories((prev) => ({ ...prev, [storyId]: true }));
+      showSuccess('Story added to your profile!');
+      window.dispatchEvent(new CustomEvent('story:refresh'));
+      if (notifId) {
+        notificationService.markAsRead(notifId).catch(() => {});
+        useNotificationStore.getState().markAsRead(notifId);
+      }
+    } catch (err) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to add story to your profile';
+      showError(errorMsg);
+    } finally {
+      setProcessingMentionStoryId(null);
+    }
+  };
+
   const filteredNotifications = useMemo(
     () => notifications.filter((n) => matchesNotificationFilter(n, activeFilter)),
     [notifications, activeFilter]
@@ -400,7 +430,28 @@ export const NotificationsPage = () => {
         </div>
 
         <div className="notification-side-action">
-          {notif.type === 'FOLLOW' || notif.type === 'FOLLOW_REQUEST_ACCEPTED' ? (
+          {(notif.type === 'USER_MENTIONED' || notif.type === 'MENTION') && (notif.storyId || notif.referenceType === 'STORY') ? (
+            <button
+              type="button"
+              className={`notif-action-btn ${
+                addedMentionStories[notif.storyId || notif.referenceId] ? 'secondary' : 'primary'
+              } notif-add-story-btn`}
+              disabled={
+                processingMentionStoryId === (notif.storyId || notif.referenceId) ||
+                addedMentionStories[notif.storyId || notif.referenceId]
+              }
+              onClick={(e) => handleAddMentionedStory(e, notif.storyId || notif.referenceId, notif.id)}
+            >
+              <Plus size={13} />
+              <span>
+                {addedMentionStories[notif.storyId || notif.referenceId]
+                  ? 'Added'
+                  : processingMentionStoryId === (notif.storyId || notif.referenceId)
+                  ? 'Adding...'
+                  : 'Add to Story'}
+              </span>
+            </button>
+          ) : notif.type === 'FOLLOW' || notif.type === 'FOLLOW_REQUEST_ACCEPTED' ? (
             <>
               <button
                 type="button"

@@ -25,6 +25,7 @@ import {
   VolumeX,
   Edit2,
   MinusCircle,
+  Plus,
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import { SkeletonUserRows } from '../ui/Skeleton';
@@ -96,6 +97,8 @@ export const StoryViewerModal = ({
   const [showEditHighlight, setShowEditHighlight] = useState(false);
   const [showCreateHighlight, setShowCreateHighlight] = useState(false);
   const [initialStoryForCreate, setInitialStoryForCreate] = useState(null);
+  const [sharingMention, setSharingMention] = useState(false);
+  const [sharedStoriesMap, setSharedStoriesMap] = useState({});
 
   const startTimeRef = useRef(null);
   const elapsedBeforePauseRef = useRef(0);
@@ -128,6 +131,18 @@ export const StoryViewerModal = ({
   const isHighlight = Boolean(currentGroup?.isHighlight);
   const highlightId = currentGroup?.highlightId;
   const highlightTitle = currentGroup?.highlightTitle;
+
+  const isMentionedInCurrentStory = Boolean(
+    !isMyStory &&
+    currentUser &&
+    (currentStory?.mentions || []).some((m) => {
+      const myId = String(currentUser.id || currentUser.userId || '');
+      const myUsername = (currentUser.username || '').toLowerCase();
+      const mId = String(m.id || m.userId || m.user?.id || '');
+      const mUsername = (m.username || m.user?.username || '').toLowerCase();
+      return (myId && mId && myId === mId) || (myUsername && mUsername && myUsername === mUsername);
+    })
+  );
 
   // Reset states when active story changes
   useEffect(() => {
@@ -758,6 +773,29 @@ export const StoryViewerModal = ({
     }
   };
 
+  const handleShareMentionedStory = async (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    if (!currentStory?.id || sharingMention || sharedStoriesMap[currentStory.id]) return;
+    try {
+      setSharingMention(true);
+      await storyService.shareMentionedStory(currentStory.id);
+      setSharedStoriesMap((prev) => ({ ...prev, [currentStory.id]: true }));
+      showSuccess('Added to your story!');
+      window.dispatchEvent(new CustomEvent('story:refresh'));
+    } catch (err) {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to add story to your profile';
+      showError(errorMsg);
+    } finally {
+      setSharingMention(false);
+    }
+  };
+
   if (!isOpen || !currentGroup || !currentStory) return null;
 
   return (
@@ -831,6 +869,11 @@ export const StoryViewerModal = ({
                 {currentStory.isCloseFriends && (
                   <span className="story-close-friends-badge">
                     <Star size={10} fill="#fff" /> Close Friends
+                  </span>
+                )}
+                {currentStory.caption?.startsWith('Reposted from') && (
+                  <span className="story-repost-tag" title={currentStory.caption}>
+                    {currentStory.caption}
                   </span>
                 )}
               </div>
@@ -1504,6 +1547,41 @@ export const StoryViewerModal = ({
             </div>
           )}
 
+          {/* Mention Stickers Overlay */}
+          {currentStory?.mentions && currentStory.mentions.length > 0 && (
+            <div className="story-mentions-container" onClick={(e) => e.stopPropagation()}>
+              {currentStory.mentions.map((m, idx) => {
+                const hasPos = m.xPercent != null && m.yPercent != null;
+                return (
+                  <div
+                    key={m.userId || m.username || idx}
+                    className="story-mention-badge"
+                    style={
+                      hasPos
+                        ? {
+                            position: 'absolute',
+                            left: `${m.xPercent}%`,
+                            top: `${m.yPercent}%`,
+                            transform: 'translate(-50%, -50%)',
+                          }
+                        : {}
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (m.userId || m.username) {
+                        onClose?.();
+                        navigate(`/profile/${m.userId || m.username}`);
+                      }
+                    }}
+                    title={`View @${m.username || 'user'}`}
+                  >
+                    <span>@{m.username}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           {/* Add Yours Sticker */}
           {currentStory?.addYours && (
             <div className="story-add-yours-sticker" onClick={(e) => e.stopPropagation()}>
@@ -1595,6 +1673,33 @@ export const StoryViewerModal = ({
             </div>
           ) : (
             <>
+              {/* Add Mentioned Story to Your Story */}
+              {isMentionedInCurrentStory && (
+                <div className="story-add-mention-wrapper">
+                  <button
+                    type="button"
+                    className={`story-add-mention-btn ${sharedStoriesMap[currentStory.id] ? 'is-shared' : ''}`}
+                    onClick={handleShareMentionedStory}
+                    disabled={sharingMention || sharedStoriesMap[currentStory.id]}
+                    aria-label={sharedStoriesMap[currentStory.id] ? 'Added to your story' : 'Add this to your story'}
+                  >
+                    {sharedStoriesMap[currentStory.id] ? (
+                      <>
+                        <span className="story-add-mention-check">✓</span>
+                        <span>Added to your story</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={15} />
+                        <span>
+                          {sharingMention ? 'Adding to story...' : 'Add this to your story'}
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
               {/* Quick Emoji Reactions Bar */}
               <div className="story-quick-reactions">
                 {QUICK_EMOJIS.map((emoji) => (

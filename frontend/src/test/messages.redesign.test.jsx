@@ -34,6 +34,7 @@ vi.mock('../services/story.service', () => ({
   default: {
     getStoryFeed: vi.fn().mockResolvedValue({ data: [] }),
     getUserStories: vi.fn().mockResolvedValue({ data: { stories: [] } }),
+    shareMentionedStory: vi.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -92,7 +93,7 @@ describe('MessagesPage Redesign Suite', () => {
     expect(await screen.findByText('Share a thought...')).toBeTruthy();
     expect(screen.getByText('Your note')).toBeTruthy();
 
-    expect(screen.getByRole('tab', { name: 'Messages' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Primary' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Requests' })).toHaveAttribute('aria-selected', 'false');
 
     expect(await screen.findByText('No messages yet')).toBeTruthy();
@@ -112,7 +113,7 @@ describe('MessagesPage Redesign Suite', () => {
     expect(screen.getByRole('tab', { name: 'Requests' })).toHaveAttribute('aria-selected', 'true');
     expect(await screen.findByText('No message requests')).toBeTruthy();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Messages' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Primary' }));
     expect(await screen.findByText('No messages yet')).toBeTruthy();
   });
 
@@ -237,7 +238,7 @@ describe('MessagesPage Redesign Suite', () => {
     await waitFor(() => {
       expect(chatService.acceptMessageRequest).toHaveBeenCalledWith(requestConv.id);
     });
-    expect(screen.getByRole('tab', { name: 'Messages' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Primary' })).toHaveAttribute('aria-selected', 'true');
     expect((await screen.findAllByText('Stranger User')).length).toBeGreaterThanOrEqual(2);
     expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
   });
@@ -281,6 +282,60 @@ describe('MessagesPage Redesign Suite', () => {
     await waitFor(() => {
       expect(withStories.container.querySelectorAll('.note-avatar-ring')).toHaveLength(2);
     });
+  });
+
+  it('renders story mention DM card with "Mentioned you in their story" and "Add this to your story" button', async () => {
+    const mentionConv = {
+      id: 'conv-mention-1',
+      isGroup: false,
+      folder: 'PRIMARY',
+      members: [
+        { id: 'user-creator', username: 'story_creator', displayName: 'Creator' },
+        { id: 'u-1', username: 'test', displayName: 'Test User' },
+      ],
+      lastMessage: {
+        id: 'msg-mention-1',
+        sender: { id: 'user-creator', username: 'story_creator' },
+        messageType: 'STORY_SHARE',
+        content: 'Mentioned you in their story',
+        mediaUrl: 'https://cloudinary.com/test.jpg#storyId=story-999&mediaType=IMAGE',
+        createdAt: new Date().toISOString(),
+      },
+      unreadCount: 0,
+    };
+
+    chatService.getConversations.mockResolvedValue({ data: { content: [mentionConv] } });
+    chatService.getMessages.mockResolvedValue({
+      data: {
+        content: [
+          {
+            id: 'msg-mention-1',
+            sender: { id: 'user-creator', username: 'story_creator' },
+            messageType: 'STORY_SHARE',
+            content: 'Mentioned you in their story',
+            mediaUrl: 'https://cloudinary.com/test.jpg#storyId=story-999&mediaType=IMAGE',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+        totalPages: 1,
+        last: true,
+      },
+    });
+
+    renderMessages();
+    await screen.findByText('Creator');
+    expect(screen.getByText(/Mentioned you in their story/i)).toBeTruthy();
+
+    fireEvent.click(screen.getByText('Creator'));
+
+    const addBtn = await screen.findByRole('button', { name: /Add this to your story/i });
+    expect(addBtn).toBeTruthy();
+
+    fireEvent.click(addBtn);
+    await waitFor(() => {
+      expect(storyService.shareMentionedStory).toHaveBeenCalledWith('story-999');
+    });
+    expect((await screen.findAllByText(/Added to your story/i)).length).toBeGreaterThanOrEqual(1);
   });
 });
 

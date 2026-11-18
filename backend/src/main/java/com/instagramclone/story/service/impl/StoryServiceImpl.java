@@ -410,7 +410,22 @@ public class StoryServiceImpl implements IStoryService {
                             currentUserId,
                             NotificationType.USER_MENTIONED,
                             null,
-                            null);
+                            null,
+                            null,
+                            saved.getMediaUrl());
+
+                    // Instagram Parity: Send an automated story mention DM with preview & "Add to Story" button
+                    try {
+                        ConversationResponse conversation = chatService.getOrCreateDirectConversation(mentionedUser.getId());
+                        SendMessageRequest sendRequest = SendMessageRequest.builder()
+                                .content("Mentioned you in their story")
+                                .messageType(MessageType.STORY_SHARE)
+                                .mediaUrl(saved.getMediaUrl() + "#storyId=" + saved.getId() + "&mediaType=" + saved.getMediaType())
+                                .build();
+                        chatService.sendMessage(conversation.getId(), sendRequest);
+                    } catch (Exception e) {
+                        log.warn("Failed to send story mention direct message to user {}: {}", mentionedUser.getId(), e.getMessage());
+                    }
                 });
             }
         }

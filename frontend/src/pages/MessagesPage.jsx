@@ -46,6 +46,7 @@ import userService from '../services/user.service';
 import followService from '../services/follow.service';
 import mediaService from '../services/media.service';
 import stompClient from '../services/websocket';
+import storyService from '../services/story.service';
 import NotesTray from '../components/notes/NotesTray';
 import VoiceNotePlayer from '../components/chat/VoiceNotePlayer';
 import SharedPostCard from '../components/chat/SharedPostCard';
@@ -114,6 +115,8 @@ export const MessagesPage = () => {
   const [viewOnceModalData, setViewOnceModalData] = useState(null);
   const [viewOnceCountdown, setViewOnceCountdown] = useState(10);
   const [storyPreviewModalUrl, setStoryPreviewModalUrl] = useState(null);
+  const [sharedMentionStories, setSharedMentionStories] = useState({});
+  const [sharingMentionStoryId, setSharingMentionStoryId] = useState(null);
   const mediaFileInputRef = useRef(null);
   const viewOnceTimerRef = useRef(null);
 
@@ -1736,8 +1739,13 @@ export const MessagesPage = () => {
                           text = last.content || 'Audio call ended';
                         } else if (isStory) {
                           const mine = isMyMessage(last);
-                          const snippet = last.content ? `: ${last.content}` : '';
-                          text = mine ? `Replied to story${snippet}` : `Replied to your story${snippet}`;
+                          const isMention = last.content?.toLowerCase().includes('mentioned you') || last.content?.toLowerCase().includes('mention');
+                          if (isMention) {
+                            text = mine ? `Mentioned @${other?.username || 'user'} in your story` : 'Mentioned you in their story';
+                          } else {
+                            const snippet = last.content ? `: ${last.content}` : '';
+                            text = mine ? `Replied to story${snippet}` : `Replied to your story${snippet}`;
+                          }
                         } else if (last.messageType === 'IMAGE' || last.messageType === 'VIDEO' || (last.mediaUrl && !last.mediaUrl.startsWith('call:'))) {
                           const mine = isMyMessage(last);
                           if (mine) {
@@ -2311,6 +2319,8 @@ export const MessagesPage = () => {
                             const [cleanUrl, hash] = rawUrl.split('#');
                             const params = new URLSearchParams(hash || '');
                             const isVideo = params.get('mediaType') === 'VIDEO' || Boolean(cleanUrl.match(/\.(mp4|webm|mov)(\?|$)/i));
+                            const isMention = msg.content && (msg.content.toLowerCase().includes('mentioned you') || msg.content.toLowerCase().includes('mention'));
+                            const storyId = params.get('storyId');
                             const isEmoji = msg.content && typeof msg.content === 'string' &&
                               /^(\p{Extended_Pictographic}|\u200D|\uFE0F|\u20E3|\u{1F3FB}-\u{1F3FF}){1,5}$/u.test(msg.content.trim());
 
@@ -2319,9 +2329,11 @@ export const MessagesPage = () => {
                                 <div className="story-dm-badge-header">
                                   <span className="story-dm-gradient-dot" />
                                   <span>
-                                    {mine
-                                      ? (isEmoji ? 'Reacted to their story' : 'Replied to story')
-                                      : (isEmoji ? 'Reacted to your story' : 'Replied to your story')}
+                                    {isMention
+                                      ? (mine ? `You mentioned @${other?.username || 'user'} in your story` : 'Mentioned you in their story')
+                                      : mine
+                                        ? (isEmoji ? 'Reacted to their story' : 'Replied to story')
+                                        : (isEmoji ? 'Reacted to your story' : 'Replied to your story')}
                                   </span>
                                 </div>
 
@@ -2352,15 +2364,54 @@ export const MessagesPage = () => {
                                   </div>
                                 )}
 
-                                {isEmoji ? (
+                                {!mine && isMention && storyId && (
+                                  <button
+                                    type="button"
+                                    className={`story-dm-add-story-btn ${sharedMentionStories[storyId] ? 'shared' : ''}`}
+                                    onClick={async (e) => {
+                                      e.stopPropagation();
+                                      if (sharedMentionStories[storyId] || sharingMentionStoryId === storyId) return;
+                                      try {
+                                        setSharingMentionStoryId(storyId);
+                                        await storyService.shareMentionedStory(storyId);
+                                        setSharedMentionStories((prev) => ({ ...prev, [storyId]: true }));
+                                        showSuccess('Added to your story!');
+                                        window.dispatchEvent(new CustomEvent('story:refresh'));
+                                      } catch (err) {
+                                        const errorMsg =
+                                          err?.response?.data?.message ||
+                                          err?.message ||
+                                          'Failed to add story to your profile';
+                                        showError(errorMsg);
+                                      } finally {
+                                        setSharingMentionStoryId(null);
+                                      }
+                                    }}
+                                    disabled={sharedMentionStories[storyId] || sharingMentionStoryId === storyId}
+                                  >
+                                    {sharedMentionStories[storyId] ? (
+                                      <>
+                                        <Check size={13} />
+                                        <span>Added to your story</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Plus size={13} />
+                                        <span>Add this to your story</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+
+                                {!isMention && isEmoji ? (
                                   <div className="story-dm-emoji-reaction">
                                     {msg.content}
                                   </div>
-                                ) : (
+                                ) : !isMention && msg.content ? (
                                   <div className="story-dm-comment-bubble">
                                     {msg.content}
                                   </div>
-                                )}
+                                ) : null}
                               </div>
                             );
                           })()

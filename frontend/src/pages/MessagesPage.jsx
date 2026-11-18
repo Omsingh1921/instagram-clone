@@ -1494,7 +1494,9 @@ export const MessagesPage = () => {
   const isGroup = activeConversation?.type === 'GROUP';
   const groupDisplayName = isGroup
     ? (activeConversation.name || (activeConversation.members || []).map((m) => m.username).join(', ') || 'Group Chat')
-    : (otherMember?.displayName || otherMember?.username || 'User');
+    : ((otherMember?.displayName && otherMember.displayName.toLowerCase() !== currentUsername?.toLowerCase())
+        ? otherMember.displayName
+        : (otherMember?.username || otherMember?.displayName || 'User'));
 
   // Find index of latest message received from other party
   const lastTheirsIndex = messages.map((m) => !isMyMessage(m)).lastIndexOf(true);
@@ -1675,7 +1677,9 @@ export const MessagesPage = () => {
               const isConvGroup = conv.type === 'GROUP';
               const title = isConvGroup
                 ? (conv.name || (conv.members || []).map((m) => m.username).join(', ') || 'Group Chat')
-                : (other.displayName || other.username || 'User');
+                : ((other.displayName && other.displayName.toLowerCase() !== currentUsername?.toLowerCase())
+                    ? other.displayName
+                    : (other.username || other.displayName || 'User'));
 
               return (
                 <div
@@ -2330,7 +2334,7 @@ export const MessagesPage = () => {
                                   <span className="story-dm-gradient-dot" />
                                   <span>
                                     {isMention
-                                      ? (mine ? `You mentioned @${other?.username || 'user'} in your story` : 'Mentioned you in their story')
+                                      ? (mine ? `You mentioned @${otherMember?.username || 'user'} in your story` : 'Mentioned you in their story')
                                       : mine
                                         ? (isEmoji ? 'Reacted to their story' : 'Replied to story')
                                         : (isEmoji ? 'Reacted to your story' : 'Replied to your story')}

@@ -608,9 +608,9 @@ export const MessagesPage = () => {
     // Check if there is an active call right now
     callService.getActiveGroupCall(convId)
       .then((res) => {
-        const data = res?.data || res;
-        if (data && data.status !== 'ENDED') {
-          setActiveGroupCallBanner(data);
+        const session = res && Object.prototype.hasOwnProperty.call(res, 'data') ? res.data : res;
+        if (session && session.id && session.status !== 'ENDED' && session.status !== 'MISSED') {
+          setActiveGroupCallBanner(session);
         } else {
           setActiveGroupCallBanner(null);
         }
@@ -619,11 +619,11 @@ export const MessagesPage = () => {
 
     // Subscribe to group call status events on this conversation
     const unsub = stompClient.subscribe(`/topic/conversations/${convId}/call`, (event) => {
-      if (!event) return;
+      if (!event || !event.eventType) return;
       if (event.eventType === 'GROUP_CALL_STARTED' || event.eventType === 'PARTICIPANT_JOINED') {
         setActiveGroupCallBanner(event);
       } else if (event.eventType === 'CALL_ENDED' || event.eventType === 'PARTICIPANT_LEFT') {
-        if (event.eventType === 'CALL_ENDED' || (event.participants && event.participants.length === 0)) {
+        if (event.eventType === 'CALL_ENDED' || !event.participants || event.participants.length === 0) {
           setActiveGroupCallBanner(null);
         } else {
           setActiveGroupCallBanner(event);
@@ -2241,7 +2241,7 @@ export const MessagesPage = () => {
             )}
 
             {/* Live Active Group Call Banner */}
-            {isGroup && activeGroupCallBanner && (
+            {isGroup && activeGroupCallBanner && activeGroupCallBanner.id && (
               <div className="active-group-call-banner">
                 <div className="active-group-call-banner-left">
                   <span className="live-call-pulse-dot" />

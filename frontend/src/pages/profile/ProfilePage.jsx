@@ -23,7 +23,6 @@ import {
   Briefcase,
   Folder,
   ArrowLeft,
-  QrCode,
   Tag,
   Star,
   Archive,
@@ -2331,15 +2330,6 @@ export const ProfilePage = () => {
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary profile-btn profile-icon-btn"
-                    onClick={() => setQrModalOpen(true)}
-                    title="QR Code Nametag"
-                    aria-label="QR Code"
-                  >
-                    <QrCode size={17} />
-                  </button>
-                  <button
-                    type="button"
                     className="btn btn-secondary profile-btn profile-icon-btn profile-gear-btn"
                     onClick={() => setGearMenuOpen(true)}
                     title="Settings"
@@ -2394,15 +2384,6 @@ export const ProfilePage = () => {
                       </button>
                     </>
                   )}
-
-                  <button
-                    type="button"
-                    className="btn btn-secondary profile-btn"
-                    onClick={() => setQrModalOpen(true)}
-                    title="QR Code"
-                  >
-                    <QrCode size={18} />
-                  </button>
 
                   {isViewerAdmin && (
                     <button

@@ -2949,6 +2949,8 @@ export const ProfilePage = () => {
           collectionName={selectedCollection.name}
           existingPostIds={collectionPosts.map((p) => p.id)}
           existingReelIds={collectionReels.map((r) => r.id)}
+          initialSavedPosts={savedPosts}
+          initialSavedReels={savedReels}
           onItemsAdded={() => {
             handleSelectCollection(selectedCollection);
             loadCollections();

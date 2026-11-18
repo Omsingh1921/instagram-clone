@@ -16,11 +16,13 @@ export const AddToCollectionModal = ({
   collectionName,
   existingPostIds = [],
   existingReelIds = [],
+  initialSavedPosts = [],
+  initialSavedReels = [],
   onItemsAdded,
 }) => {
   const [activeTab, setActiveTab] = useState('posts'); // 'posts' | 'reels'
-  const [savedPosts, setSavedPosts] = useState([]);
-  const [savedReels, setSavedReels] = useState([]);
+  const [savedPosts, setSavedPosts] = useState(initialSavedPosts || []);
+  const [savedReels, setSavedReels] = useState(initialSavedReels || []);
   const [selectedPostIds, setSelectedPostIds] = useState(new Set());
   const [selectedReelIds, setSelectedReelIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,13 @@ export const AddToCollectionModal = ({
       return;
     }
 
+    if (Array.isArray(initialSavedPosts) && initialSavedPosts.length > 0) {
+      setSavedPosts(initialSavedPosts);
+    }
+    if (Array.isArray(initialSavedReels) && initialSavedReels.length > 0) {
+      setSavedReels(initialSavedReels);
+    }
+
     const loadSavedItems = async () => {
       try {
         setLoading(true);
@@ -43,13 +52,15 @@ export const AddToCollectionModal = ({
         ]);
 
         if (postsRes.status === 'fulfilled') {
-          const list = postsRes.value?.content || postsRes.value?.data || postsRes.value || [];
-          setSavedPosts(Array.isArray(list) ? list : []);
+          const raw = postsRes.value?.data?.content || postsRes.value?.content || postsRes.value?.data || postsRes.value || [];
+          const list = Array.isArray(raw) ? raw : (Array.isArray(raw?.content) ? raw.content : []);
+          setSavedPosts(list);
         }
 
         if (reelsRes.status === 'fulfilled') {
-          const rList = reelsRes.value?.content || reelsRes.value?.data || reelsRes.value || [];
-          setSavedReels(Array.isArray(rList) ? rList : []);
+          const raw = reelsRes.value?.data?.content || reelsRes.value?.content || reelsRes.value?.data || reelsRes.value || [];
+          const rList = Array.isArray(raw) ? raw : (Array.isArray(raw?.content) ? raw.content : []);
+          setSavedReels(rList);
         }
       } catch (err) {
         console.error('Failed to load saved posts/reels for collection', err);
@@ -156,6 +167,7 @@ export const AddToCollectionModal = ({
               <div className="add-to-coll-grid">
                 {savedPosts.map((post) => {
                   const media = post.media?.[0];
+                  const mediaUrl = media?.mediaUrl || post.mediaUrl || post.thumbnailUrl;
                   const isAlreadyIn = existingPostIds.includes(post.id);
                   const isChecked = selectedPostIds.has(post.id);
 
@@ -168,7 +180,7 @@ export const AddToCollectionModal = ({
                       onClick={() => togglePost(post.id)}
                     >
                       <ProgressiveImage
-                        src={media?.mediaUrl}
+                        src={mediaUrl}
                         alt={post.caption || 'Saved post'}
                         className="add-to-coll-media"
                         loading="lazy"

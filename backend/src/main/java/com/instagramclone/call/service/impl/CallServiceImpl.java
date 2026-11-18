@@ -513,17 +513,26 @@ public class CallServiceImpl implements ICallService {
         UserSummaryResponse joinedUserSummary = userMapper.toUserSummaryResponse(user);
 
         // Broadcast PARTICIPANT_JOINED to all active members in the call
+        CallEventMessage joinEvent = CallEventMessage.builder()
+                .eventType(CallConstants.EVENT_PARTICIPANT_JOINED)
+                .callId(session.getId())
+                .conversationId(session.getConversationId())
+                .caller(userMapper.toUserSummaryResponse(session.getCaller()))
+                .isGroup(true)
+                .participant(joinedUserSummary)
+                .participants(participantSummaries)
+                .callType(session.getCallType())
+                .build();
+
         for (CallParticipant p : activeParticipants) {
-            sendCallEvent(p.getUser().getId(), CallEventMessage.builder()
-                    .eventType(CallConstants.EVENT_PARTICIPANT_JOINED)
-                    .callId(session.getId())
-                    .conversationId(session.getConversationId())
-                    .caller(userMapper.toUserSummaryResponse(session.getCaller()))
-                    .isGroup(true)
-                    .participant(joinedUserSummary)
-                    .participants(participantSummaries)
-                    .callType(session.getCallType())
-                    .build());
+            sendCallEvent(p.getUser().getId(), joinEvent);
+        }
+
+        if (session.getConversationId() != null) {
+            messagingTemplate.convertAndSend(
+                    "/topic/conversations/" + session.getConversationId() + "/call",
+                    joinEvent
+            );
         }
 
         log.info("User {} joined group call {}", user.getUsername(), session.getId());
@@ -590,18 +599,34 @@ public class CallServiceImpl implements ICallService {
                     .callType(session.getCallType())
                     .build();
             sendCallEvent(userId, endMsg);
+
+            if (session.getConversationId() != null) {
+                messagingTemplate.convertAndSend(
+                        "/topic/conversations/" + session.getConversationId() + "/call",
+                        endMsg
+                );
+            }
         } else {
             // Notify remaining participants
+            CallEventMessage leftMsg = CallEventMessage.builder()
+                    .eventType(CallConstants.EVENT_PARTICIPANT_LEFT)
+                    .callId(session.getId())
+                    .conversationId(session.getConversationId())
+                    .isGroup(true)
+                    .participant(leftUserSummary)
+                    .participants(remainingSummaries)
+                    .callType(session.getCallType())
+                    .build();
+
             for (CallParticipant p : remainingParticipants) {
-                sendCallEvent(p.getUser().getId(), CallEventMessage.builder()
-                        .eventType(CallConstants.EVENT_PARTICIPANT_LEFT)
-                        .callId(session.getId())
-                        .conversationId(session.getConversationId())
-                        .isGroup(true)
-                        .participant(leftUserSummary)
-                        .participants(remainingSummaries)
-                        .callType(session.getCallType())
-                        .build());
+                sendCallEvent(p.getUser().getId(), leftMsg);
+            }
+
+            if (session.getConversationId() != null) {
+                messagingTemplate.convertAndSend(
+                        "/topic/conversations/" + session.getConversationId() + "/call",
+                        leftMsg
+                );
             }
         }
 

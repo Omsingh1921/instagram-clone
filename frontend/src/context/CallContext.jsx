@@ -222,6 +222,30 @@ export const CallProvider = ({ children }) => {
       setGroupParticipants(initialParticipants);
       setCallStatusText('In call');
 
+      // If joining an existing call with participants already in it, negotiate WebRTC mesh with each peer
+      if (callData.participants && callData.participants.length > 0) {
+        for (const peer of callData.participants) {
+          const peerId = peer.id || peer.userId;
+          if (peerId && peerId !== currentUserId) {
+            try {
+              webrtcService.createPeerForUser(
+                peerId,
+                (targetId, candidate) => sendSignal(callData.id, targetId, 'ice-candidate', candidate),
+                (targetId, rStream) => setRemoteStreams((prev) => ({ ...prev, [targetId]: rStream })),
+                (targetId, state) => console.log(`[GroupCall] Peer ${targetId} state:`, state)
+              );
+              webrtcService.createOfferForUser(peerId).then((offer) => {
+                sendSignal(callData.id, peerId, 'offer', offer);
+              }).catch((e) => {
+                console.warn('[CallContext] Error creating offer for existing peer:', e);
+              });
+            } catch (e) {
+              console.warn('[CallContext] Failed to setup peer:', e);
+            }
+          }
+        }
+      }
+
       if (!timerRef.current) {
         timerRef.current = setInterval(() => {
           setCallDuration((prev) => prev + 1);
@@ -232,7 +256,7 @@ export const CallProvider = ({ children }) => {
       showError(err.message || 'Failed to start group call. Please check microphone/camera permissions.');
       cleanupCallState();
     }
-  }, [currentUser, currentUserId, showError, cleanupCallState]);
+  }, [currentUser, currentUserId, sendSignal, showError, cleanupCallState]);
 
   // Accept Call (Callee flow - supports both 1:1 and Group Calls)
   const acceptCall = useCallback(async () => {

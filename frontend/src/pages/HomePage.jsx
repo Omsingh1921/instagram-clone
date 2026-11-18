@@ -496,15 +496,6 @@ export const HomePage = () => {
 
           {/* Footer Links */}
           <footer className="sidebar-footer-links">
-            <div className="sidebar-footer-row">
-              <a href="https://about.instagram.com" target="_blank" rel="noreferrer">About</a>
-              <a href="https://help.instagram.com" target="_blank" rel="noreferrer">Help</a>
-              <a href="https://about.instagram.com/blog" target="_blank" rel="noreferrer">Press</a>
-              <a href="https://developers.facebook.com" target="_blank" rel="noreferrer">API</a>
-              <a href="https://about.instagram.com/about-us/careers" target="_blank" rel="noreferrer">Jobs</a>
-              <a href="/privacy">Privacy</a>
-              <a href="/terms">Terms</a>
-            </div>
             <div className="copyright-text">© 2026 INSTAGRAM CLONE FROM META</div>
           </footer>
         </aside>

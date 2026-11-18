@@ -1,0 +1,99 @@
+import React from 'react';
+import { Search, ChevronDown } from 'lucide-react';
+
+export const SettingsNavPane = ({
+  isUserAdmin = false,
+  searchQuery = '',
+  setSearchQuery,
+  openGroups = new Set(),
+  setOpenGroups,
+  activeTab = 'profile',
+  setActiveTab,
+  filteredCategories = [],
+}) => {
+  return (
+    <nav className="settings-nav-pane">
+      <h2 className="settings-nav-title">Settings</h2>
+
+      {!isUserAdmin && (
+        <div className="settings-search-wrapper">
+          <Search size={15} className="settings-search-icon" />
+          <input
+            type="text"
+            className="settings-search-input"
+            placeholder="Search settings..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery?.(e.target.value)}
+          />
+        </div>
+      )}
+
+      <div className="settings-nav-groups-container">
+        {filteredCategories.map((cat) => {
+          const isGroupExpanded =
+            Boolean(searchQuery.trim()) || openGroups.has(cat.group);
+          return (
+            <div key={cat.group} className="settings-nav-group">
+              <button
+                type="button"
+                className={`settings-nav-group-trigger ${
+                  isGroupExpanded ? 'open' : ''
+                }`}
+                aria-expanded={isGroupExpanded}
+                onClick={() => {
+                  setOpenGroups?.((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(cat.group)) next.delete(cat.group);
+                    else next.add(cat.group);
+                    return next;
+                  });
+                }}
+              >
+                <span className="settings-nav-group-title">{cat.group}</span>
+                <ChevronDown
+                  size={14}
+                  className="settings-nav-group-chevron"
+                  aria-hidden="true"
+                />
+              </button>
+              <div
+                className={`settings-nav-group-items ${
+                  isGroupExpanded ? 'expanded' : 'collapsed'
+                }`}
+              >
+                {cat.items.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isSelected = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      tabIndex={isGroupExpanded ? 0 : -1}
+                      className={`settings-nav-button ${
+                        isSelected ? 'active' : ''
+                      }`}
+                      onClick={() => {
+                        setActiveTab?.(item.id);
+                        setOpenGroups?.((prev) => {
+                          if (prev.has(cat.group)) return prev;
+                          const next = new Set(prev);
+                          next.add(cat.group);
+                          return next;
+                        });
+                      }}
+                    >
+                      <ItemIcon size={17} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
+export default SettingsNavPane;

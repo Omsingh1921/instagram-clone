@@ -1,0 +1,15 @@
+export { default as SettingsNavPane } from './SettingsNavPane';
+export { default as ProfileSettingsTab } from './ProfileSettingsTab';
+export { default as PasswordSettingsTab } from './PasswordSettingsTab';
+export { default as PrivacySettingsTab } from './PrivacySettingsTab';
+export { default as SessionsSettingsTab } from './SessionsSettingsTab';
+export { default as BlockedUsersTab } from './BlockedUsersTab';
+export { default as AccountDangerZoneTab } from './AccountDangerZoneTab';
+export { default as NotificationsSettingsTab } from './NotificationsSettingsTab';
+export { default as HiddenWordsTab } from './HiddenWordsTab';
+export { default as ProfessionalAccountTab } from './ProfessionalAccountTab';
+export { default as AppsAndWebsitesTab } from './AppsAndWebsitesTab';
+export { default as SharingAndRemixesTab } from './SharingAndRemixesTab';
+export { default as TagsAndMentionsTab } from './TagsAndMentionsTab';
+export { default as MutedUsersTab } from './MutedUsersTab';
+export { default as PreferencesTab } from './PreferencesTab';

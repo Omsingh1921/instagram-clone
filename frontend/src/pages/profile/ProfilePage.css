@@ -956,6 +956,9 @@
   .profile-grid-opts-wrapper {
     opacity: 1;
   }
+  .collection-item-remove-btn {
+    opacity: 0.85;
+  }
 }
 
 .profile-grid-item.dropdown-active,
@@ -1517,6 +1520,11 @@
   .profile-grid,
   .profile-reels-grid {
     gap: 6px;
+  }
+
+  .collections-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .profile-grid-item,

@@ -137,3 +137,24 @@
   padding-top: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
+
+@media (max-width: 480px) {
+  .add-to-coll-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .add-to-coll-grid {
+    gap: 4px;
+  }
+  .add-to-coll-scroll-area {
+    max-height: 52vh;
+    min-height: 180px;
+  }
+  .add-to-coll-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .add-to-coll-footer .btn {
+    width: 100%;
+  }
+}

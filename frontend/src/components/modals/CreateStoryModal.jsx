@@ -864,7 +864,8 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title={previewUrl ? 'Edit Story' : 'Add to Story'}
+      title={previewUrl ? null : 'Add to Story'}
+      showCloseButton={!previewUrl}
       size={previewUrl ? 'lg' : 'md'}
     >
       <div className="create-story-form">
@@ -888,7 +889,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
           </div>
         ) : (
           <>
-            {/* Wizard Subnav Header with Top-Right Save Button */}
+            {/* Wizard Subnav Header with Top-Right Save Button & Close Button */}
             <div className="ig-wizard-subnav">
               <button
                 type="button"
@@ -898,8 +899,9 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                   setFile(null);
                 }}
                 title="Back to file select"
+                aria-label="Back"
               >
-                <ArrowLeft size={20} />
+                <ArrowLeft size={19} />
               </button>
 
               <span className="ig-subnav-title">Edit Story</span>
@@ -913,8 +915,17 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                   title="Save Story Crop & Changes (✓)"
                   aria-label="Save Story Crop & Changes"
                 >
-                  <Check size={16} strokeWidth={2.8} />
+                  <Check size={15} strokeWidth={2.8} />
                   <span>Save</span>
+                </button>
+                <button
+                  type="button"
+                  className="ig-subnav-close-btn"
+                  onClick={handleClose}
+                  title="Close"
+                  aria-label="Close"
+                >
+                  <X size={19} />
                 </button>
               </div>
             </div>
@@ -1136,16 +1147,14 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
                 {/* Overlaid Active Sticker */}
                 {activeStickerType === 'mention' && (
-                  <div className="story-sticker-overlay mention-overlay">
-                    <AtSign size={15} />
-                    <span>
+                  <div className="story-sticker-overlay ig-mention-sticker-pill">
+                    <span className="ig-mention-gradient-at">@</span>
+                    <span className="ig-mention-username">
                       {selectedMentionUser?.username
-                        ? `@${selectedMentionUser.username}`
+                        ? selectedMentionUser.username
                         : mentionSearch.trim()
-                        ? mentionSearch.startsWith('@')
-                          ? mentionSearch
-                          : `@${mentionSearch}`
-                        : '@mention'}
+                        ? mentionSearch.replace(/^@/, '')
+                        : 'mention'}
                     </span>
                   </div>
                 )}
@@ -1274,10 +1283,21 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                   </div>
                 )}
 
-                {activeStickerType === 'music' && audioTitle && (
-                  <div className="story-sticker-overlay music-overlay">
-                    <Music size={14} />
-                    <span>{audioTitle} {audioArtist ? `• ${audioArtist}` : ''}</span>
+                {activeStickerType === 'music' && (audioTitle || audioArtist) && (
+                  <div className="story-sticker-overlay ig-music-sticker-card">
+                    <div className="ig-music-art-disc">
+                      <Music size={15} />
+                    </div>
+                    <div className="ig-music-meta">
+                      <span className="ig-music-title">{audioTitle || 'Song Name'}</span>
+                      <span className="ig-music-artist">{audioArtist || 'Instagram Music'}</span>
+                    </div>
+                    <div className="ig-music-eq" aria-hidden="true">
+                      <span className="ig-eq-bar bar-1" />
+                      <span className="ig-eq-bar bar-2" />
+                      <span className="ig-eq-bar bar-3" />
+                      <span className="ig-eq-bar bar-4" />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1590,17 +1610,17 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                     </h4>
                     <div className="story-stickers-grid">
                       {[
-                        { type: 'mention', label: 'Mention', icon: AtSign },
-                        { type: 'question', label: 'Question', icon: HelpCircle },
-                        { type: 'poll', label: 'Poll', icon: BarChart2 },
-                        { type: 'quiz', label: 'Quiz', icon: QuizIcon },
-                        { type: 'slider', label: 'Slider', icon: Flame },
-                        { type: 'countdown', label: 'Countdown', icon: Clock },
-                        { type: 'link', label: 'Link', icon: LinkIcon },
-                        { type: 'location', label: 'Location', icon: MapPin },
-                        { type: 'hashtag', label: 'Hashtag', icon: Hash },
-                        { type: 'music', label: 'Music', icon: Music },
-                      ].map(({ type, label, icon: Icon }) => {
+                        { type: 'mention', label: 'Mention', icon: AtSign, color: 'linear-gradient(45deg, #f09433, #e6683c)' },
+                        { type: 'music', label: 'Music', icon: Music, color: 'linear-gradient(45deg, #dc2743, #cc2366)' },
+                        { type: 'question', label: 'Question', icon: HelpCircle, color: 'linear-gradient(45deg, #8a3ab9, #bc1888)' },
+                        { type: 'poll', label: 'Poll', icon: BarChart2, color: 'linear-gradient(45deg, #00ba7c, #0095f6)' },
+                        { type: 'quiz', label: 'Quiz', icon: QuizIcon, color: 'linear-gradient(45deg, #e95950, #fccc63)' },
+                        { type: 'slider', label: 'Slider', icon: Flame, color: 'linear-gradient(45deg, #ff5e3a, #ff2a68)' },
+                        { type: 'countdown', label: 'Countdown', icon: Clock, color: 'linear-gradient(45deg, #ff9500, #ff5e3a)' },
+                        { type: 'link', label: 'Link', icon: LinkIcon, color: 'linear-gradient(45deg, #0095f6, #4c68d7)' },
+                        { type: 'location', label: 'Location', icon: MapPin, color: 'linear-gradient(45deg, #e1306c, #fd1d1d)' },
+                        { type: 'hashtag', label: 'Hashtag', icon: Hash, color: 'linear-gradient(45deg, #5851db, #833ab4)' },
+                      ].map(({ type, label, icon: Icon, color }) => {
                         const isActive = activeStickerType === type;
                         return (
                           <button
@@ -1609,7 +1629,9 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                             onClick={() => setActiveStickerType(isActive ? 'none' : type)}
                             className={`story-sticker-card-btn ${isActive ? 'active' : ''}`}
                           >
-                            <Icon size={18} />
+                            <span className="story-sticker-icon-badge" style={{ background: color }}>
+                              <Icon size={14} />
+                            </span>
                             <span>{label}</span>
                           </button>
                         );
@@ -1895,7 +1917,32 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
                       {activeStickerType === 'music' && (
                         <div className="sticker-input-group">
-                          <label>Song & Artist</label>
+                          <label>Trending on Instagram</label>
+                          <div className="ig-trending-music-chips">
+                            {[
+                              { title: 'Die With A Smile', artist: 'Lady Gaga, Bruno Mars' },
+                              { title: 'Espresso', artist: 'Sabrina Carpenter' },
+                              { title: 'Birds of a Feather', artist: 'Billie Eilish' },
+                              { title: 'Starboy', artist: 'The Weeknd' },
+                              { title: 'Blinding Lights', artist: 'The Weeknd' },
+                            ].map((track) => (
+                              <button
+                                key={track.title}
+                                type="button"
+                                className="ig-trending-track-btn"
+                                onClick={() => {
+                                  setAudioTitle(track.title);
+                                  setAudioArtist(track.artist);
+                                }}
+                              >
+                                <Music size={12} />
+                                <span className="ig-track-name">{track.title}</span>
+                                <span className="ig-track-artist">• {track.artist}</span>
+                              </button>
+                            ))}
+                          </div>
+
+                          <label style={{ marginTop: '10px' }}>Custom Song & Artist</label>
                           <input
                             type="text"
                             value={audioTitle}

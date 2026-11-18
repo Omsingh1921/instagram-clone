@@ -209,4 +209,67 @@ describe('Stories Comprehensive Frontend Features', () => {
       expect(screen.getByRole('button', { name: /Added to your story/i })).toBeInTheDocument();
     });
   });
+
+  it('5. StoryViewerModal renders multiple composable stickers simultaneously (Music, Mentions, Locations, Hashtags, and Links)', async () => {
+    const mockGroups = [
+      {
+        author: { id: 'author-101', username: 'travel_creator', avatarUrl: 'https://example.com/author.jpg' },
+        stories: [
+          {
+            id: 'multi-sticker-story',
+            mediaUrl: 'https://example.com/multi.jpg',
+            mediaType: 'IMAGE',
+            createdAt: new Date().toISOString(),
+            audioTitle: 'Die With A Smile',
+            audioArtist: 'Lady Gaga & Bruno Mars',
+            mentions: [
+              { userId: 'friend-1', username: 'ram', xPercent: 50, yPercent: 30 },
+              { userId: 'friend-2', username: 'shyam', xPercent: 50, yPercent: 36 },
+            ],
+            locations: [
+              { id: 'loc-1', locationName: 'Mumbai, India', xPercent: 50, yPercent: 78 },
+            ],
+            hashtags: [
+              { id: 'tag-1', hashtag: 'travel', xPercent: 50, yPercent: 86 },
+            ],
+            links: [
+              { id: 'lnk-1', url: 'https://instagram.com', title: 'Visit Website', xPercent: 50, yPercent: 70 },
+            ],
+          },
+        ],
+      },
+    ];
+
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <ToastProvider>
+            <StoryViewerModal
+              isOpen={true}
+              storyGroups={mockGroups}
+              initialGroupIdx={0}
+              onClose={vi.fn()}
+            />
+          </ToastProvider>
+        </AuthProvider>
+      </MemoryRouter>
+    );
+
+    // 1. Music title & artist in top bar
+    expect(screen.getByText(/Die With A Smile/i)).toBeInTheDocument();
+    expect(screen.getByText(/Lady Gaga & Bruno Mars/i)).toBeInTheDocument();
+
+    // 2. Mentions
+    expect(screen.getByText('@ram')).toBeInTheDocument();
+    expect(screen.getByText('@shyam')).toBeInTheDocument();
+
+    // 3. Location
+    expect(screen.getByText('Mumbai, India')).toBeInTheDocument();
+
+    // 4. Hashtag
+    expect(screen.getByText('#travel')).toBeInTheDocument();
+
+    // 5. Link
+    expect(screen.getByText('Visit Website')).toBeInTheDocument();
+  });
 });

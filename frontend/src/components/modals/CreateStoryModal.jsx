@@ -106,11 +106,37 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
   // Sticker types: 'none', 'mention', 'question', 'poll', 'quiz', 'slider', 'countdown', 'link', 'location', 'hashtag', 'music'
   const [activeStickerType, setActiveStickerType] = useState('none');
-  const [stickerPos, setStickerPos] = useState({ x: 50, y: 32 });
-  const [isDraggingSticker, setIsDraggingSticker] = useState(false);
+  const [interactiveType, setInteractiveType] = useState('none'); // 'none' | 'question' | 'poll' | 'quiz' | 'slider' | 'countdown'
+  const [stickerPositions, setStickerPositions] = useState({
+    music: { x: 50, y: 15 },
+    mention: { x: 50, y: 30 },
+    interactive: { x: 50, y: 50 },
+    link: { x: 50, y: 70 },
+    location: { x: 50, y: 78 },
+    hashtag: { x: 50, y: 86 },
+  });
+  const [draggingStickerKey, setDraggingStickerKey] = useState(null);
+  const draggingStickerKeyRef = useRef(null);
   const isDraggingStickerRef = useRef(false);
   const stickerDragStartRef = useRef({ mouseX: 0, mouseY: 0, startX: 50, startY: 32 });
   const canvasRef = useRef(null);
+
+  const getPositionKeyForType = (type) => {
+    if (['question', 'poll', 'quiz', 'slider', 'countdown'].includes(type)) return 'interactive';
+    return type;
+  };
+
+  const activePositionKey = getPositionKeyForType(activeStickerType);
+  const stickerPos = stickerPositions[activePositionKey] || { x: 50, y: 32 };
+  const isDraggingSticker = Boolean(draggingStickerKey);
+
+  const setStickerPos = (pos) => {
+    const key = getPositionKeyForType(activeStickerType);
+    setStickerPositions((prev) => ({
+      ...prev,
+      [key]: typeof pos === 'function' ? pos(prev[key] || { x: 50, y: 32 }) : pos,
+    }));
+  };
 
   // Mention (@username)
   const [mentionSearch, setMentionSearch] = useState('');
@@ -160,6 +186,23 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
   // Audio / Music
   const [audioTitle, setAudioTitle] = useState('');
   const [audioArtist, setAudioArtist] = useState('');
+
+  // Composable Sticker Active States
+  const isMusicActive = Boolean(audioTitle.trim() || audioArtist.trim());
+  const isMentionActive = selectedMentionUsers.length > 0;
+  const isInteractiveActive = interactiveType !== 'none';
+  const isLinkActive = Boolean(linkUrl.trim());
+  const isLocationActive = Boolean(locationName.trim());
+  const isHashtagActive = Boolean(hashtagTag.trim());
+
+  const attachedCount = [
+    isMusicActive,
+    isMentionActive,
+    isInteractiveActive,
+    isLinkActive,
+    isLocationActive,
+    isHashtagActive,
+  ].filter(Boolean).length;
 
   const fileInputRef = useRef(null);
   const dragStartRef = useRef({ x: 0, y: 0, initialPanX: 0, initialPanY: 0 });
@@ -212,6 +255,15 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     setIsSavingCrop(false);
     setCropSavedToast(false);
     setActiveStickerType('none');
+    setInteractiveType('none');
+    setStickerPositions({
+      music: { x: 50, y: 15 },
+      mention: { x: 50, y: 30 },
+      interactive: { x: 50, y: 50 },
+      link: { x: 50, y: 70 },
+      location: { x: 50, y: 78 },
+      hashtag: { x: 50, y: 86 },
+    });
     setQuestionPrompt('Ask me a question');
     setPollQuestion('Ask a question...');
     setPollOptionA('Yes');
@@ -223,6 +275,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     setQuizCorrectIndex(0);
     setSliderQuestion('How hot is this?');
     setSliderEmoji('🔥');
+    setCountdownTitle('Upcoming Event');
     setLinkUrl('');
     setLinkText('');
     setLocationName('');
@@ -261,24 +314,36 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     return () => clearTimeout(timer);
   }, [mentionSearch, activeStickerType]);
 
-  // Handle Dragging Sticker on Story Canvas
-  const handleStickerPointerDown = (e) => {
+  // Handle Dragging Any Sticker on Story Canvas
+  const handleStickerPointerDown = (e, key = null) => {
     if (['INPUT', 'TEXTAREA', 'BUTTON'].includes(e.target?.tagName)) return;
+    const resolvedKey = key || getPositionKeyForType(activeStickerType);
+    draggingStickerKeyRef.current = resolvedKey;
+    setDraggingStickerKey(resolvedKey);
     isDraggingStickerRef.current = true;
-    setIsDraggingSticker(true);
+
+    // Bring this sticker into active sidebar editing
+    if (resolvedKey === 'interactive') {
+      setActiveStickerType(interactiveType !== 'none' ? interactiveType : 'question');
+    } else if (resolvedKey) {
+      setActiveStickerType(resolvedKey);
+    }
+
     const clientX = e.touches ? e.touches[0].clientX : e.clientX;
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const currentPos = (resolvedKey && stickerPositions[resolvedKey]) || { x: 50, y: 50 };
     stickerDragStartRef.current = {
       mouseX: clientX,
       mouseY: clientY,
-      startX: stickerPos.x,
-      startY: stickerPos.y,
+      startX: currentPos.x,
+      startY: currentPos.y,
     };
   };
 
   useEffect(() => {
     const handlePointerMove = (e) => {
-      if (!isDraggingStickerRef.current || !canvasRef.current) return;
+      const activeKey = draggingStickerKeyRef.current;
+      if (!activeKey || !canvasRef.current) return;
       const clientX = e.touches ? e.touches[0].clientX : e.clientX;
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       const rect = canvasRef.current.getBoundingClientRect();
@@ -291,15 +356,19 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
       const deltaYPct = (deltaY / rect.height) * 100;
 
       const newX = Math.min(85, Math.max(15, stickerDragStartRef.current.startX + deltaXPct));
-      const newY = Math.min(88, Math.max(12, stickerDragStartRef.current.startY + deltaYPct));
+      const newY = Math.min(90, Math.max(10, stickerDragStartRef.current.startY + deltaYPct));
 
-      setStickerPos({ x: Math.round(newX), y: Math.round(newY) });
+      setStickerPositions((prev) => ({
+        ...prev,
+        [activeKey]: { x: Math.round(newX), y: Math.round(newY) },
+      }));
     };
 
     const handlePointerUp = () => {
-      if (isDraggingStickerRef.current) {
+      if (draggingStickerKeyRef.current) {
+        draggingStickerKeyRef.current = null;
+        setDraggingStickerKey(null);
         isDraggingStickerRef.current = false;
-        setIsDraggingSticker(false);
       }
     };
 
@@ -314,7 +383,37 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('touchend', handlePointerUp);
     };
-  }, [stickerPos]);
+  }, []);
+
+  const handleSetPresetPosition = (preset) => {
+    const key = getPositionKeyForType(activeStickerType);
+    if (!key) return;
+    const yVal = preset === 'top' ? 16 : preset === 'center' ? 45 : 75;
+    setStickerPositions((prev) => ({
+      ...prev,
+      [key]: { x: 50, y: yVal },
+    }));
+  };
+
+  const handleRemoveCurrentSticker = (type) => {
+    if (type === 'music') {
+      setAudioTitle('');
+      setAudioArtist('');
+    } else if (type === 'mention') {
+      setSelectedMentionUsers([]);
+      setMentionSearch('');
+    } else if (['question', 'poll', 'quiz', 'slider', 'countdown'].includes(type)) {
+      setInteractiveType('none');
+    } else if (type === 'link') {
+      setLinkUrl('');
+      setLinkText('');
+    } else if (type === 'location') {
+      setLocationName('');
+    } else if (type === 'hashtag') {
+      setHashtagTag('');
+    }
+    setActiveStickerType('none');
+  };
 
   const handleClose = (keepThumbnailUrl = null) => {
     resetForm(keepThumbnailUrl);
@@ -692,7 +791,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     const capturedPreviewUrl = previewUrl;
     const capturedRatio = selectedRatio;
     const capturedTrim = { ...videoTrim };
-    const capturedStickerType = activeStickerType;
+    const capturedInteractive = interactiveType;
     const capturedPrompt = questionPrompt;
     const capturedPoll = { question: pollQuestion, optA: pollOptionA, optB: pollOptionB };
     const capturedQuiz = {
@@ -711,6 +810,8 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     const capturedAudioArtist = audioArtist;
     const capturedMentionUsers = [...selectedMentionUsers];
     const capturedShowMentionsOnScreen = showMentionsOnScreen;
+    const capturedPositions = { ...stickerPositions };
+    const capturedFilter = selectedFilter;
 
     const performStoryUpload = async (updateProgress = () => {}) => {
       updateProgress(25, 'Adding to your story...');
@@ -757,12 +858,16 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
         mediaUrl,
         mediaType,
         closeFriendsOnly: closeFriends,
+        caption: null,
+        filterName: capturedFilter !== 'NORMAL' ? capturedFilter : null,
+        audioTitle: capturedAudioTitle.trim() || null,
+        audioArtist: capturedAudioArtist.trim() || null,
         questionPrompt:
-          capturedStickerType === 'question' && capturedPrompt.trim()
+          capturedInteractive === 'question' && capturedPrompt.trim()
             ? capturedPrompt.trim()
             : null,
         poll:
-          capturedStickerType === 'poll' && capturedPoll.question.trim()
+          capturedInteractive === 'poll' && capturedPoll.question.trim()
             ? {
                 question: capturedPoll.question.trim(),
                 optionA: capturedPoll.optA.trim() || 'Yes',
@@ -770,7 +875,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
               }
             : null,
         quiz:
-          capturedStickerType === 'quiz' && capturedQuiz.question.trim()
+          capturedInteractive === 'quiz' && capturedQuiz.question.trim()
             ? {
                 question: capturedQuiz.question.trim(),
                 optionA: capturedQuiz.optA.trim() || 'Option A',
@@ -780,42 +885,56 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
               }
             : null,
         slider:
-          capturedStickerType === 'slider' && capturedSlider.question.trim()
+          capturedInteractive === 'slider' && capturedSlider.question.trim()
             ? {
                 question: capturedSlider.question.trim(),
                 emoji: capturedSlider.emoji || '🔥',
               }
             : null,
         countdown:
-          capturedStickerType === 'countdown' && capturedCountdown.title.trim()
+          capturedInteractive === 'countdown' && capturedCountdown.title.trim()
             ? {
                 title: capturedCountdown.title.trim(),
                 targetDate: new Date(capturedCountdown.date).toISOString(),
               }
             : null,
-        link:
-          capturedStickerType === 'link' && capturedLink.url.trim()
-            ? {
-                url: capturedLink.url.trim(),
-                stickerText: capturedLink.text.trim() || null,
-              }
-            : null,
-        location:
-          capturedStickerType === 'location' && capturedLocation.trim()
-            ? { name: capturedLocation.trim() }
-            : null,
-        hashtag:
-          capturedStickerType === 'hashtag' && capturedHashtag.trim()
-            ? { tag: capturedHashtag.replace(/^#/, '').trim() }
-            : null,
-        audioTitle: capturedAudioTitle.trim() || null,
-        audioArtist: capturedAudioArtist.trim() || null,
+        links:
+          capturedLink.url.trim()
+            ? [
+                {
+                  url: capturedLink.url.trim(),
+                  title: capturedLink.text.trim() || null,
+                  xPercent: capturedPositions?.link?.x ?? 50,
+                  yPercent: capturedPositions?.link?.y ?? 70,
+                },
+              ]
+            : [],
+        locations:
+          capturedLocation.trim()
+            ? [
+                {
+                  locationName: capturedLocation.trim(),
+                  xPercent: capturedPositions?.location?.x ?? 50,
+                  yPercent: capturedPositions?.location?.y ?? 78,
+                },
+              ]
+            : [],
+        hashtags:
+          capturedHashtag.trim()
+            ? [
+                {
+                  hashtag: capturedHashtag.replace(/^#/, '').trim(),
+                  xPercent: capturedPositions?.hashtag?.x ?? 50,
+                  yPercent: capturedPositions?.hashtag?.y ?? 85,
+                },
+              ]
+            : [],
         mentions:
-          capturedStickerType === 'mention' && capturedMentionUsers?.length > 0
+          capturedMentionUsers?.length > 0
             ? capturedMentionUsers.map((u, idx) => ({
                 userId: u.id || u.userId,
-                xPercent: Math.min(85, Math.max(15, Number((stickerPos?.x || 50) + idx * 2))),
-                yPercent: Math.min(85, Math.max(15, Number((stickerPos?.y || 35) + idx * 5))),
+                xPercent: Math.min(85, Math.max(15, Number((capturedPositions?.mention?.x || 50) + idx * 2))),
+                yPercent: Math.min(85, Math.max(15, Number((capturedPositions?.mention?.y || 32) + idx * 5))),
               }))
             : [],
       };
@@ -833,12 +952,15 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
         mediaUrl: capturedPreviewUrl,
         mediaType: capturedFile.type.startsWith('video/') ? 'VIDEO' : 'IMAGE',
         isCloseFriends: closeFriends,
+        filterName: capturedFilter !== 'NORMAL' ? capturedFilter : null,
+        audioTitle: capturedAudioTitle.trim() || null,
+        audioArtist: capturedAudioArtist.trim() || null,
         question:
-          capturedStickerType === 'question' && capturedPrompt.trim()
+          capturedInteractive === 'question' && capturedPrompt.trim()
             ? capturedPrompt.trim()
             : null,
         poll:
-          capturedStickerType === 'poll' && capturedPoll.question.trim()
+          capturedInteractive === 'poll' && capturedPoll.question.trim()
             ? {
                 question: capturedPoll.question.trim(),
                 optionA: capturedPoll.optA.trim() || 'Yes',
@@ -846,7 +968,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
               }
             : null,
         quiz:
-          capturedStickerType === 'quiz' && capturedQuiz.question.trim()
+          capturedInteractive === 'quiz' && capturedQuiz.question.trim()
             ? {
                 question: capturedQuiz.question.trim(),
                 optionA: capturedQuiz.optA.trim() || 'Option A',
@@ -856,44 +978,30 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
               }
             : null,
         slider:
-          capturedStickerType === 'slider' && capturedSlider.question.trim()
+          capturedInteractive === 'slider' && capturedSlider.question.trim()
             ? {
                 question: capturedSlider.question.trim(),
                 emoji: capturedSlider.emoji || '🔥',
               }
             : null,
         countdown:
-          capturedStickerType === 'countdown' && capturedCountdown.title.trim()
+          capturedInteractive === 'countdown' && capturedCountdown.title.trim()
             ? {
                 title: capturedCountdown.title.trim(),
                 targetDate: new Date(capturedCountdown.date).toISOString(),
               }
             : null,
-        link:
-          capturedStickerType === 'link' && capturedLink.url.trim()
-            ? {
-                url: capturedLink.url.trim(),
-                stickerText: capturedLink.text.trim() || null,
-              }
-            : null,
-        location:
-          capturedStickerType === 'location' && capturedLocation.trim()
-            ? { name: capturedLocation.trim() }
-            : null,
-        hashtag:
-          capturedStickerType === 'hashtag' && capturedHashtag.trim()
-            ? { tag: capturedHashtag.replace(/^#/, '').trim() }
-            : null,
-        audioTitle: capturedAudioTitle.trim() || null,
-        audioArtist: capturedAudioArtist.trim() || null,
-        mentions:
-          capturedStickerType === 'mention' && capturedMentionUsers?.length > 0
-            ? capturedMentionUsers.map((u, idx) => ({
-                userId: u.id || u.userId,
-                xPercent: Math.min(85, Math.max(15, Number((stickerPos?.x || 50) + idx * 2))),
-                yPercent: Math.min(85, Math.max(15, Number((stickerPos?.y || 35) + idx * 5))),
-              }))
+        links:
+          capturedLink.url.trim()
+            ? [{ url: capturedLink.url.trim(), title: capturedLink.text.trim() || null }]
             : [],
+        locations:
+          capturedLocation.trim() ? [{ locationName: capturedLocation.trim() }] : [],
+        hashtags:
+          capturedHashtag.trim()
+            ? [{ hashtag: capturedHashtag.replace(/^#/, '').trim() }]
+            : [],
+        mentions: capturedMentionUsers?.length > 0 ? capturedMentionUsers : [],
         task: performStoryUpload,
       });
       handleClose(capturedPreviewUrl);
@@ -1208,200 +1316,343 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                   </div>
                 )}
 
-                {/* Overlaid Active Sticker */}
-                {activeStickerType !== 'none' && (activeStickerType !== 'mention' || showMentionsOnScreen) && (
+                {/* Composable Multi-Sticker Overlays on Story Canvas */}
+
+                {/* 1. Music Sticker Overlay */}
+                {(isMusicActive || activeStickerType === 'music') && (
                   <div
-                    className={`story-sticker-overlay-wrapper ${isDraggingSticker ? 'dragging' : ''}`}
+                    className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'music' ? 'dragging' : ''} ${activeStickerType === 'music' ? 'selected' : ''}`}
                     style={{
-                      left: `${stickerPos.x}%`,
-                      top: `${stickerPos.y}%`,
+                      left: `${stickerPositions.music.x}%`,
+                      top: `${stickerPositions.music.y}%`,
                     }}
-                    onMouseDown={handleStickerPointerDown}
-                    onTouchStart={handleStickerPointerDown}
+                    onMouseDown={(e) => handleStickerPointerDown(e, 'music')}
+                    onTouchStart={(e) => handleStickerPointerDown(e, 'music')}
                   >
                     <button
                       type="button"
                       className="story-sticker-corner-remove-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (activeStickerType === 'mention') {
-                          setShowMentionsOnScreen(false);
-                        } else {
-                          setActiveStickerType('none');
-                        }
+                        setAudioTitle('');
+                        setAudioArtist('');
+                        if (activeStickerType === 'music') setActiveStickerType('none');
                       }}
-                      title={activeStickerType === 'mention' ? "Don't show on screen" : "Remove sticker"}
-                      aria-label={activeStickerType === 'mention' ? "Don't show on screen" : "Remove sticker"}
+                      title="Remove music"
+                      aria-label="Remove music"
                     >
                       <X size={12} strokeWidth={2.8} />
                     </button>
-
-                    <div className="story-sticker-drag-handle" title="Drag to reposition anywhere">
+                    <div className="story-sticker-drag-handle" title="Drag to reposition music">
                       <span className="story-sticker-drag-pill" />
                     </div>
+                    <div className="story-sticker-overlay ig-music-sticker-card">
+                      <div className="ig-music-art-disc">
+                        <Music size={15} />
+                      </div>
+                      <div className="ig-music-meta">
+                        <span className="ig-music-title">{audioTitle || 'Song Name'}</span>
+                        <span className="ig-music-artist">{audioArtist || 'Instagram Music'}</span>
+                      </div>
+                      <div className="ig-music-eq" aria-hidden="true">
+                        <span className="ig-eq-bar bar-1" />
+                        <span className="ig-eq-bar bar-2" />
+                        <span className="ig-eq-bar bar-3" />
+                        <span className="ig-eq-bar bar-4" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                    {activeStickerType === 'mention' && showMentionsOnScreen && (
-                      <div className="story-sticker-overlay ig-mention-sticker-group">
-                        {selectedMentionUsers.length > 0 ? (
-                          selectedMentionUsers.map((u) => (
-                            <div key={u.id || u.userId} className="ig-mention-sticker-pill">
-                              <span className="ig-mention-gradient-at">@</span>
-                              <span className="ig-mention-username">{u.username}</span>
-                            </div>
-                          ))
-                        ) : (
-                          <div className="ig-mention-sticker-pill">
+                {/* 2. Mentions Overlay */}
+                {showMentionsOnScreen && (selectedMentionUsers.length > 0 || (activeStickerType === 'mention' && (mentionSearch.trim() || selectedMentionUsers.length === 0))) && (
+                  <div
+                    className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'mention' ? 'dragging' : ''} ${activeStickerType === 'mention' ? 'selected' : ''}`}
+                    style={{
+                      left: `${stickerPositions.mention.x}%`,
+                      top: `${stickerPositions.mention.y}%`,
+                    }}
+                    onMouseDown={(e) => handleStickerPointerDown(e, 'mention')}
+                    onTouchStart={(e) => handleStickerPointerDown(e, 'mention')}
+                  >
+                    <button
+                      type="button"
+                      className="story-sticker-corner-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMentionsOnScreen(false);
+                      }}
+                      title="Don't show on screen"
+                      aria-label="Don't show on screen"
+                    >
+                      <X size={12} strokeWidth={2.8} />
+                    </button>
+                    <div className="story-sticker-drag-handle" title="Drag to reposition mentions">
+                      <span className="story-sticker-drag-pill" />
+                    </div>
+                    <div className="story-sticker-overlay ig-mention-sticker-group">
+                      {selectedMentionUsers.length > 0 ? (
+                        selectedMentionUsers.map((u) => (
+                          <div key={u.id || u.userId} className="ig-mention-sticker-pill">
                             <span className="ig-mention-gradient-at">@</span>
-                            <span className="ig-mention-username">
-                              {mentionSearch.trim() ? mentionSearch.replace(/^@/, '') : 'mention'}
-                            </span>
+                            <span className="ig-mention-username">{u.username}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="ig-mention-sticker-pill">
+                          <span className="ig-mention-gradient-at">@</span>
+                          <span className="ig-mention-username">
+                            {mentionSearch.trim() ? mentionSearch.replace(/^@/, '') : 'mention'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Interactive Widget Overlay */}
+                {(interactiveType !== 'none' || ['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType)) && (
+                  (() => {
+                    const activeWidget = ['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType)
+                      ? activeStickerType
+                      : interactiveType;
+                    return (
+                      <div
+                        className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'interactive' ? 'dragging' : ''} ${['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType) ? 'selected' : ''}`}
+                        style={{
+                          left: `${stickerPositions.interactive.x}%`,
+                          top: `${stickerPositions.interactive.y}%`,
+                        }}
+                        onMouseDown={(e) => handleStickerPointerDown(e, 'interactive')}
+                        onTouchStart={(e) => handleStickerPointerDown(e, 'interactive')}
+                      >
+                        <button
+                          type="button"
+                          className="story-sticker-corner-remove-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInteractiveType('none');
+                            if (['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType)) {
+                              setActiveStickerType('none');
+                            }
+                          }}
+                          title="Remove interactive sticker"
+                          aria-label="Remove interactive sticker"
+                        >
+                          <X size={12} strokeWidth={2.8} />
+                        </button>
+                        <div className="story-sticker-drag-handle" title="Drag to reposition widget">
+                          <span className="story-sticker-drag-pill" />
+                        </div>
+
+                        {activeWidget === 'question' && (
+                          <div className="story-sticker-overlay question-overlay">
+                            <div className="question-header">
+                              <input
+                                type="text"
+                                value={questionPrompt}
+                                onChange={(e) => setQuestionPrompt(e.target.value)}
+                                placeholder="Ask me a question"
+                                maxLength={150}
+                                className="sticker-prompt-input"
+                              />
+                            </div>
+                            <div className="question-placeholder">Type something...</div>
+                          </div>
+                        )}
+
+                        {activeWidget === 'poll' && (
+                          <div className="story-sticker-overlay poll-overlay">
+                            <input
+                              type="text"
+                              value={pollQuestion}
+                              onChange={(e) => setPollQuestion(e.target.value)}
+                              placeholder="Ask a question..."
+                              maxLength={150}
+                              className="sticker-prompt-input"
+                            />
+                            <div className="poll-options-row">
+                              <input
+                                type="text"
+                                value={pollOptionA}
+                                onChange={(e) => setPollOptionA(e.target.value)}
+                                placeholder="Option 1"
+                                maxLength={40}
+                                className="poll-option-input"
+                              />
+                              <input
+                                type="text"
+                                value={pollOptionB}
+                                onChange={(e) => setPollOptionB(e.target.value)}
+                                placeholder="Option 2"
+                                maxLength={40}
+                                className="poll-option-input"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {activeWidget === 'quiz' && (
+                          <div className="story-sticker-overlay quiz-overlay">
+                            <input
+                              type="text"
+                              value={quizQuestion}
+                              onChange={(e) => setQuizQuestion(e.target.value)}
+                              placeholder="Guess the answer!"
+                              maxLength={150}
+                              className="sticker-prompt-input"
+                            />
+                            <div className="quiz-options-list">
+                              {[
+                                { val: quizOptionA, set: setQuizOptionA, idx: 0 },
+                                { val: quizOptionB, set: setQuizOptionB, idx: 1 },
+                                { val: quizOptionC, set: setQuizOptionC, idx: 2 },
+                              ].map(({ val, set, idx }) => (
+                                <div
+                                  key={idx}
+                                  className={`quiz-option-row ${quizCorrectIndex === idx ? 'correct' : ''}`}
+                                  onClick={() => setQuizCorrectIndex(idx)}
+                                  title={quizCorrectIndex === idx ? 'Correct answer' : 'Click to set correct answer'}
+                                >
+                                  <input
+                                    type="text"
+                                    value={val}
+                                    onChange={(e) => set(e.target.value)}
+                                    className="quiz-option-input"
+                                    placeholder={`Option ${idx + 1}`}
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {activeWidget === 'slider' && (
+                          <div className="story-sticker-overlay slider-overlay">
+                            <input
+                              type="text"
+                              value={sliderQuestion}
+                              onChange={(e) => setSliderQuestion(e.target.value)}
+                              placeholder="How hot is this?"
+                              maxLength={100}
+                              className="sticker-prompt-input"
+                            />
+                            <div className="slider-track-preview">
+                              <span className="slider-emoji">{sliderEmoji}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {activeWidget === 'countdown' && (
+                          <div className="story-sticker-overlay countdown-overlay">
+                            <div className="countdown-title">{countdownTitle || 'Upcoming Event'}</div>
+                            <div className="countdown-timer-box">03d : 12h : 45m</div>
                           </div>
                         )}
                       </div>
-                    )}
+                    );
+                  })()
+                )}
 
-                    {activeStickerType === 'question' && (
-                      <div className="story-sticker-overlay question-overlay">
-                        <div className="question-header">
-                          <input
-                            type="text"
-                            value={questionPrompt}
-                            onChange={(e) => setQuestionPrompt(e.target.value)}
-                            placeholder="Ask me a question"
-                            maxLength={150}
-                            className="sticker-prompt-input"
-                          />
-                        </div>
-                        <div className="question-placeholder">Type something...</div>
-                      </div>
-                    )}
+                {/* 4. Link Sticker Overlay */}
+                {(isLinkActive || (activeStickerType === 'link' && linkUrl.trim())) && (
+                  <div
+                    className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'link' ? 'dragging' : ''} ${activeStickerType === 'link' ? 'selected' : ''}`}
+                    style={{
+                      left: `${stickerPositions.link.x}%`,
+                      top: `${stickerPositions.link.y}%`,
+                    }}
+                    onMouseDown={(e) => handleStickerPointerDown(e, 'link')}
+                    onTouchStart={(e) => handleStickerPointerDown(e, 'link')}
+                  >
+                    <button
+                      type="button"
+                      className="story-sticker-corner-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLinkUrl('');
+                        setLinkText('');
+                        if (activeStickerType === 'link') setActiveStickerType('none');
+                      }}
+                      title="Remove link"
+                      aria-label="Remove link"
+                    >
+                      <X size={12} strokeWidth={2.8} />
+                    </button>
+                    <div className="story-sticker-drag-handle" title="Drag to reposition link">
+                      <span className="story-sticker-drag-pill" />
+                    </div>
+                    <div className="story-sticker-overlay link-overlay">
+                      <LinkIcon size={14} />
+                      <span>{linkText || linkUrl.replace(/^https?:\/\//, '') || 'Visit Link'}</span>
+                    </div>
+                  </div>
+                )}
 
-                    {activeStickerType === 'poll' && (
-                      <div className="story-sticker-overlay poll-overlay">
-                        <input
-                          type="text"
-                          value={pollQuestion}
-                          onChange={(e) => setPollQuestion(e.target.value)}
-                          placeholder="Ask a question..."
-                          maxLength={150}
-                          className="sticker-prompt-input"
-                        />
-                        <div className="poll-options-row">
-                          <input
-                            type="text"
-                            value={pollOptionA}
-                            onChange={(e) => setPollOptionA(e.target.value)}
-                            placeholder="Option 1"
-                            maxLength={40}
-                            className="poll-option-input"
-                          />
-                          <input
-                            type="text"
-                            value={pollOptionB}
-                            onChange={(e) => setPollOptionB(e.target.value)}
-                            placeholder="Option 2"
-                            maxLength={40}
-                            className="poll-option-input"
-                          />
-                        </div>
-                      </div>
-                    )}
+                {/* 5. Location Sticker Overlay */}
+                {(isLocationActive || (activeStickerType === 'location' && locationName.trim())) && (
+                  <div
+                    className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'location' ? 'dragging' : ''} ${activeStickerType === 'location' ? 'selected' : ''}`}
+                    style={{
+                      left: `${stickerPositions.location.x}%`,
+                      top: `${stickerPositions.location.y}%`,
+                    }}
+                    onMouseDown={(e) => handleStickerPointerDown(e, 'location')}
+                    onTouchStart={(e) => handleStickerPointerDown(e, 'location')}
+                  >
+                    <button
+                      type="button"
+                      className="story-sticker-corner-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLocationName('');
+                        if (activeStickerType === 'location') setActiveStickerType('none');
+                      }}
+                      title="Remove location"
+                      aria-label="Remove location"
+                    >
+                      <X size={12} strokeWidth={2.8} />
+                    </button>
+                    <div className="story-sticker-drag-handle" title="Drag to reposition location">
+                      <span className="story-sticker-drag-pill" />
+                    </div>
+                    <div className="story-sticker-overlay location-overlay">
+                      <MapPin size={14} />
+                      <span>{locationName || 'Location'}</span>
+                    </div>
+                  </div>
+                )}
 
-                    {activeStickerType === 'quiz' && (
-                      <div className="story-sticker-overlay quiz-overlay">
-                        <input
-                          type="text"
-                          value={quizQuestion}
-                          onChange={(e) => setQuizQuestion(e.target.value)}
-                          placeholder="Guess the answer!"
-                          maxLength={150}
-                          className="sticker-prompt-input"
-                        />
-                        <div className="quiz-options-list">
-                          {[
-                            { val: quizOptionA, set: setQuizOptionA, idx: 0 },
-                            { val: quizOptionB, set: setQuizOptionB, idx: 1 },
-                            { val: quizOptionC, set: setQuizOptionC, idx: 2 },
-                          ].map(({ val, set, idx }) => (
-                            <div
-                              key={idx}
-                              className={`quiz-option-row ${quizCorrectIndex === idx ? 'correct' : ''}`}
-                              onClick={() => setQuizCorrectIndex(idx)}
-                              title={quizCorrectIndex === idx ? 'Correct answer' : 'Click to set correct answer'}
-                            >
-                              <input
-                                type="text"
-                                value={val}
-                                onChange={(e) => set(e.target.value)}
-                                className="quiz-option-input"
-                                placeholder={`Option ${idx + 1}`}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'slider' && (
-                      <div className="story-sticker-overlay slider-overlay">
-                        <input
-                          type="text"
-                          value={sliderQuestion}
-                          onChange={(e) => setSliderQuestion(e.target.value)}
-                          placeholder="How hot is this?"
-                          maxLength={100}
-                          className="sticker-prompt-input"
-                        />
-                        <div className="slider-track-preview">
-                          <span className="slider-emoji">{sliderEmoji}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'countdown' && (
-                      <div className="story-sticker-overlay countdown-overlay">
-                        <div className="countdown-title">{countdownTitle || 'Upcoming Event'}</div>
-                        <div className="countdown-timer-box">03d : 12h : 45m</div>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'link' && linkUrl && (
-                      <div className="story-sticker-overlay link-overlay">
-                        <LinkIcon size={14} />
-                        <span>{linkText || linkUrl.replace(/^https?:\/\//, '')}</span>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'location' && locationName && (
-                      <div className="story-sticker-overlay location-overlay">
-                        <MapPin size={14} />
-                        <span>{locationName}</span>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'hashtag' && hashtagTag && (
-                      <div className="story-sticker-overlay hashtag-overlay">
-                        <span>#{hashtagTag.replace(/^#/, '')}</span>
-                      </div>
-                    )}
-
-                    {activeStickerType === 'music' && (audioTitle || audioArtist) && (
-                      <div className="story-sticker-overlay ig-music-sticker-card">
-                        <div className="ig-music-art-disc">
-                          <Music size={15} />
-                        </div>
-                        <div className="ig-music-meta">
-                          <span className="ig-music-title">{audioTitle || 'Song Name'}</span>
-                          <span className="ig-music-artist">{audioArtist || 'Instagram Music'}</span>
-                        </div>
-                        <div className="ig-music-eq" aria-hidden="true">
-                          <span className="ig-eq-bar bar-1" />
-                          <span className="ig-eq-bar bar-2" />
-                          <span className="ig-eq-bar bar-3" />
-                          <span className="ig-eq-bar bar-4" />
-                        </div>
-                      </div>
-                    )}
+                {/* 6. Hashtag Sticker Overlay */}
+                {(isHashtagActive || (activeStickerType === 'hashtag' && hashtagTag.trim())) && (
+                  <div
+                    className={`story-sticker-overlay-wrapper ${draggingStickerKey === 'hashtag' ? 'dragging' : ''} ${activeStickerType === 'hashtag' ? 'selected' : ''}`}
+                    style={{
+                      left: `${stickerPositions.hashtag.x}%`,
+                      top: `${stickerPositions.hashtag.y}%`,
+                    }}
+                    onMouseDown={(e) => handleStickerPointerDown(e, 'hashtag')}
+                    onTouchStart={(e) => handleStickerPointerDown(e, 'hashtag')}
+                  >
+                    <button
+                      type="button"
+                      className="story-sticker-corner-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setHashtagTag('');
+                        if (activeStickerType === 'hashtag') setActiveStickerType('none');
+                      }}
+                      title="Remove hashtag"
+                      aria-label="Remove hashtag"
+                    >
+                      <X size={12} strokeWidth={2.8} />
+                    </button>
+                    <div className="story-sticker-drag-handle" title="Drag to reposition hashtag">
+                      <span className="story-sticker-drag-pill" />
+                    </div>
+                    <div className="story-sticker-overlay hashtag-overlay">
+                      <span>#{hashtagTag ? hashtagTag.replace(/^#/, '') : 'hashtag'}</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1712,31 +1963,195 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                     <h4 className="ig-panel-heading" style={{ margin: '14px 14px 6px' }}>
                       Interactive Stickers
                     </h4>
+                    {/* Attached Features Chips Strip */}
+                    {attachedCount > 0 && (
+                      <div className="story-attached-features-bar">
+                        <div className="story-attached-header">
+                          <span className="story-attached-title">
+                            Applied to Story <span className="story-attached-count">({attachedCount})</span>
+                          </span>
+                          <span className="story-attached-hint">All combined into single story</span>
+                        </div>
+                        <div className="story-attached-chips">
+                          {isMusicActive && (
+                            <div
+                              className={`story-feature-chip ${activeStickerType === 'music' ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType('music')}
+                              title="Click to edit music"
+                            >
+                              <span className="story-feature-chip-label">🎵 {audioTitle || 'Music'}</span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAudioTitle('');
+                                  setAudioArtist('');
+                                  if (activeStickerType === 'music') setActiveStickerType('none');
+                                }}
+                                title="Remove music"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {selectedMentionUsers.length > 0 && (
+                            <div
+                              className={`story-feature-chip ${activeStickerType === 'mention' ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType('mention')}
+                              title="Click to edit mentions"
+                            >
+                              <span className="story-feature-chip-label">@ {selectedMentionUsers.length} Tagged</span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedMentionUsers([]);
+                                  if (activeStickerType === 'mention') setActiveStickerType('none');
+                                }}
+                                title="Remove mentions"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {interactiveType !== 'none' && (
+                            <div
+                              className={`story-feature-chip ${['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType) ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType(interactiveType)}
+                              title="Click to edit interactive widget"
+                            >
+                              <span className="story-feature-chip-label">
+                                {interactiveType === 'question' && '❓ Question'}
+                                {interactiveType === 'poll' && '📊 Poll'}
+                                {interactiveType === 'quiz' && '💡 Quiz'}
+                                {interactiveType === 'slider' && '🔥 Slider'}
+                                {interactiveType === 'countdown' && '⏱️ Countdown'}
+                              </span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInteractiveType('none');
+                                  if (['question', 'poll', 'quiz', 'slider', 'countdown'].includes(activeStickerType)) {
+                                    setActiveStickerType('none');
+                                  }
+                                }}
+                                title="Remove interactive sticker"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {isLinkActive && (
+                            <div
+                              className={`story-feature-chip ${activeStickerType === 'link' ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType('link')}
+                              title="Click to edit link"
+                            >
+                              <span className="story-feature-chip-label">🔗 {linkText || 'Link'}</span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLinkUrl('');
+                                  setLinkText('');
+                                  if (activeStickerType === 'link') setActiveStickerType('none');
+                                }}
+                                title="Remove link"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {isLocationActive && (
+                            <div
+                              className={`story-feature-chip ${activeStickerType === 'location' ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType('location')}
+                              title="Click to edit location"
+                            >
+                              <span className="story-feature-chip-label">📍 {locationName}</span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setLocationName('');
+                                  if (activeStickerType === 'location') setActiveStickerType('none');
+                                }}
+                                title="Remove location"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                          {isHashtagActive && (
+                            <div
+                              className={`story-feature-chip ${activeStickerType === 'hashtag' ? 'selected' : ''}`}
+                              onClick={() => setActiveStickerType('hashtag')}
+                              title="Click to edit hashtag"
+                            >
+                              <span className="story-feature-chip-label">#{hashtagTag.replace(/^#/, '')}</span>
+                              <button
+                                type="button"
+                                className="story-feature-chip-remove"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setHashtagTag('');
+                                  if (activeStickerType === 'hashtag') setActiveStickerType('none');
+                                }}
+                                title="Remove hashtag"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="story-stickers-grid">
                       {[
-                        { type: 'mention', label: 'Mention', icon: AtSign, color: 'linear-gradient(45deg, #f09433, #e6683c)' },
-                        { type: 'music', label: 'Music', icon: Music, color: 'linear-gradient(45deg, #dc2743, #cc2366)' },
-                        { type: 'question', label: 'Question', icon: HelpCircle, color: 'linear-gradient(45deg, #8a3ab9, #bc1888)' },
-                        { type: 'poll', label: 'Poll', icon: BarChart2, color: 'linear-gradient(45deg, #00ba7c, #0095f6)' },
-                        { type: 'quiz', label: 'Quiz', icon: QuizIcon, color: 'linear-gradient(45deg, #e95950, #fccc63)' },
-                        { type: 'slider', label: 'Slider', icon: Flame, color: 'linear-gradient(45deg, #ff5e3a, #ff2a68)' },
-                        { type: 'countdown', label: 'Countdown', icon: Clock, color: 'linear-gradient(45deg, #ff9500, #ff5e3a)' },
-                        { type: 'link', label: 'Link', icon: LinkIcon, color: 'linear-gradient(45deg, #0095f6, #4c68d7)' },
-                        { type: 'location', label: 'Location', icon: MapPin, color: 'linear-gradient(45deg, #e1306c, #fd1d1d)' },
-                        { type: 'hashtag', label: 'Hashtag', icon: Hash, color: 'linear-gradient(45deg, #5851db, #833ab4)' },
-                      ].map(({ type, label, icon: Icon, color }) => {
-                        const isActive = activeStickerType === type;
+                        { type: 'mention', label: 'Mention', icon: AtSign, color: 'linear-gradient(45deg, #f09433, #e6683c)', isAttached: isMentionActive, count: selectedMentionUsers.length },
+                        { type: 'music', label: 'Music', icon: Music, color: 'linear-gradient(45deg, #dc2743, #cc2366)', isAttached: isMusicActive },
+                        { type: 'question', label: 'Question', icon: HelpCircle, color: 'linear-gradient(45deg, #8a3ab9, #bc1888)', isAttached: interactiveType === 'question' },
+                        { type: 'poll', label: 'Poll', icon: BarChart2, color: 'linear-gradient(45deg, #00ba7c, #0095f6)', isAttached: interactiveType === 'poll' },
+                        { type: 'quiz', label: 'Quiz', icon: QuizIcon, color: 'linear-gradient(45deg, #e95950, #fccc63)', isAttached: interactiveType === 'quiz' },
+                        { type: 'slider', label: 'Slider', icon: Flame, color: 'linear-gradient(45deg, #ff5e3a, #ff2a68)', isAttached: interactiveType === 'slider' },
+                        { type: 'countdown', label: 'Countdown', icon: Clock, color: 'linear-gradient(45deg, #ff9500, #ff5e3a)', isAttached: interactiveType === 'countdown' },
+                        { type: 'link', label: 'Link', icon: LinkIcon, color: 'linear-gradient(45deg, #0095f6, #4c68d7)', isAttached: isLinkActive },
+                        { type: 'location', label: 'Location', icon: MapPin, color: 'linear-gradient(45deg, #e1306c, #fd1d1d)', isAttached: isLocationActive },
+                        { type: 'hashtag', label: 'Hashtag', icon: Hash, color: 'linear-gradient(45deg, #5851db, #833ab4)', isAttached: isHashtagActive },
+                      ].map(({ type, label, icon: Icon, color, isAttached, count }) => {
+                        const isEditing = activeStickerType === type;
                         return (
                           <button
                             key={type}
                             type="button"
-                            onClick={() => setActiveStickerType(isActive ? 'none' : type)}
-                            className={`story-sticker-card-btn ${isActive ? 'active' : ''}`}
+                            onClick={() => {
+                              if (isEditing) {
+                                setActiveStickerType('none');
+                              } else {
+                                setActiveStickerType(type);
+                                if (['question', 'poll', 'quiz', 'slider', 'countdown'].includes(type)) {
+                                  setInteractiveType(type);
+                                }
+                              }
+                            }}
+                            className={`story-sticker-card-btn ${isEditing ? 'active' : ''} ${isAttached ? 'attached' : ''}`}
                           >
                             <span className="story-sticker-icon-badge" style={{ background: color }}>
                               <Icon size={14} />
                             </span>
-                            <span>{label}</span>
+                            <span className="story-sticker-label-text">{label}</span>
+                            {isAttached && (
+                              <span className="story-sticker-attached-badge" title="Applied to story">
+                                ✓{count ? ` ${count}` : ''}
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -1748,40 +2163,42 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                       {activeStickerType !== 'none' && (
                         <div className="sticker-pos-presets">
                           <div className="sticker-pos-header">
-                            <label>Sticker Position</label>
+                            <label>
+                              {activeStickerType.charAt(0).toUpperCase() + activeStickerType.slice(1)} Position
+                            </label>
                             <button
                               type="button"
                               className="sticker-remove-text-btn"
-                              onClick={() => setActiveStickerType('none')}
+                              onClick={() => handleRemoveCurrentSticker(activeStickerType)}
                             >
-                              Remove sticker
+                              Remove from story
                             </button>
                           </div>
                           <div className="ig-pos-btn-group">
                             <button
                               type="button"
                               className={`ig-pos-btn ${stickerPos.y <= 28 ? 'active' : ''}`}
-                              onClick={() => setStickerPos({ x: 50, y: 18 })}
+                              onClick={() => handleSetPresetPosition('top')}
                             >
                               Top
                             </button>
                             <button
                               type="button"
                               className={`ig-pos-btn ${stickerPos.y > 28 && stickerPos.y < 60 ? 'active' : ''}`}
-                              onClick={() => setStickerPos({ x: 50, y: 38 })}
+                              onClick={() => handleSetPresetPosition('center')}
                             >
                               Center
                             </button>
                             <button
                               type="button"
                               className={`ig-pos-btn ${stickerPos.y >= 60 ? 'active' : ''}`}
-                              onClick={() => setStickerPos({ x: 50, y: 70 })}
+                              onClick={() => handleSetPresetPosition('bottom')}
                             >
                               Bottom
                             </button>
                           </div>
                           <p className="sticker-drag-tip-text">
-                            💡 You can also drag the sticker anywhere on the video preview.
+                            💡 You can also drag this sticker anywhere on the story preview.
                           </p>
                         </div>
                       )}

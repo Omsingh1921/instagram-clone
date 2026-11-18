@@ -247,4 +247,49 @@ describe('CreateStoryModal Crop, Trim, Stickers & Right-Up Corner Save Features'
       expect(onClose).toHaveBeenCalled();
     });
   });
+
+  it('7. applies multiple features and stickers simultaneously to a single story', async () => {
+    const onStoryCreated = vi.fn();
+    render(<CreateStoryModal isOpen={true} onClose={vi.fn()} onStoryCreated={onStoryCreated} />);
+
+    const photoFile = new File(['mock photo bytes'], 'multi.jpg', { type: 'image/jpeg' });
+    const fileInputs = document.querySelectorAll('input[type="file"]');
+    fireEvent.change(fileInputs[0], { target: { files: [photoFile] } });
+
+    await waitFor(() => {
+      expect(screen.getByText('Stickers')).toBeInTheDocument();
+    });
+
+    // 1. Switch to Stickers tab
+    fireEvent.click(screen.getByText('Stickers'));
+
+    // 2. Select Music sticker and click trending song
+    fireEvent.click(screen.getByText('Music'));
+    const trendingBtn = screen.getByText('Die With A Smile');
+    fireEvent.click(trendingBtn);
+
+    // Verify Music attached chip appears
+    expect(screen.getByText(/Applied to Story/i)).toBeInTheDocument();
+
+    // 3. Select Question sticker
+    fireEvent.click(screen.getByText('Question'));
+    expect(screen.getAllByPlaceholderText('Ask me a question').length).toBeGreaterThanOrEqual(1);
+
+    // 4. Select Location sticker and enter a city
+    fireEvent.click(screen.getByText('Location'));
+    const locInput = screen.getByPlaceholderText('Add location (e.g. Mumbai, India)');
+    fireEvent.change(locInput, { target: { value: 'Mumbai, India' } });
+
+    // Verify all 3 attached chips appear in Applied to Story strip
+    expect(screen.getByText(/🎵 Die With A Smile/i)).toBeInTheDocument();
+    expect(screen.getByText(/❓ Question/i)).toBeInTheDocument();
+    expect(screen.getByText(/📍 Mumbai, India/i)).toBeInTheDocument();
+
+    // Submit story to Your Story
+    fireEvent.click(screen.getByText('Your Story'));
+
+    await waitFor(() => {
+      expect(mockShowSuccess).toHaveBeenCalledWith(expect.stringContaining('Story added!'));
+    });
+  });
 });

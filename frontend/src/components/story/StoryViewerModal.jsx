@@ -1517,35 +1517,74 @@ export const StoryViewerModal = ({
             </div>
           )}
 
-          {/* Link Sticker */}
-          {currentStory?.link && (
+          {/* Link Sticker(s) */}
+          {(currentStory?.links?.length
+            ? currentStory.links
+            : currentStory?.link
+            ? [currentStory.link]
+            : []
+          ).map((lnk, idx) => (
             <a
-              href={currentStory.link.url}
+              key={lnk.id || idx}
+              href={lnk.url}
               target="_blank"
               rel="noopener noreferrer"
               className="story-link-pill"
+              style={
+                lnk.xPercent != null && lnk.yPercent != null
+                  ? { left: `${lnk.xPercent}%`, top: `${lnk.yPercent}%` }
+                  : undefined
+              }
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink size={14} />
-              <span>{currentStory.link.stickerText || 'Visit Link'}</span>
+              <span>{lnk.title || lnk.stickerText || 'Visit Link'}</span>
             </a>
-          )}
+          ))}
 
-          {/* Location Sticker */}
-          {currentStory?.location && (
-            <div className="story-location-badge" onClick={(e) => e.stopPropagation()}>
+          {/* Location Sticker(s) */}
+          {(currentStory?.locations?.length
+            ? currentStory.locations
+            : currentStory?.location
+            ? [currentStory.location]
+            : []
+          ).map((loc, idx) => (
+            <div
+              key={loc.id || idx}
+              className="story-location-badge"
+              style={
+                loc.xPercent != null && loc.yPercent != null
+                  ? { left: `${loc.xPercent}%`, top: `${loc.yPercent}%` }
+                  : undefined
+              }
+              onClick={(e) => e.stopPropagation()}
+            >
               <MapPin size={13} color="#ff4d4f" />
-              <span>{currentStory.location.name}</span>
+              <span>{loc.locationName || loc.name}</span>
             </div>
-          )}
+          ))}
 
-          {/* Hashtag Sticker */}
-          {currentStory?.hashtag && (
-            <div className="story-hashtag-badge" onClick={(e) => e.stopPropagation()}>
+          {/* Hashtag Sticker(s) */}
+          {(currentStory?.hashtags?.length
+            ? currentStory.hashtags
+            : currentStory?.hashtag
+            ? [currentStory.hashtag]
+            : []
+          ).map((tag, idx) => (
+            <div
+              key={tag.id || idx}
+              className="story-hashtag-badge"
+              style={
+                tag.xPercent != null && tag.yPercent != null
+                  ? { left: `${tag.xPercent}%`, top: `${tag.yPercent}%` }
+                  : undefined
+              }
+              onClick={(e) => e.stopPropagation()}
+            >
               <Hash size={13} />
-              <span>{currentStory.hashtag.tag}</span>
+              <span>#{String(tag.hashtag || tag.tag).replace(/^#/, '')}</span>
             </div>
-          )}
+          ))}
 
           {/* Mention Stickers Overlay */}
           {currentStory?.mentions && currentStory.mentions.length > 0 && (

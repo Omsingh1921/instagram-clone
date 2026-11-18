@@ -114,7 +114,8 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
   const [mentionSearch, setMentionSearch] = useState('');
   const [mentionUserResults, setMentionUserResults] = useState([]);
   const [isSearchingMention, setIsSearchingMention] = useState(false);
-  const [selectedMentionUser, setSelectedMentionUser] = useState(null);
+  const [selectedMentionUsers, setSelectedMentionUsers] = useState([]);
+  const selectedMentionUser = selectedMentionUsers[0] || null;
 
   // Question (AMA)
   const [questionPrompt, setQuestionPrompt] = useState('Ask me a question');
@@ -228,7 +229,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     setMentionSearch('');
     setMentionUserResults([]);
     setIsSearchingMention(false);
-    setSelectedMentionUser(null);
+    setSelectedMentionUsers([]);
   };
 
   useEffect(() => {
@@ -704,7 +705,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     const capturedHashtag = hashtagTag;
     const capturedAudioTitle = audioTitle;
     const capturedAudioArtist = audioArtist;
-    const capturedMentionUser = selectedMentionUser;
+    const capturedMentionUsers = [...selectedMentionUsers];
 
     const performStoryUpload = async (updateProgress = () => {}) => {
       updateProgress(25, 'Adding to your story...');
@@ -805,14 +806,12 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
         audioTitle: capturedAudioTitle.trim() || null,
         audioArtist: capturedAudioArtist.trim() || null,
         mentions:
-          capturedStickerType === 'mention' && capturedMentionUser?.id
-            ? [
-                {
-                  userId: capturedMentionUser.id,
-                  xPercent: 50.0,
-                  yPercent: 50.0,
-                },
-              ]
+          capturedStickerType === 'mention' && capturedMentionUsers?.length > 0
+            ? capturedMentionUsers.map((u, idx) => ({
+                userId: u.id || u.userId,
+                xPercent: Math.min(85, Math.max(15, Number((stickerPos?.x || 50) + idx * 2))),
+                yPercent: Math.min(85, Math.max(15, Number((stickerPos?.y || 35) + idx * 5))),
+              }))
             : [],
       };
 
@@ -883,14 +882,12 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
         audioTitle: capturedAudioTitle.trim() || null,
         audioArtist: capturedAudioArtist.trim() || null,
         mentions:
-          capturedStickerType === 'mention' && capturedMentionUser?.id
-            ? [
-                {
-                  userId: capturedMentionUser.id,
-                  xPercent: 50.0,
-                  yPercent: 50.0,
-                },
-              ]
+          capturedStickerType === 'mention' && capturedMentionUsers?.length > 0
+            ? capturedMentionUsers.map((u, idx) => ({
+                userId: u.id || u.userId,
+                xPercent: Math.min(85, Math.max(15, Number((stickerPos?.x || 50) + idx * 2))),
+                yPercent: Math.min(85, Math.max(15, Number((stickerPos?.y || 35) + idx * 5))),
+              }))
             : [],
         task: performStoryUpload,
       });
@@ -1235,15 +1232,22 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                     </div>
 
                     {activeStickerType === 'mention' && (
-                      <div className="story-sticker-overlay ig-mention-sticker-pill">
-                        <span className="ig-mention-gradient-at">@</span>
-                        <span className="ig-mention-username">
-                          {selectedMentionUser?.username
-                            ? selectedMentionUser.username
-                            : mentionSearch.trim()
-                            ? mentionSearch.replace(/^@/, '')
-                            : 'mention'}
-                        </span>
+                      <div className="story-sticker-overlay ig-mention-sticker-group">
+                        {selectedMentionUsers.length > 0 ? (
+                          selectedMentionUsers.map((u) => (
+                            <div key={u.id || u.userId} className="ig-mention-sticker-pill">
+                              <span className="ig-mention-gradient-at">@</span>
+                              <span className="ig-mention-username">{u.username}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="ig-mention-sticker-pill">
+                            <span className="ig-mention-gradient-at">@</span>
+                            <span className="ig-mention-username">
+                              {mentionSearch.trim() ? mentionSearch.replace(/^@/, '') : 'mention'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1775,55 +1779,34 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
                       {activeStickerType === 'mention' && (
                         <div className="sticker-input-group">
-                          <label>Mention User (@username)</label>
+                          <label>Mention Users (@username)</label>
                           <input
                             type="text"
                             value={mentionSearch}
-                            onChange={(e) => {
-                              setMentionSearch(e.target.value);
-                              if (selectedMentionUser && e.target.value !== `@${selectedMentionUser.username}`) {
-                                setSelectedMentionUser(null);
-                              }
-                            }}
-                            placeholder="@search username..."
+                            onChange={(e) => setMentionSearch(e.target.value)}
+                            placeholder="@search username to add..."
                             className="ig-details-input"
                             autoFocus
                           />
 
-                          {selectedMentionUser && (
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                marginTop: '8px',
-                                padding: '6px 10px',
-                                background: 'rgba(0, 149, 246, 0.15)',
-                                borderRadius: '8px',
-                                border: '1px solid rgba(0, 149, 246, 0.3)',
-                              }}
-                            >
-                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#0095f6' }}>
-                                Mentioning: @{selectedMentionUser.username}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedMentionUser(null);
-                                  setMentionSearch('');
-                                }}
-                                style={{
-                                  background: 'none',
-                                  border: 'none',
-                                  cursor: 'pointer',
-                                  color: '#8e8e8e',
-                                  marginLeft: 'auto',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <X size={14} />
-                              </button>
+                          {/* Selected Mention Chips */}
+                          {selectedMentionUsers.length > 0 && (
+                            <div className="mention-selected-chips-list">
+                              {selectedMentionUsers.map((u) => (
+                                <span key={u.id || u.userId} className="mention-user-chip">
+                                  <Avatar src={u.avatarUrl || u.profilePictureUrl} size="xs" />
+                                  <span className="chip-username">@{u.username}</span>
+                                  <button
+                                    type="button"
+                                    className="chip-remove-btn"
+                                    onClick={() => setSelectedMentionUsers((prev) => prev.filter((m) => (m.id || m.userId) !== (u.id || u.userId)))}
+                                    title={`Remove @${u.username}`}
+                                    aria-label={`Remove @${u.username}`}
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                </span>
+                              ))}
                             </div>
                           )}
 
@@ -1833,7 +1816,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                             </div>
                           )}
 
-                          {!selectedMentionUser && mentionUserResults.length > 0 && (
+                          {mentionUserResults.length > 0 && (
                             <div
                               style={{
                                 marginTop: '6px',
@@ -1844,39 +1827,45 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                                 overflowY: 'auto',
                               }}
                             >
-                              {mentionUserResults.map((u) => (
-                                <div
-                                  key={u.id || u.userId}
-                                  onClick={() => {
-                                    setSelectedMentionUser(u);
-                                    setMentionSearch(`@${u.username}`);
-                                    setMentionUserResults([]);
-                                  }}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '10px',
-                                    padding: '8px 12px',
-                                    cursor: 'pointer',
-                                    borderBottom: '1px solid #262626',
-                                  }}
-                                  className="mention-user-row"
-                                >
-                                  <Avatar src={u.avatarUrl || u.profilePictureUrl} size="sm" />
-                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
-                                      @{u.username}
-                                    </span>
-                                    {u.displayName && (
-                                      <span style={{ fontSize: '11px', color: '#8e8e8e' }}>
-                                        {u.displayName}
+                              {mentionUserResults
+                                .filter((u) => !selectedMentionUsers.some((m) => (m.id || m.userId) === (u.id || u.userId)))
+                                .map((u) => (
+                                  <div
+                                    key={u.id || u.userId}
+                                    onClick={() => {
+                                      setSelectedMentionUsers((prev) => [...prev, u]);
+                                      setMentionSearch('');
+                                      setMentionUserResults([]);
+                                    }}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      padding: '8px 12px',
+                                      cursor: 'pointer',
+                                      borderBottom: '1px solid #262626',
+                                    }}
+                                    className="mention-user-row"
+                                  >
+                                    <Avatar src={u.avatarUrl || u.profilePictureUrl} size="sm" />
+                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+                                        @{u.username}
                                       </span>
-                                    )}
+                                      {u.displayName && (
+                                        <span style={{ fontSize: '11px', color: '#8e8e8e' }}>
+                                          {u.displayName}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <span className="mention-add-pill">+ Add</span>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
                             </div>
                           )}
+                          <p className="sticker-drag-tip-text">
+                            💡 You can mention multiple users. Each will receive an instant notification and auto-DM with &quot;Add to Story&quot;!
+                          </p>
                         </div>
                       )}
 

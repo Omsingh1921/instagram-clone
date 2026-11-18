@@ -926,6 +926,14 @@
 }
 
 /* Instagram Mention Sticker */
+.ig-mention-sticker-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 320px;
+}
+
 .ig-mention-sticker-pill {
   display: inline-flex;
   align-items: center;
@@ -952,6 +960,63 @@
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.2px;
+}
+
+/* Selected Mention Chips in Sidebar */
+.mention-selected-chips-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.mention-user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 6px;
+  background: rgba(0, 149, 246, 0.15);
+  border: 1px solid rgba(0, 149, 246, 0.35);
+  border-radius: 999px;
+  color: #0095f6;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.mention-user-chip .chip-username {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip-remove-btn {
+  background: none;
+  border: none;
+  color: #8e8e8e;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin-left: 2px;
+  border-radius: 50%;
+  transition: color 0.15s ease;
+}
+
+.chip-remove-btn:hover {
+  color: #ed4956;
+}
+
+.mention-add-pill {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0095f6;
+  background: rgba(0, 149, 246, 0.12);
+  border: 1px solid rgba(0, 149, 246, 0.3);
+  padding: 3px 8px;
+  border-radius: 6px;
 }
 
 /* Trending Music Chips */

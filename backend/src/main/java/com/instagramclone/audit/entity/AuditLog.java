@@ -15,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @SuperBuilder
 public class AuditLog extends BaseCreatedEntity {
-@Column(name = "user_id")
+    @Column(name = "user_id")
     private UUID userId;
 
     @Column(name = "action", length = 50, nullable = false)

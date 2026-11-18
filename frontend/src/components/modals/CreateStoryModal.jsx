@@ -27,11 +27,14 @@ import {
   Smile,
   Volume2,
   VolumeX,
+  AtSign,
 } from 'lucide-react';
 import Modal from '../common/Modal';
 import LoadingSpinner from '../common/LoadingSpinner';
+import Avatar from '../common/Avatar';
 import mediaService from '../../services/media.service';
 import storyService from '../../services/story.service';
+import userService from '../../services/user.service';
 import { useToast } from '../../context/ToastContext';
 import {
   formatTime,
@@ -99,8 +102,14 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
   const [isSavingCrop, setIsSavingCrop] = useState(false);
   const [cropSavedToast, setCropSavedToast] = useState(false);
 
-  // Sticker types: 'none', 'question', 'poll', 'quiz', 'slider', 'countdown', 'link', 'location', 'hashtag', 'music'
+  // Sticker types: 'none', 'mention', 'question', 'poll', 'quiz', 'slider', 'countdown', 'link', 'location', 'hashtag', 'music'
   const [activeStickerType, setActiveStickerType] = useState('none');
+
+  // Mention (@username)
+  const [mentionSearch, setMentionSearch] = useState('');
+  const [mentionUserResults, setMentionUserResults] = useState([]);
+  const [isSearchingMention, setIsSearchingMention] = useState(false);
+  const [selectedMentionUser, setSelectedMentionUser] = useState(null);
 
   // Question (AMA)
   const [questionPrompt, setQuestionPrompt] = useState('Ask me a question');
@@ -211,7 +220,36 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     setHashtagTag('');
     setAudioTitle('');
     setAudioArtist('');
+    setMentionSearch('');
+    setMentionUserResults([]);
+    setIsSearchingMention(false);
+    setSelectedMentionUser(null);
   };
+
+  useEffect(() => {
+    if (activeStickerType !== 'mention' || !mentionSearch.trim()) {
+      setMentionUserResults([]);
+      return;
+    }
+    const clean = mentionSearch.replace(/^@/, '').trim();
+    if (!clean) {
+      setMentionUserResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsSearchingMention(true);
+      try {
+        const res = await userService.searchUsers(clean, 0, 6);
+        const list = res?.data?.content || res?.data || res || [];
+        setMentionUserResults(Array.isArray(list) ? list : []);
+      } catch {
+        setMentionUserResults([]);
+      } finally {
+        setIsSearchingMention(false);
+      }
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [mentionSearch, activeStickerType]);
 
   const handleClose = (keepThumbnailUrl = null) => {
     resetForm(keepThumbnailUrl);
@@ -606,6 +644,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     const capturedHashtag = hashtagTag;
     const capturedAudioTitle = audioTitle;
     const capturedAudioArtist = audioArtist;
+    const capturedMentionUser = selectedMentionUser;
 
     const performStoryUpload = async (updateProgress = () => {}) => {
       updateProgress(25, 'Adding to your story...');
@@ -705,6 +744,16 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
             : null,
         audioTitle: capturedAudioTitle.trim() || null,
         audioArtist: capturedAudioArtist.trim() || null,
+        mentions:
+          capturedStickerType === 'mention' && capturedMentionUser?.id
+            ? [
+                {
+                  userId: capturedMentionUser.id,
+                  xPercent: 50.0,
+                  yPercent: 50.0,
+                },
+              ]
+            : [],
       };
 
       await storyService.createStory(payload);
@@ -773,6 +822,16 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
             : null,
         audioTitle: capturedAudioTitle.trim() || null,
         audioArtist: capturedAudioArtist.trim() || null,
+        mentions:
+          capturedStickerType === 'mention' && capturedMentionUser?.id
+            ? [
+                {
+                  userId: capturedMentionUser.id,
+                  xPercent: 50.0,
+                  yPercent: 50.0,
+                },
+              ]
+            : [],
         task: performStoryUpload,
       });
       handleClose(capturedPreviewUrl);
@@ -1076,6 +1135,21 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                 )}
 
                 {/* Overlaid Active Sticker */}
+                {activeStickerType === 'mention' && (
+                  <div className="story-sticker-overlay mention-overlay">
+                    <AtSign size={15} />
+                    <span>
+                      {selectedMentionUser?.username
+                        ? `@${selectedMentionUser.username}`
+                        : mentionSearch.trim()
+                        ? mentionSearch.startsWith('@')
+                          ? mentionSearch
+                          : `@${mentionSearch}`
+                        : '@mention'}
+                    </span>
+                  </div>
+                )}
+
                 {activeStickerType === 'question' && (
                   <div className="story-sticker-overlay question-overlay">
                     <div className="question-header">
@@ -1516,6 +1590,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                     </h4>
                     <div className="story-stickers-grid">
                       {[
+                        { type: 'mention', label: 'Mention', icon: AtSign },
                         { type: 'question', label: 'Question', icon: HelpCircle },
                         { type: 'poll', label: 'Poll', icon: BarChart2 },
                         { type: 'quiz', label: 'Quiz', icon: QuizIcon },
@@ -1543,6 +1618,113 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
                     {/* Active Sticker Editor Form in Sidebar */}
                     <div className="story-sticker-config-form">
+                      {activeStickerType === 'mention' && (
+                        <div className="sticker-input-group">
+                          <label>Mention User (@username)</label>
+                          <input
+                            type="text"
+                            value={mentionSearch}
+                            onChange={(e) => {
+                              setMentionSearch(e.target.value);
+                              if (selectedMentionUser && e.target.value !== `@${selectedMentionUser.username}`) {
+                                setSelectedMentionUser(null);
+                              }
+                            }}
+                            placeholder="@search username..."
+                            className="ig-details-input"
+                            autoFocus
+                          />
+
+                          {selectedMentionUser && (
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                marginTop: '8px',
+                                padding: '6px 10px',
+                                background: 'rgba(0, 149, 246, 0.15)',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(0, 149, 246, 0.3)',
+                              }}
+                            >
+                              <span style={{ fontSize: '13px', fontWeight: 600, color: '#0095f6' }}>
+                                Mentioning: @{selectedMentionUser.username}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedMentionUser(null);
+                                  setMentionSearch('');
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  color: '#8e8e8e',
+                                  marginLeft: 'auto',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                }}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          )}
+
+                          {isSearchingMention && (
+                            <div style={{ padding: '8px', fontSize: '12px', color: '#8e8e8e' }}>
+                              Searching users...
+                            </div>
+                          )}
+
+                          {!selectedMentionUser && mentionUserResults.length > 0 && (
+                            <div
+                              style={{
+                                marginTop: '6px',
+                                background: '#1c1c1c',
+                                border: '1px solid #333',
+                                borderRadius: '8px',
+                                maxHeight: '180px',
+                                overflowY: 'auto',
+                              }}
+                            >
+                              {mentionUserResults.map((u) => (
+                                <div
+                                  key={u.id || u.userId}
+                                  onClick={() => {
+                                    setSelectedMentionUser(u);
+                                    setMentionSearch(`@${u.username}`);
+                                    setMentionUserResults([]);
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    padding: '8px 12px',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid #262626',
+                                  }}
+                                  className="mention-user-row"
+                                >
+                                  <Avatar src={u.avatarUrl || u.profilePictureUrl} size="sm" />
+                                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#fff' }}>
+                                      @{u.username}
+                                    </span>
+                                    {u.displayName && (
+                                      <span style={{ fontSize: '11px', color: '#8e8e8e' }}>
+                                        {u.displayName}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {activeStickerType === 'question' && (
                         <div className="sticker-input-group">
                           <label>Question Prompt</label>

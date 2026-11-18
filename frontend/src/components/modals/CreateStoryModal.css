@@ -1019,6 +1019,53 @@
   border-radius: 6px;
 }
 
+/* Mention Visibility Toggle */
+.mention-visibility-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.ig-mention-vis-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color, #333333);
+  color: #ffffff;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ig-mention-vis-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ig-mention-vis-toggle-btn.hidden-state {
+  background: rgba(255, 149, 0, 0.15);
+  border-color: #ff9500;
+  color: #ff9500;
+}
+
+.mention-invisible-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 149, 0, 0.12);
+  border: 1px solid rgba(255, 149, 0, 0.28);
+  color: #ffb340;
+  font-size: 11.5px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
 /* Trending Music Chips */
 .ig-trending-music-chips {
   display: flex;

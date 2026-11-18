@@ -28,6 +28,8 @@ import {
   Volume2,
   VolumeX,
   AtSign,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import Modal from '../common/Modal';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -116,6 +118,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
   const [isSearchingMention, setIsSearchingMention] = useState(false);
   const [selectedMentionUsers, setSelectedMentionUsers] = useState([]);
   const selectedMentionUser = selectedMentionUsers[0] || null;
+  const [showMentionsOnScreen, setShowMentionsOnScreen] = useState(true);
 
   // Question (AMA)
   const [questionPrompt, setQuestionPrompt] = useState('Ask me a question');
@@ -230,6 +233,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     setMentionUserResults([]);
     setIsSearchingMention(false);
     setSelectedMentionUsers([]);
+    setShowMentionsOnScreen(true);
   };
 
   useEffect(() => {
@@ -706,6 +710,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
     const capturedAudioTitle = audioTitle;
     const capturedAudioArtist = audioArtist;
     const capturedMentionUsers = [...selectedMentionUsers];
+    const capturedShowMentionsOnScreen = showMentionsOnScreen;
 
     const performStoryUpload = async (updateProgress = () => {}) => {
       updateProgress(25, 'Adding to your story...');
@@ -1204,7 +1209,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                 )}
 
                 {/* Overlaid Active Sticker */}
-                {activeStickerType !== 'none' && (
+                {activeStickerType !== 'none' && (activeStickerType !== 'mention' || showMentionsOnScreen) && (
                   <div
                     className={`story-sticker-overlay-wrapper ${isDraggingSticker ? 'dragging' : ''}`}
                     style={{
@@ -1219,10 +1224,14 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                       className="story-sticker-corner-remove-btn"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setActiveStickerType('none');
+                        if (activeStickerType === 'mention') {
+                          setShowMentionsOnScreen(false);
+                        } else {
+                          setActiveStickerType('none');
+                        }
                       }}
-                      title="Remove sticker"
-                      aria-label="Remove sticker"
+                      title={activeStickerType === 'mention' ? "Don't show on screen" : "Remove sticker"}
+                      aria-label={activeStickerType === 'mention' ? "Don't show on screen" : "Remove sticker"}
                     >
                       <X size={12} strokeWidth={2.8} />
                     </button>
@@ -1231,7 +1240,7 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
                       <span className="story-sticker-drag-pill" />
                     </div>
 
-                    {activeStickerType === 'mention' && (
+                    {activeStickerType === 'mention' && showMentionsOnScreen && (
                       <div className="story-sticker-overlay ig-mention-sticker-group">
                         {selectedMentionUsers.length > 0 ? (
                           selectedMentionUsers.map((u) => (
@@ -1779,7 +1788,38 @@ export const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
 
                       {activeStickerType === 'mention' && (
                         <div className="sticker-input-group">
-                          <label>Mention Users (@username)</label>
+                          <div className="mention-visibility-header">
+                            <label style={{ margin: 0 }}>Mention Users (@username)</label>
+                            <button
+                              type="button"
+                              className={`ig-mention-vis-toggle-btn ${showMentionsOnScreen ? 'active' : 'hidden-state'}`}
+                              onClick={() => setShowMentionsOnScreen((prev) => !prev)}
+                              title={showMentionsOnScreen ? 'Click to hide mentions from video screen' : 'Click to show mentions on video screen'}
+                            >
+                              {showMentionsOnScreen ? (
+                                <>
+                                  <Eye size={13} />
+                                  <span>Show on screen</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff size={13} />
+                                  <span>Don&apos;t show on screen</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {!showMentionsOnScreen && (
+                            <div className="mention-invisible-alert">
+                              <EyeOff size={14} style={{ flexShrink: 0, marginTop: '2px' }} />
+                              <div>
+                                <strong>Invisible Mentions Active:</strong>
+                                <span> Mentioned friends will still receive a notification and DM, but their names will NOT show on the video.</span>
+                              </div>
+                            </div>
+                          )}
+
                           <input
                             type="text"
                             value={mentionSearch}

@@ -18,6 +18,7 @@ import {
   Copy,
   EyeOff,
   RotateCw,
+  Folder,
 } from 'lucide-react';
 import Avatar from '../components/common/Avatar';
 import CommentsModal from '../components/modals/CommentsModal';
@@ -25,6 +26,7 @@ import ShareModal from '../components/modals/ShareModal';
 import InsightsModal from '../components/modals/InsightsModal';
 import ReportModal from '../components/modals/ReportModal';
 import LikesModal from '../components/modals/LikesModal';
+import SaveToCollectionModal from '../components/modals/SaveToCollectionModal';
 import EmptyState from '../components/common/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import reelService from '../services/reel.service';
@@ -66,6 +68,7 @@ export const ReelsPage = () => {
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportReelId, setReportReelId] = useState(null);
   const [likesModalReelId, setLikesModalReelId] = useState(null);
+  const [saveToCollReelId, setSaveToCollReelId] = useState(null);
   const [videoProgress, setVideoProgress] = useState(0);
   const [slideDirection, setSlideDirection] = useState(null);
 
@@ -1355,6 +1358,19 @@ export const ReelsPage = () => {
               type="button"
               role="menuitem"
               className="reel-option-item"
+              onClick={() => {
+                const targetReelId = menuState.reelId;
+                setMenuState(null);
+                setSaveToCollReelId(targetReelId);
+              }}
+            >
+              <Folder size={16} />
+              <span>Save to collection...</span>
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="reel-option-item"
               onClick={() => handleCopyLink(menuState.reelId)}
             >
               <Copy size={16} />
@@ -1397,6 +1413,18 @@ export const ReelsPage = () => {
             const reportedReel = reels.find((r) => r.id === reportReelId);
             const authorId = reportedReel?.author?.id;
             setReels((prev) => prev.filter((r) => r.id !== reportReelId && (!authorId || r.author?.id !== authorId)));
+          }}
+        />
+      )}
+
+      {/* Save Reel to Collection Modal */}
+      {saveToCollReelId && (
+        <SaveToCollectionModal
+          isOpen={Boolean(saveToCollReelId)}
+          onClose={() => setSaveToCollReelId(null)}
+          reelId={saveToCollReelId}
+          onSaved={() => {
+            setSavedMap((prev) => ({ ...prev, [saveToCollReelId]: true }));
           }}
         />
       )}

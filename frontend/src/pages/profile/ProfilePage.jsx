@@ -45,6 +45,7 @@ import ReportModal from '../../components/modals/ReportModal';
 import CreateHighlightModal from '../../components/modals/CreateHighlightModal';
 import EditHighlightModal from '../../components/modals/EditHighlightModal';
 import CreateCollectionModal from '../../components/modals/CreateCollectionModal';
+import AddToCollectionModal from '../../components/modals/AddToCollectionModal';
 import CloseFriendsModal from '../../components/modals/CloseFriendsModal';
 import ProfileQrModal from '../../components/modals/ProfileQrModal';
 import NoteModal from '../../components/modals/NoteModal';
@@ -170,6 +171,7 @@ export const ProfilePage = () => {
   const [collectionReels, setCollectionReels] = useState([]);
   const [loadingCollectionReels, setLoadingCollectionReels] = useState(false);
   const [createCollectionOpen, setCreateCollectionOpen] = useState(false);
+  const [addToCollectionOpen, setAddToCollectionModalOpen] = useState(false);
 
   // Modals
   const [followModalOpen, setFollowModalOpen] = useState(false);
@@ -420,6 +422,36 @@ export const ProfilePage = () => {
       } finally {
         setLoadingCollectionReels(false);
       }
+    }
+  };
+
+  const handleDeleteCollection = async () => {
+    if (!selectedCollection?.id) return;
+    if (!window.confirm(`Delete collection "${selectedCollection.name}"? Saved posts won't be deleted.`)) return;
+    try {
+      await collectionService.deleteCollection(selectedCollection.id);
+      showSuccess('Collection deleted');
+      setSelectedCollection(null);
+      loadCollections();
+    } catch (err) {
+      showError(err.message || 'Failed to delete collection');
+    }
+  };
+
+  const handleRemoveFromCollection = async (postId, reelId) => {
+    if (!selectedCollection?.id) return;
+    try {
+      await collectionService.removeItem(selectedCollection.id, postId, reelId);
+      showSuccess('Removed from collection');
+      if (postId) {
+        setCollectionPosts((prev) => prev.filter((p) => p.id !== postId));
+      }
+      if (reelId) {
+        setCollectionReels((prev) => prev.filter((r) => r.id !== reelId));
+      }
+      loadCollections();
+    } catch (err) {
+      showError(err.message || 'Failed to remove item');
     }
   };
 
@@ -1439,6 +1471,27 @@ export const ProfilePage = () => {
                 <ArrowLeft size={16} />
                 <span>{selectedCollection.name}</span>
               </button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary profile-btn"
+                  onClick={() => setAddToCollectionModalOpen(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '6px 12px' }}
+                >
+                  <Plus size={15} />
+                  <span>Add from Saved</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary profile-btn danger"
+                  onClick={handleDeleteCollection}
+                  title="Delete Collection"
+                  aria-label="Delete Collection"
+                  style={{ padding: '6px 8px', borderColor: 'rgba(237, 73, 86, 0.4)', color: '#ed4956' }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
 
             <div className="collection-subtab-bar" style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
@@ -1470,6 +1523,8 @@ export const ProfilePage = () => {
                 icon={Bookmark}
                 title="No posts in this collection"
                 description="Save posts or reels to add them here."
+                actionLabel="+ Add from Saved"
+                onAction={() => setAddToCollectionModalOpen(true)}
               />
             ) : (
               <div className="profile-grid">
@@ -1481,6 +1536,7 @@ export const ProfilePage = () => {
                       key={post.id}
                       className="profile-grid-item"
                       onClick={() => setSelectedPostId(post.id)}
+                      style={{ position: 'relative' }}
                     >
                       {isVideo ? (
                         <video
@@ -1508,6 +1564,18 @@ export const ProfilePage = () => {
                           <span>{formatCount(post.commentCount || 0)}</span>
                         </div>
                       </div>
+                      <button
+                        type="button"
+                        className="collection-item-remove-btn"
+                        title="Remove from collection"
+                        aria-label="Remove from collection"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFromCollection(post.id, null);
+                        }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
                   );
                 })}
@@ -1521,6 +1589,8 @@ export const ProfilePage = () => {
                 icon={Film}
                 title="No reels in this collection"
                 description="Save reels from the reels feed into this collection to see them here."
+                actionLabel="+ Add from Saved"
+                onAction={() => setAddToCollectionModalOpen(true)}
               />
             ) : (
               <div className="profile-reels-grid">
@@ -1529,6 +1599,7 @@ export const ProfilePage = () => {
                     key={reel.id}
                     className="profile-reel-item"
                     onClick={() => navigate(`/reels/${reel.id}`)}
+                    style={{ position: 'relative' }}
                   >
                     <video
                       src={reel.videoUrl}
@@ -1552,6 +1623,18 @@ export const ProfilePage = () => {
                         <span>{formatCount(reel.commentCount || 0)}</span>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      className="collection-item-remove-btn"
+                      title="Remove from collection"
+                      aria-label="Remove from collection"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFromCollection(null, reel.id);
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1608,6 +1691,8 @@ export const ProfilePage = () => {
                 icon={Folder}
                 title="No Collections Yet"
                 description="Save posts into custom collections to organize them."
+                actionLabel="+ New Collection"
+                onAction={() => setCreateCollectionOpen(true)}
               />
             ) : (
               <div className="collections-grid">
@@ -2852,6 +2937,22 @@ export const ProfilePage = () => {
           isOpen={createCollectionOpen}
           onClose={() => setCreateCollectionOpen(false)}
           onCreated={() => loadCollections()}
+        />
+      )}
+
+      {/* Add To Collection Modal */}
+      {addToCollectionOpen && selectedCollection && (
+        <AddToCollectionModal
+          isOpen={addToCollectionOpen}
+          onClose={() => setAddToCollectionModalOpen(false)}
+          collectionId={selectedCollection.id}
+          collectionName={selectedCollection.name}
+          existingPostIds={collectionPosts.map((p) => p.id)}
+          existingReelIds={collectionReels.map((r) => r.id)}
+          onItemsAdded={() => {
+            handleSelectCollection(selectedCollection);
+            loadCollections();
+          }}
         />
       )}
 

@@ -159,9 +159,9 @@ describe('ReelsPage Redesign & Controls Removal Suite', () => {
     expect(container.querySelector('.reel-options-backdrop')).toBeNull();
     expect(container.querySelector('.reel-options-mobile-scrim')).toBeNull();
 
-    // Verify vertical options order: Report reel, Not interested, Save reel, Copy link, Cancel
+    // Verify vertical options order: Report reel, Not interested, Save reel, Save to collection..., Copy link, Cancel
     const items = screen.getAllByRole('menuitem').map((el) => el.textContent);
-    expect(items).toEqual(['Report reel', 'Not interested', 'Save reel', 'Copy link', 'Cancel']);
+    expect(items).toEqual(['Report reel', 'Not interested', 'Save reel', 'Save to collection...', 'Copy link', 'Cancel']);
 
     // Clicking the same three-dot button again toggles the menu closed
     fireEvent.click(topBtn);

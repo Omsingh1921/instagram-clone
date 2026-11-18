@@ -7,6 +7,7 @@ import { SkeletonUserRows } from '../ui/Skeleton';
 import ReportModal from './ReportModal';
 import ShareModal from './ShareModal';
 import LikesModal from './LikesModal';
+import SaveToCollectionModal from './SaveToCollectionModal';
 import postService from '../../services/post.service';
 import reelService from '../../services/reel.service';
 import engagementService from '../../services/engagement.service';
@@ -29,6 +30,7 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
   const [reportOpen, setReportOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [likesModalOpen, setLikesModalOpen] = useState(false);
+  const [saveToCollOpen, setSaveToCollOpen] = useState(false);
   const [repliesMap, setRepliesMap] = useState({});
   const [showTags, setShowTags] = useState(false);
 
@@ -638,6 +640,16 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
             </button>
             <button
               type="button"
+              className="comments-option-item"
+              onClick={() => {
+                setOptionsOpen(false);
+                setSaveToCollOpen(true);
+              }}
+            >
+              <span>Save to collection</span>
+            </button>
+            <button
+              type="button"
               className="comments-option-item cancel"
               onClick={() => setOptionsOpen(false)}
             >
@@ -668,6 +680,19 @@ export const CommentsModal = ({ isOpen, onClose, postId, onPostUpdated, isReel =
           onClose={() => setLikesModalOpen(false)}
           targetId={postId}
           targetType={isReel ? 'reel' : 'post'}
+        />
+      )}
+
+      {saveToCollOpen && (
+        <SaveToCollectionModal
+          isOpen={saveToCollOpen}
+          onClose={() => setSaveToCollOpen(false)}
+          postId={!isReel ? postId : null}
+          reelId={isReel ? postId : null}
+          onSaved={() => {
+            setIsSaved(true);
+            if (onPostUpdated) onPostUpdated();
+          }}
         />
       )}
     </>

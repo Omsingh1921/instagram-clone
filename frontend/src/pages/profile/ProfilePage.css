@@ -1243,6 +1243,36 @@
   font-weight: 600;
 }
 
+.collection-item-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.18s ease;
+  z-index: 3;
+}
+
+.profile-grid-item:hover .collection-item-remove-btn,
+.profile-reel-item:hover .collection-item-remove-btn {
+  opacity: 1;
+}
+
+.collection-item-remove-btn:hover {
+  background: rgba(237, 73, 86, 0.92);
+  border-color: #ed4956;
+  transform: scale(1.1);
+}
+
 /* Archived & Recently Deleted Tabs */
 .tab-info-header {
   display: flex;

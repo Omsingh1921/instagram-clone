@@ -29,6 +29,7 @@ import {
   EyeOff,
   BadgeCheck,
   Smile,
+  Folder,
 } from 'lucide-react';
 import Avatar from '../common/Avatar';
 import CommentsModal from '../modals/CommentsModal';
@@ -37,6 +38,7 @@ import ShareModal from '../modals/ShareModal';
 import InsightsModal from '../modals/InsightsModal';
 import EditPostModal from '../modals/EditPostModal';
 import LikesModal from '../modals/LikesModal';
+import SaveToCollectionModal from '../modals/SaveToCollectionModal';
 import { getFilterStyle } from '../../utils/instagramFilters';
 import ProgressiveImage from '../common/ProgressiveImage';
 import { getVideoPosterUrl, getAdaptiveVideoUrl } from '../../utils/mediaUrl';
@@ -75,6 +77,7 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
   const [likesModalOpen, setLikesModalOpen] = useState(false);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [saveToCollOpen, setSaveToCollOpen] = useState(false);
   const [quickComment, setQuickComment] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showQuickEmojis, setShowQuickEmojis] = useState(false);
@@ -510,6 +513,17 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
               <button type="button" className="post-menu-item" onClick={handleCopyLink}>
                 <Copy size={14} />
                 <span>Copy link</span>
+              </button>
+              <button
+                type="button"
+                className="post-menu-item"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setSaveToCollOpen(true);
+                }}
+              >
+                <Folder size={14} />
+                <span>Save to collection...</span>
               </button>
               {isAuthor ? (
                 <>
@@ -984,6 +998,18 @@ export const PostCard = ({ post, onPostDeleted, onPostUpdated }) => {
           onClose={() => setLikesModalOpen(false)}
           targetId={post.id}
           targetType="post"
+        />
+      )}
+
+      {saveToCollOpen && (
+        <SaveToCollectionModal
+          isOpen={saveToCollOpen}
+          onClose={() => setSaveToCollOpen(false)}
+          postId={post.id}
+          onSaved={() => {
+            setIsSaved(true);
+            if (onPostUpdated) onPostUpdated();
+          }}
         />
       )}
     </>

@@ -14,11 +14,11 @@ export const CreateCollectionModal = ({ isOpen, onClose, onCreated }) => {
     if (!name.trim()) return;
     try {
       setLoading(true);
-      await collectionService.createCollection({ name: name.trim() });
+      const res = await collectionService.createCollection({ name: name.trim() });
       showSuccess(`Collection "${name.trim()}" created`);
       setName('');
       onClose();
-      if (onCreated) onCreated();
+      if (onCreated) onCreated(res?.data || res);
     } catch (err) {
       showError(err.message || 'Failed to create collection');
     } finally {

@@ -23,6 +23,7 @@ vi.mock('../services/chat.service', () => ({
     forwardMessage: vi.fn().mockResolvedValue({ data: [] }),
     updateConversationFolder: vi.fn().mockResolvedValue({ success: true }),
     markAsRead: vi.fn().mockResolvedValue({ success: true }),
+    getUserPresence: vi.fn().mockResolvedValue({ data: { online: true } }),
   },
 }));
 

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Users, Phone, Video, Palette, Info, Pin, FolderInput } from 'lucide-react';
 import Avatar from '../common/Avatar';
+import chatService from '../../services/chat.service';
+import { timeAgo } from '../../utils';
 
 export const ChatHeader = ({
   activeConversation,
@@ -16,6 +18,32 @@ export const ChatHeader = ({
   onVoiceCall,
   onVideoCall,
 }) => {
+  const [presence, setPresence] = useState(null);
+
+  useEffect(() => {
+    if (isGroup || !otherMember) {
+      setPresence(null);
+      return;
+    }
+    const targetId = otherMember?.id || otherMember?.userId;
+    if (!targetId || typeof chatService?.getUserPresence !== 'function') return;
+
+    let isMounted = true;
+    chatService.getUserPresence(targetId)
+      .then((res) => {
+        if (!isMounted) return;
+        const data = res?.data || res;
+        if (data) setPresence(data);
+      })
+      .catch(() => {
+        // Fallback gracefully on network/mock
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isGroup, otherMember?.id, otherMember?.userId]);
+
   if (!activeConversation) return null;
 
   return (
@@ -64,6 +92,10 @@ export const ChatHeader = ({
             <span className="chat-recipient-subtext">
               {isGroup ? (
                 `${(activeConversation.members || []).length} members`
+              ) : presence && presence.online === false && presence.lastSeen ? (
+                <span className="chat-active-status offline">
+                  {`Active ${timeAgo(presence.lastSeen)} ago`}
+                </span>
               ) : (
                 <span className="chat-active-status">
                   <span className="chat-active-dot" aria-hidden="true" />

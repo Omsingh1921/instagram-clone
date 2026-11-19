@@ -120,6 +120,10 @@ export const chatService = {
       targetConversationIds: Array.isArray(targetConversationIds) ? targetConversationIds : [targetConversationIds],
     });
   },
+
+  getUserPresence: async (userId) => {
+    return await api.get(`/users/${userId}/presence`);
+  },
 };
 
 export default chatService;

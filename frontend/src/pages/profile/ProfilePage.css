@@ -264,6 +264,12 @@
   flex-wrap: wrap;
 }
 
+.profile-username-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .profile-username-title {
   font-size: 21px;
   font-weight: 700;
@@ -1440,52 +1446,183 @@
 
 @media (max-width: 768px) {
   .profile-page-container {
-    padding: 16px 12px 24px;
+    padding: 14px 14px 28px;
+    max-width: 100%;
   }
 
+  /* Authentic Instagram Mobile Grid Layout:
+     Row 1: [ Avatar + Note ]  [ Posts | Followers | Following ]
+     Row 2: [ Username & Verified Badge ]
+     Row 3: [ Bio: Full Name, Category, Bio Text, Links ]
+     Row 4: [ Action Buttons: Edit, Archive, Gear ] */
   .profile-header-section {
-    gap: 16px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "avatar   stats"
+      "username username"
+      "bio      bio"
+      "actions  actions";
+    column-gap: 20px;
+    row-gap: 12px;
+    align-items: center;
     margin-bottom: 18px;
     padding: 0;
-    flex-direction: column;
-    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .profile-avatar-column {
+    grid-area: avatar;
     flex: none;
     justify-content: flex-start;
+    align-items: center;
     padding-left: 0;
   }
 
   .profile-avatar-trigger .avatar-xxl {
-    width: 96px;
-    height: 96px;
-    font-size: 28px;
+    width: 82px;
+    height: 82px;
+    font-size: 26px;
   }
 
+  .profile-avatar-note-bubble {
+    top: -18px;
+    padding: 4px 10px;
+    max-width: 120px;
+  }
+
+  .note-bubble-text {
+    font-size: 10.5px;
+    max-width: 90px;
+  }
+
+  .profile-add-note-pill {
+    margin-top: 6px;
+    padding: 2px 8px;
+    font-size: 10.5px;
+  }
+
+  /* Unwraps profile-info-column directly into the parent grid */
   .profile-info-column {
-    gap: 12px;
+    display: contents;
+  }
+
+  /* Stats beside Avatar on Mobile */
+  .profile-stats-row {
+    grid-area: stats;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 8px;
+    border: none !important;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 2px;
+    cursor: default;
+  }
+
+  .stat-num {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.2;
+  }
+
+  .stat-label,
+  .stat-item span:not(.stat-num) {
+    font-size: 12.5px;
+    color: var(--text-secondary, #a8a8b3);
+    font-weight: 400;
+    line-height: 1.2;
+  }
+
+  /* Unwraps username-badge-wrap and action-buttons into grid areas */
+  .profile-username-row {
+    display: contents;
+  }
+
+  .profile-username-badge-wrap {
+    grid-area: username;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+  }
+
+  .profile-username-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0;
+  }
+
+  .profile-bio-section {
+    grid-area: bio;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13.5px;
+    line-height: 1.45;
+  }
+
+  .profile-full-name {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .profile-category-pill {
+    align-self: flex-start;
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  .profile-bio-text {
+    font-size: 13.5px;
   }
 
   .profile-action-buttons {
-    flex-wrap: wrap;
+    grid-area: actions;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     width: 100%;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),
+  .profile-action-buttons > .btn-primary:not(.profile-icon-btn) {
+    flex: 1 1 120px;
+    min-width: 0;
+    text-align: center;
   }
 
   .profile-btn {
-    padding: 0 11px;
-    height: 32px;
-    font-size: 12.5px;
+    padding: 0 12px;
+    height: 34px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 8px;
   }
 
-  .profile-stats-row {
-    width: 100%;
-    box-sizing: border-box;
-    justify-content: space-around;
-    padding: 10px 0;
-    gap: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  .profile-icon-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 34px;
+    padding: 0;
+    flex: 0 0 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .profile-highlights-tray {
@@ -1530,5 +1667,44 @@
   .profile-grid-item,
   .profile-reel-item {
     border-radius: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .profile-page-container {
+    padding: 12px 10px 24px;
+  }
+
+  .profile-header-section {
+    column-gap: 14px;
+    row-gap: 10px;
+  }
+
+  .profile-avatar-trigger .avatar-xxl {
+    width: 76px;
+    height: 76px;
+    font-size: 24px;
+  }
+
+  .stat-num {
+    font-size: 15px;
+  }
+
+  .stat-label,
+  .stat-item span:not(.stat-num) {
+    font-size: 11.5px;
+  }
+
+  .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),
+  .profile-action-buttons > .btn-primary:not(.profile-icon-btn) {
+    flex: 1 1 100px;
+    font-size: 12px;
+  }
+
+  .profile-icon-btn {
+    width: 34px;
+    min-width: 34px;
+    height: 32px;
+    flex: 0 0 34px;
   }
 }

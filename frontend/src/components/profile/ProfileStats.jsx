@@ -12,7 +12,7 @@ export const ProfileStats = ({
     <div className="profile-stats-row">
       <div className="stat-item">
         <span className="stat-num">{formatCount(postsCount)}</span>
-        <span>posts</span>
+        <span className="stat-label">posts</span>
       </div>
       <div
         className="stat-item clickable"
@@ -22,7 +22,7 @@ export const ProfileStats = ({
         }}
       >
         <span className="stat-num">{formatCount(followersCount)}</span>
-        <span>followers</span>
+        <span className="stat-label">followers</span>
       </div>
       <div
         className="stat-item clickable"
@@ -32,7 +32,7 @@ export const ProfileStats = ({
         }}
       >
         <span className="stat-num">{formatCount(followingCount)}</span>
-        <span>following</span>
+        <span className="stat-label">following</span>
       </div>
     </div>
   );

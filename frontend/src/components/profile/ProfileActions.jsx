@@ -39,11 +39,12 @@ export const ProfileActions = ({
 }) => {
   return (
     <div className="profile-username-row">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="profile-username-badge-wrap">
         <h1 className="profile-username-title">{profile.username}</h1>
         {(profile.isVerified || profile.verified) && (
           <span
             title="Verified Account"
+            className="profile-verified-badge"
             style={{ display: 'inline-flex', alignItems: 'center' }}
           >
             <BadgeCheck size={20} color="#ffffff" fill="#0095f6" />

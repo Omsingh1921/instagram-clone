@@ -1,40 +1,21 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import {
-  Heart,
-  MessageCircle,
-  Send,
-  Bookmark,
-  Volume2,
-  VolumeX,
-  Music,
-  Film,
-  Play,
-  BarChart2,
-  MoreHorizontal,
-  Archive,
-  Trash2,
-  Flag,
-  Copy,
-  EyeOff,
-  RotateCw,
-  Folder,
-} from 'lucide-react';
-import Avatar from '../components/common/Avatar';
-import CommentsModal from '../components/modals/CommentsModal';
-import ShareModal from '../components/modals/ShareModal';
-import InsightsModal from '../components/modals/InsightsModal';
-import ReportModal from '../components/modals/ReportModal';
-import LikesModal from '../components/modals/LikesModal';
-import SaveToCollectionModal from '../components/modals/SaveToCollectionModal';
+import { Film } from 'lucide-react';
 import EmptyState from '../components/common/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import reelService from '../services/reel.service';
-import { getVideoPosterUrl, getAdaptiveVideoUrl, shouldPrefetchMedia } from '../utils/mediaUrl';
+import { getAdaptiveVideoUrl, shouldPrefetchMedia } from '../utils/mediaUrl';
 import { useAuth } from '../context/AuthContext';
 import { useUpload } from '../context/UploadContext';
 import { useToast } from '../context/ToastContext';
-import { formatCount } from '../utils';
+import {
+  ReelFeedTabs,
+  ReelPreviewCard,
+  ReelVideoCard,
+  ReelActionRail,
+  ReelOptionsMenu,
+  ReelModals,
+} from '../components/reels';
 import './ReelsPage.css';
 
 const REELS_PAGE_SIZE = 5;
@@ -53,7 +34,7 @@ export const ReelsPage = () => {
   const [savedMap, setSavedMap] = useState({});
   const [sharesMap, setSharesMap] = useState({});
   const [showHeartAnim, setShowHeartAnim] = useState(false);
-  
+
   const [commentsModalOpen, setCommentsModalOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
   const [shareModalReel, setShareModalReel] = useState(null);
@@ -100,7 +81,7 @@ export const ReelsPage = () => {
     (u) => u.type === 'reel' && u.status === 'uploading'
   );
 
-  const effectiveReels = React.useMemo(() => {
+  const effectiveReels = useMemo(() => {
     if (!reelUpload) return reels;
 
     const uploadingItem = {
@@ -131,7 +112,7 @@ export const ReelsPage = () => {
   const loadReels = async (pageNum = 0, currentFeedType = feedType, seed = sessionSeedRef.current) => {
     try {
       if (pageNum === 0) setLoading(true);
-      
+
       let list = [];
       // If direct deep-link reelId is requested and this is page 0, load that specific reel first
       if (pageNum === 0 && reelId) {
@@ -150,7 +131,7 @@ export const ReelsPage = () => {
         ? await reelService.getFollowingReels(pageNum, REELS_PAGE_SIZE, seed)
         : await reelService.getReels(pageNum, REELS_PAGE_SIZE, seed);
       const fetchedList = res?.data?.content || res?.content || res?.data || [];
-      
+
       // Filter out duplicate if deep-linked reel was already added
       const existingIds = new Set(list.map((r) => r.id));
       for (const item of fetchedList) {
@@ -159,7 +140,7 @@ export const ReelsPage = () => {
           existingIds.add(item.id);
         }
       }
-      
+
       setReels((prev) => {
         if (pageNum === 0) return list;
         return [...prev, ...fetchedList];
@@ -191,10 +172,10 @@ export const ReelsPage = () => {
     }
   };
 
-  const recordCurrentReelView = useCallback((reelId) => {
-    if (reelId && !viewedReelsRef.current.has(reelId)) {
-      viewedReelsRef.current.add(reelId);
-      reelService.recordView(reelId).catch(() => {});
+  const recordCurrentReelView = useCallback((currentId) => {
+    if (currentId && !viewedReelsRef.current.has(currentId)) {
+      viewedReelsRef.current.add(currentId);
+      reelService.recordView(currentId).catch(() => {});
     }
   }, []);
 
@@ -300,7 +281,7 @@ export const ReelsPage = () => {
         setMenuState(null);
         return;
       }
-      if (commentsModalOpen || shareModalReel || insightsReel || reportModalOpen) return; // Don't intercept when modal is open
+      if (commentsModalOpen || shareModalReel || insightsReel || reportModalOpen) return;
       if (e.key === 'ArrowDown' || e.key === 'PageDown') {
         e.preventDefault();
         handleNextReel();
@@ -531,30 +512,30 @@ export const ReelsPage = () => {
     }
   };
 
-  const handleLikeToggle = async (reelId) => {
-    const cur = likesMap[reelId] || { count: 0, liked: false };
+  const handleLikeToggle = async (targetReelId) => {
+    const cur = likesMap[targetReelId] || { count: 0, liked: false };
     const nextLiked = !cur.liked;
 
     setLikesMap((prev) => ({
       ...prev,
-      [reelId]: {
+      [targetReelId]: {
         liked: nextLiked,
         count: nextLiked ? cur.count + 1 : Math.max(0, cur.count - 1),
       },
     }));
 
     try {
-      await reelService.toggleLike(reelId);
+      await reelService.toggleLike(targetReelId);
     } catch {
       // Revert if failed
       setLikesMap((prev) => ({
         ...prev,
-        [reelId]: cur,
+        [targetReelId]: cur,
       }));
     }
   };
 
-  const handleDoubleTap = (reelId) => {
+  const handleDoubleTap = (targetReelId) => {
     setShowHeartAnim(true);
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try {
@@ -564,8 +545,8 @@ export const ReelsPage = () => {
       }
     }
     setTimeout(() => setShowHeartAnim(false), 850);
-    if (!likesMap[reelId]?.liked) {
-      handleLikeToggle(reelId);
+    if (!likesMap[targetReelId]?.liked) {
+      handleLikeToggle(targetReelId);
     }
   };
 
@@ -601,53 +582,53 @@ export const ReelsPage = () => {
     }
   };
 
-  const handleSaveToggle = async (reelId) => {
-    const curSaved = !!savedMap[reelId];
-    setSavedMap((prev) => ({ ...prev, [reelId]: !curSaved }));
+  const handleSaveToggle = async (targetReelId) => {
+    const curSaved = !!savedMap[targetReelId];
+    setSavedMap((prev) => ({ ...prev, [targetReelId]: !curSaved }));
 
     try {
-      await reelService.toggleSaveReel(reelId);
+      await reelService.toggleSaveReel(targetReelId);
       showSuccess(!curSaved ? 'Reel saved' : 'Reel removed from saved');
     } catch {
-      setSavedMap((prev) => ({ ...prev, [reelId]: curSaved }));
+      setSavedMap((prev) => ({ ...prev, [targetReelId]: curSaved }));
     }
   };
 
-  const handleDeleteReel = async (reelId) => {
+  const handleDeleteReel = async (targetReelId) => {
     if (!window.confirm('Delete this reel? It will be moved to Recently Deleted for 30 days.')) return;
     try {
-      await reelService.deleteReel(reelId);
+      await reelService.deleteReel(targetReelId);
       showSuccess('Reel moved to Recently Deleted');
       setMenuState(null);
       window.dispatchEvent(new CustomEvent('reel:refresh'));
-      setReels((prev) => prev.filter((r) => r.id !== reelId));
+      setReels((prev) => prev.filter((r) => r.id !== targetReelId));
     } catch (err) {
       showError(err.message || 'Failed to delete reel');
     }
   };
 
-  const handleArchiveReel = async (reelId) => {
+  const handleArchiveReel = async (targetReelId) => {
     try {
-      const res = await reelService.toggleArchiveReel(reelId);
+      const res = await reelService.toggleArchiveReel(targetReelId);
       const isArchived = Boolean(res?.data?.isArchived ?? res?.isArchived);
       showSuccess(isArchived ? 'Reel archived. Hidden from your profile.' : 'Reel unarchived');
       setMenuState(null);
-      setReels((prev) => prev.filter((r) => r.id !== reelId));
+      setReels((prev) => prev.filter((r) => r.id !== targetReelId));
     } catch (err) {
       showError(err.message || 'Failed to archive reel');
     }
   };
 
-  const handleCopyLink = (reelId) => {
-    const reelUrl = `${window.location.origin}/reels/${reelId}`;
+  const handleCopyLink = (targetReelId) => {
+    const reelUrl = `${window.location.origin}/reels/${targetReelId}`;
     navigator.clipboard.writeText(reelUrl);
     showSuccess('Reel link copied to clipboard');
     setMenuState(null);
   };
 
-  const handleNotInterested = async (reelId) => {
+  const handleNotInterested = async (targetReelId) => {
     try {
-      await reelService.markNotInterested(reelId);
+      await reelService.markNotInterested(targetReelId);
       showSuccess("We'll show fewer reels like this");
     } catch {
       showSuccess("We'll show fewer reels like this");
@@ -665,17 +646,6 @@ export const ReelsPage = () => {
       }
     } catch (err) {
       showError(err.message || 'Action failed');
-    }
-  };
-
-  const handleShare = async (reelId) => {
-    const url = `${window.location.origin}/reels/${reelId}`;
-    navigator.clipboard.writeText(url);
-    showSuccess('Reel link copied to clipboard!');
-    try {
-      await reelService.recordShare(reelId, { shareType: 'COPY_LINK' });
-    } catch {
-      // Non-critical
     }
   };
 
@@ -859,56 +829,18 @@ export const ReelsPage = () => {
       onTouchCancel={handleTouchCancel}
     >
       {/* Top Stage Header: Centered Feed Switcher + Right Mute/Options Controls */}
-      <div className="reels-stage-topbar">
-        <div className="reels-topbar-spacer" aria-hidden="true" />
-        <div className="reels-top-feed-switcher" role="tablist" aria-label="Reels feed filter">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={feedType === 'for-you'}
-            className={`reels-feed-tab ${feedType === 'for-you' ? 'active' : ''}`}
-            onClick={() => handleSwitchFeed('for-you')}
-          >
-            For You
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={feedType === 'following'}
-            className={`reels-feed-tab ${feedType === 'following' ? 'active' : ''}`}
-            onClick={() => handleSwitchFeed('following')}
-          >
-            Following
-          </button>
-        </div>
-        {currentReel ? (
-          <div className="reel-top-right-controls">
-            <button
-              type="button"
-              className="reel-top-btn"
-              onClick={() => setIsMuted(!isMuted)}
-              aria-label={isMuted ? 'Unmute' : 'Mute'}
-              title={isMuted ? 'Unmute' : 'Mute'}
-            >
-              {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-            </button>
-            <button
-              ref={topMenuBtnRef}
-              type="button"
-              className={`reel-top-btn ${isMenuOpenForCurrent && menuState?.anchor === 'top' ? 'active' : ''}`}
-              onClick={() => toggleReelMenu(currentReel.id, 'top')}
-              aria-label="Reel options"
-              aria-haspopup="menu"
-              aria-expanded={isMenuOpenForCurrent && menuState?.anchor === 'top'}
-              title="More options"
-            >
-              <MoreHorizontal size={18} />
-            </button>
-          </div>
-        ) : (
-          <div className="reels-topbar-spacer" aria-hidden="true" />
-        )}
-      </div>
+      <ReelFeedTabs
+        feedType={feedType}
+        onSwitchFeed={handleSwitchFeed}
+        currentReel={currentReel}
+        isMuted={isMuted}
+        onToggleMute={() => setIsMuted((prev) => !prev)}
+        topMenuBtnRef={topMenuBtnRef}
+        isMenuOpen={isMenuOpenForCurrent}
+        menuAnchor={menuState?.anchor}
+        onToggleMenu={toggleReelMenu}
+      />
+
       {loading ? (
         <div className="w-full h-full flex flex-col items-center justify-center p-4">
           <Skeleton className="w-[320px] sm:w-[360px] h-[540px] sm:h-[620px] rounded-2xl" />
@@ -921,513 +853,147 @@ export const ReelsPage = () => {
         />
       ) : currentReel ? (
         <div className="reels-carousel-wrapper">
-              <div
-                className={`reels-carousel-stage ${isDraggingReel ? 'is-dragging' : ''}`}
-                style={
-                  dragOffsetY
-                    ? { transform: `translateY(${dragOffsetY}px)`, transition: 'none' }
-                    : { transform: 'translateY(0px)', transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)' }
-                }
-              >
-                {/* Prev Preview Card (if activeIndex > 0) */}
-                {prevReel && (
-                  <div className="reel-card-preview reel-card-prev" aria-hidden="true">
-                    <video
-                      src={prevReel.videoUrl?.startsWith('blob:') ? prevReel.videoUrl : getAdaptiveVideoUrl(prevReel.videoUrl)}
-                      poster={prevReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(prevReel.videoUrl, prevReel.thumbnailUrl)}
-                      className="reel-video-element-preview"
-                      preload="none"
-                      muted
-                      playsInline
-                    />
-                    <div className="reel-preview-overlay">
-                      <span className="reel-preview-caption">@{prevReel.author?.username}</span>
-                    </div>
-                  </div>
-                )}
+          <div
+            className={`reels-carousel-stage ${isDraggingReel ? 'is-dragging' : ''}`}
+            style={
+              dragOffsetY
+                ? { transform: `translateY(${dragOffsetY}px)`, transition: 'none' }
+                : { transform: 'translateY(0px)', transition: 'transform 0.32s cubic-bezier(0.22, 1, 0.36, 1)' }
+            }
+          >
+            {/* Prev Preview Card (if activeIndex > 0) */}
+            {prevReel && <ReelPreviewCard reel={prevReel} type="prev" />}
 
-                {/* Active Reel Card (One by One) */}
-                <div
-                  className={`reel-card-item ${isDraggingReel ? 'is-dragging' : ''} ${
-                    slideDirection === 'next'
-                      ? 'reel-slide-in-from-bottom'
-                      : slideDirection === 'prev'
-                      ? 'reel-slide-in-from-top'
-                      : ''
-                  }`}
-                >
-                  {/* Live Uploading Banner if reel is currently uploading */}
-                  {currentReel.isUploading && (
-                    <div className="reel-uploading-header-banner">
-                      <div className="reel-uploading-banner-top">
-                        <div className="reel-uploading-banner-title">
-                          <RotateCw size={14} className="story-upload-spinning-icon" />
-                          <span>Uploading Reel... {currentReel.uploadProgress || 10}%</span>
-                        </div>
-                        <span className="reel-uploading-status-pill">In Progress</span>
-                      </div>
-                      <div className="reel-uploading-progress-track">
-                        <div
-                          className="reel-uploading-progress-bar"
-                          style={{ width: `${Math.max(8, currentReel.uploadProgress || 10)}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <video
-                    ref={videoRef}
-                    key={`${currentReel.id}-${activeIndex}`}
-                    src={currentReel.videoUrl?.startsWith('blob:') ? currentReel.videoUrl : getAdaptiveVideoUrl(currentReel.videoUrl)}
-                    poster={currentReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(currentReel.videoUrl, currentReel.thumbnailUrl)}
-                    className="reel-video-element"
-                    autoPlay
-                    loop
-                    muted={isMuted}
-                    playsInline
-                    onClick={toggleVideoPlay}
-                    onDoubleClick={() => !currentReel.isUploading && handleDoubleTap(currentReel.id)}
-                    onTouchStart={handleVideoTouchStart}
-                    onTimeUpdate={handleTimeUpdate}
-                  />
-
-                  {/* Play/Pause Indicator if paused */}
-                  {!isPlaying && (
-                    <div className="reel-play-indicator" onClick={toggleVideoPlay}>
-                      <Play size={48} fill="#fff" />
-                    </div>
-                  )}
-
-                  {/* Double Tap Instagram Heart Burst */}
-                  {showHeartAnim && (
-                    <div className="reel-heart-burst">
-                      <div className="reel-heart-burst-glow" />
-                      <div className="reel-heart-burst-main">
-                        <Heart size={92} fill="#ff3040" color="#ff3040" />
-                      </div>
-                      <div className="reel-heart-particle p1">
-                        <Heart size={26} fill="#ff3040" color="#ff3040" />
-                      </div>
-                      <div className="reel-heart-particle p2">
-                        <Heart size={22} fill="#ff3040" color="#ff3040" />
-                      </div>
-                      <div className="reel-heart-particle p3">
-                        <Heart size={24} fill="#ff3040" color="#ff3040" />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="reel-overlay-gradient" />
-
-                  {/* Instagram Video Scrub Progress Bar */}
-                  <div
-                    className="reel-progress-track"
-                    onClick={handleSeekProgress}
-                    role="progressbar"
-                    aria-valuenow={Math.round(videoProgress)}
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-label="Reel video progress"
-                  >
-                    <div
-                      className="reel-progress-bar"
-                      style={{ width: `${videoProgress}%` }}
-                    />
-                  </div>
-
-
-
-            {/* Bottom Info: Creator, Caption, Audio */}
-            <div className="reel-bottom-info">
-              <div className="reel-author-row">
-                <Avatar
-                  src={
-                    currentReel.author?.avatarUrl ||
-                    currentReel.author?.profilePictureUrl
-                  }
-                  alt={currentReel.author?.username}
-                  size="sm"
-                  hasStory={Boolean(currentReel.author?.hasActiveStory || currentReel.author?.hasStory)}
-                  isUploading={Boolean(currentReel.isUploading)}
-                  onClick={() => !currentReel.isUploading && navigate(`/profile/${currentReel.author?.id}`)}
-                />
-                <span
-                  className="reel-author-username"
-                  onClick={() => navigate(`/profile/${currentReel.author?.id}`)}
-                >
-                  {currentReel.author?.username}
-                </span>
-                {currentUser?.id !== currentReel.author?.id && (
-                  <button
-                    type="button"
-                    className="reel-follow-btn"
-                    onClick={() => handleFollowToggle(currentReel.author?.id)}
-                  >
-                    {isFollowing(currentReel.author?.id)
-                      ? 'Following'
-                      : 'Follow'}
-                  </button>
-                )}
-              </div>
-
-              {currentReel.caption && (
-                <p className="reel-caption-text">{currentReel.caption}</p>
-              )}
-
-              <div
-                className="reel-audio-track"
-                style={{ cursor: 'pointer' }}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const audioTitle = currentReel.audioTitle || 'Original Audio';
-                  const audioArtist = currentReel.audioArtist || currentReel.author?.username || 'Artist';
-                  navigate(`/audio?title=${encodeURIComponent(audioTitle)}&artist=${encodeURIComponent(audioArtist)}`);
-                }}
-              >
-                <Music size={12} />
-                <span>{currentReel.audioTitle || 'Original Audio'} · {currentReel.audioArtist || currentReel.author?.username || 'Artist'}</span>
-              </div>
-            </div>
-
-            {/* Right Action Bar */}
-            <div className="reel-actions-column">
-              <div
-                className={`reel-action-btn-item ${
-                  likesMap[currentReel.id]?.liked ? 'liked' : ''
-                }`}
-              >
-                <button
-                  type="button"
-                  className="reel-action-icon-btn"
-                  onClick={() => handleLikeToggle(currentReel.id)}
-                  aria-label="Like reel"
-                >
-                  <span className="reel-action-icon-circle">
-                    <Heart size={22} />
-                  </span>
-                </button>
-                <span
-                  className="reel-action-count-label"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if ((likesMap[currentReel.id]?.count || 0) > 0) {
-                      setLikesModalReelId(currentReel.id);
-                    }
-                  }}
-                  style={{
-                    cursor: (likesMap[currentReel.id]?.count || 0) > 0 ? 'pointer' : 'default',
-                  }}
-                  title={(likesMap[currentReel.id]?.count || 0) > 0 ? 'View likes' : undefined}
-                >
-                  {formatCount(likesMap[currentReel.id]?.count || 0)}
-                </span>
-              </div>
-
-              <button
-                type="button"
-                className="reel-action-btn-item"
-                onClick={() => {
-                  setSelectedPostId(currentReel.id);
+            {/* Active Reel Card (One by One) */}
+            <ReelVideoCard
+              currentReel={currentReel}
+              activeIndex={activeIndex}
+              videoRef={videoRef}
+              isMuted={isMuted}
+              isPlaying={isPlaying}
+              showHeartAnim={showHeartAnim}
+              videoProgress={videoProgress}
+              slideDirection={slideDirection}
+              isDraggingReel={isDraggingReel}
+              onTogglePlay={toggleVideoPlay}
+              onDoubleTap={handleDoubleTap}
+              onTouchStart={handleVideoTouchStart}
+              onTimeUpdate={handleTimeUpdate}
+              onSeekProgress={handleSeekProgress}
+              currentUser={currentUser}
+              isFollowing={isFollowing}
+              onFollowToggle={handleFollowToggle}
+              navigate={navigate}
+            >
+              {/* Right Action Bar */}
+              <ReelActionRail
+                currentReel={currentReel}
+                likesMap={likesMap}
+                savedMap={savedMap}
+                sharesMap={sharesMap}
+                isMenuOpen={isMenuOpenForCurrent}
+                menuAnchor={menuState?.anchor}
+                bottomMenuBtnRef={bottomMenuBtnRef}
+                onLikeToggle={handleLikeToggle}
+                onOpenLikesModal={(id) => setLikesModalReelId(id)}
+                onOpenComments={(id) => {
+                  setSelectedPostId(id);
                   setCommentsModalOpen(true);
                 }}
-              >
-                <span className="reel-action-icon-circle">
-                  <MessageCircle size={22} />
-                </span>
-                <span>{formatCount(currentReel.commentCount || 0)}</span>
-              </button>
-
-              <button
-                type="button"
-                className="reel-action-btn-item"
-                onClick={() => setShareModalReel(currentReel)}
-                aria-label="Share reel"
-              >
-                <span className="reel-action-icon-circle">
-                  <Send size={21} />
-                </span>
-                <span>
-                  {formatCount(
-                    sharesMap[currentReel.id] !== undefined
-                      ? sharesMap[currentReel.id]
-                      : currentReel.shareCount || 0
-                  )}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`reel-action-btn-item ${
-                  savedMap[currentReel.id] ? 'saved' : ''
-                }`}
-                onClick={() => handleSaveToggle(currentReel.id)}
-                aria-label={savedMap[currentReel.id] ? 'Remove from saved' : 'Save reel'}
-                title={savedMap[currentReel.id] ? 'Saved' : 'Save'}
-              >
-                <span className="reel-action-icon-circle">
-                  <Bookmark
-                    size={21}
-                    fill={savedMap[currentReel.id] ? 'currentColor' : 'none'}
-                  />
-                </span>
-              </button>
-
-              {currentUser?.id === currentReel.author?.id && (
-                <button
-                  type="button"
-                  className="reel-action-btn-item"
-                  onClick={() => setInsightsReel(currentReel)}
-                  title="View Reel Insights"
-                >
-                  <span className="reel-action-icon-circle">
-                    <BarChart2 size={21} />
-                  </span>
-                  <span>Insights</span>
-                </button>
-              )}
-
-              {/* Three-Dot Options Button */}
-              <button
-                ref={bottomMenuBtnRef}
-                type="button"
-                className={`reel-action-btn-item ${isMenuOpenForCurrent && menuState?.anchor === 'bottom' ? 'menu-active' : ''}`}
-                onClick={() => toggleReelMenu(currentReel.id, 'bottom')}
-                aria-label="More options"
-                aria-haspopup="menu"
-                aria-expanded={isMenuOpenForCurrent && menuState?.anchor === 'bottom'}
-                title="More options"
-              >
-                <span className="reel-action-icon-circle">
-                  <MoreHorizontal size={21} />
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Next Preview Card with Next Video Preloading */}
-          {nextReel && (
-            <div className="reel-card-preview reel-card-next" aria-hidden="true">
-              <video
-                src={nextReel.videoUrl?.startsWith('blob:') ? nextReel.videoUrl : getAdaptiveVideoUrl(nextReel.videoUrl)}
-                poster={nextReel.videoUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(nextReel.videoUrl, nextReel.thumbnailUrl)}
-                className="reel-video-element-preview"
-                preload="auto"
-                muted
-                playsInline
+                onOpenShare={(reel) => setShareModalReel(reel)}
+                onSaveToggle={handleSaveToggle}
+                onOpenInsights={(reel) => setInsightsReel(reel)}
+                onToggleMenu={toggleReelMenu}
+                isAuthor={isReelAuthor}
               />
-              <div className="reel-preview-overlay">
-                <span className="reel-preview-caption">@{nextReel.author?.username}</span>
-              </div>
-            </div>
-          )}
+            </ReelVideoCard>
+
+            {/* Next Preview Card with Next Video Preloading */}
+            {nextReel && <ReelPreviewCard reel={nextReel} type="next" />}
+          </div>
         </div>
-      </div>
-    ) : null}
-
-      {/* Reel Comments Modal if opened */}
-      {commentsModalOpen && selectedPostId && (
-        <CommentsModal
-          isOpen={commentsModalOpen}
-          onClose={() => {
-            setCommentsModalOpen(false);
-            setSelectedPostId(null);
-          }}
-          postId={selectedPostId}
-          isReel={true}
-        />
-      )}
-
-      {/* Reel Share Modal */}
-      {shareModalReel && (
-        <ShareModal
-          isOpen={!!shareModalReel}
-          onClose={() => setShareModalReel(null)}
-          post={{ ...shareModalReel, isReel: true }}
-          onShareComplete={(newCount) => {
-            if (newCount !== undefined) {
-              setSharesMap((prev) => ({
-                ...prev,
-                [shareModalReel.id]: newCount,
-              }));
-            } else {
-              setSharesMap((prev) => ({
-                ...prev,
-                [shareModalReel.id]:
-                  (prev[shareModalReel.id] ?? shareModalReel.shareCount ?? 0) + 1,
-              }));
-            }
-          }}
-        />
-      )}
-
-      {/* Reel Insights Modal */}
-      {insightsReel && (
-        <InsightsModal
-          isOpen={!!insightsReel}
-          onClose={() => setInsightsReel(null)}
-          post={insightsReel}
-          isReel={true}
-        />
-      )}
+      ) : null}
 
       {/* Reel Options Anchored Popover (Desktop Floating Menu / Mobile Bottom Sheet) */}
-      {isMenuOpenForCurrent && (
-        <>
-          {isMobileViewport && (
-            <div
-              className="reel-options-mobile-scrim"
-              onClick={() => setMenuState(null)}
-              aria-hidden="true"
-            />
-          )}
-          <div
-            ref={menuRef}
-            role="menu"
-            aria-label="Reel actions"
-            data-reel-id={currentReel.id}
-            data-anchor={menuState.anchor}
-            data-placement={menuPosition.placement}
-            className={`reel-options-popover ${isMobileViewport ? 'mobile-sheet' : ''}`}
-            style={isMobileViewport ? undefined : menuPosition.style}
-          >
-            {canDeleteReel && (
-              <button
-                type="button"
-                role="menuitem"
-                className="reel-option-item danger"
-                onClick={() => handleDeleteReel(menuState.reelId)}
-              >
-                <Trash2 size={16} />
-                <span>Delete reel</span>
-              </button>
-            )}
-            {isReelAuthor && (
-              <button
-                type="button"
-                role="menuitem"
-                className="reel-option-item"
-                onClick={() => handleArchiveReel(menuState.reelId)}
-              >
-                <Archive size={16} />
-                <span>{currentReel.isArchived ? 'Show on profile' : 'Archive reel'}</span>
-              </button>
-            )}
-            {!isReelAuthor && (
-              <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="reel-option-item danger"
-                  onClick={() => {
-                    const targetId = menuState.reelId;
-                    setMenuState(null);
-                    setReportReelId(targetId);
-                    setReportModalOpen(true);
-                  }}
-                >
-                  <Flag size={16} />
-                  <span>Report reel</span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="reel-option-item"
-                  onClick={() => handleNotInterested(menuState.reelId)}
-                >
-                  <EyeOff size={16} />
-                  <span>Not interested</span>
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              role="menuitem"
-              className="reel-option-item"
-              onClick={() => {
-                handleSaveToggle(menuState.reelId);
-                setMenuState(null);
-              }}
-            >
-              <Bookmark
-                size={16}
-                fill={savedMap[menuState.reelId] ? 'currentColor' : 'none'}
-              />
-              <span>{savedMap[menuState.reelId] ? 'Remove from saved' : 'Save reel'}</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="reel-option-item"
-              onClick={() => {
-                const targetReelId = menuState.reelId;
-                setMenuState(null);
-                setSaveToCollReelId(targetReelId);
-              }}
-            >
-              <Folder size={16} />
-              <span>Save to collection...</span>
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              className="reel-option-item"
-              onClick={() => handleCopyLink(menuState.reelId)}
-            >
-              <Copy size={16} />
-              <span>Copy link</span>
-            </button>
-            <div className="reel-option-divider" aria-hidden="true" />
-            <button
-              type="button"
-              role="menuitem"
-              className="reel-option-item cancel"
-              onClick={() => setMenuState(null)}
-            >
-              <span>Cancel</span>
-            </button>
-          </div>
-        </>
-      )}
+      <ReelOptionsMenu
+        isOpen={isMenuOpenForCurrent}
+        currentReel={currentReel}
+        menuState={menuState}
+        menuPosition={menuPosition}
+        isMobileViewport={isMobileViewport}
+        menuRef={menuRef}
+        canDeleteReel={canDeleteReel}
+        isReelAuthor={isReelAuthor}
+        isSaved={Boolean(savedMap[menuState?.reelId])}
+        onDeleteReel={handleDeleteReel}
+        onArchiveReel={handleArchiveReel}
+        onReportReel={(id) => {
+          setMenuState(null);
+          setReportReelId(id);
+          setReportModalOpen(true);
+        }}
+        onNotInterested={handleNotInterested}
+        onSaveToggle={(id) => {
+          handleSaveToggle(id);
+          setMenuState(null);
+        }}
+        onSaveToCollection={(id) => {
+          setMenuState(null);
+          setSaveToCollReelId(id);
+        }}
+        onCopyLink={handleCopyLink}
+        onClose={() => setMenuState(null)}
+      />
 
-      {/* Reel Likes Modal */}
-      {likesModalReelId && (
-        <LikesModal
-          isOpen={Boolean(likesModalReelId)}
-          onClose={() => setLikesModalReelId(null)}
-          targetId={likesModalReelId}
-          targetType="reel"
-        />
-      )}
-
-      {/* Reel Report Modal */}
-      {reportModalOpen && reportReelId && (
-        <ReportModal
-          isOpen={reportModalOpen}
-          onClose={() => {
-            setReportModalOpen(false);
-            setReportReelId(null);
-          }}
-          targetType="REEL"
-          targetId={reportReelId}
-          onReportSuccess={() => {
-            const reportedReel = reels.find((r) => r.id === reportReelId);
-            const authorId = reportedReel?.author?.id;
-            setReels((prev) => prev.filter((r) => r.id !== reportReelId && (!authorId || r.author?.id !== authorId)));
-          }}
-        />
-      )}
-
-      {/* Save Reel to Collection Modal */}
-      {saveToCollReelId && (
-        <SaveToCollectionModal
-          isOpen={Boolean(saveToCollReelId)}
-          onClose={() => setSaveToCollReelId(null)}
-          reelId={saveToCollReelId}
-          onSaved={() => {
-            setSavedMap((prev) => ({ ...prev, [saveToCollReelId]: true }));
-          }}
-        />
-      )}
+      {/* Reel Modals (Comments, Share, Insights, Likes, Report, SaveToCollection) */}
+      <ReelModals
+        commentsModalOpen={commentsModalOpen}
+        selectedPostId={selectedPostId}
+        onCloseComments={() => {
+          setCommentsModalOpen(false);
+          setSelectedPostId(null);
+        }}
+        shareModalReel={shareModalReel}
+        onCloseShare={() => setShareModalReel(null)}
+        onShareComplete={(newCount) => {
+          if (newCount !== undefined) {
+            setSharesMap((prev) => ({
+              ...prev,
+              [shareModalReel.id]: newCount,
+            }));
+          } else {
+            setSharesMap((prev) => ({
+              ...prev,
+              [shareModalReel.id]:
+                (prev[shareModalReel.id] ?? shareModalReel.shareCount ?? 0) + 1,
+            }));
+          }
+        }}
+        insightsReel={insightsReel}
+        onCloseInsights={() => setInsightsReel(null)}
+        likesModalReelId={likesModalReelId}
+        onCloseLikes={() => setLikesModalReelId(null)}
+        reportModalOpen={reportModalOpen}
+        reportReelId={reportReelId}
+        onCloseReport={() => {
+          setReportModalOpen(false);
+          setReportReelId(null);
+        }}
+        onReportSuccess={() => {
+          const reportedReel = reels.find((r) => r.id === reportReelId);
+          const authorId = reportedReel?.author?.id;
+          setReels((prev) =>
+            prev.filter(
+              (r) => r.id !== reportReelId && (!authorId || r.author?.id !== authorId)
+            )
+          );
+        }}
+        saveToCollReelId={saveToCollReelId}
+        onCloseSaveToColl={() => setSaveToCollReelId(null)}
+        onSavedToCollection={() => {
+          setSavedMap((prev) => ({ ...prev, [saveToCollReelId]: true }));
+        }}
+      />
     </div>
   );
 };

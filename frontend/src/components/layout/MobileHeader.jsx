@@ -14,14 +14,23 @@ export const MobileHeader = ({
 }) => {
   return (
     <header className="mobile-header">
-      <NavLink to={isAdmin ? "/admin" : "/"} className="brand-link" aria-label="Instagram Home">
-        <InstagramLogo width={103} height={29} color="var(--text-primary)" />
+      <NavLink
+        to={isAdmin ? "/admin" : "/"}
+        className="mobile-brand-link brand-link"
+        aria-label="Instagram Home"
+      >
+        <InstagramLogo
+          width={103}
+          height={28}
+          color="var(--text-primary)"
+          className="mobile-header-wordmark"
+        />
       </NavLink>
 
       <div className="mobile-header-actions">
         <NavLink
           to="/search"
-          className="mobile-icon-btn"
+          className="mobile-icon-btn mobile-header-search-btn"
           aria-label="Search"
           title="Search"
         >
@@ -30,7 +39,7 @@ export const MobileHeader = ({
 
         <NavLink
           to="/notifications"
-          className="mobile-icon-btn"
+          className="mobile-icon-btn mobile-header-notifications-btn"
           aria-label="Notifications"
           title="Notifications"
         >
@@ -41,7 +50,7 @@ export const MobileHeader = ({
         {!isMessagesRoute && (
           <NavLink
             to="/messages"
-            className="mobile-icon-btn"
+            className="mobile-icon-btn mobile-header-messages-btn"
             aria-label="Messages"
             title="Direct Messages"
           >

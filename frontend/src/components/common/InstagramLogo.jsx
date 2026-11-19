@@ -10,10 +10,11 @@ export const InstagramLogo = ({
   height = 42,
   color = 'currentColor',
   className = '',
+  style = {},
 }) => {
   return (
     <span
-      className={`ig-cursive-wordmark ${className}`}
+      className={`ig-cursive-wordmark ${className}`.trim()}
       style={{
         fontFamily: "'Grand Hotel', -apple-system, cursive, sans-serif",
         fontSize: typeof height === 'number' ? `${Math.round(height * 1.05)}px` : '36px',
@@ -23,6 +24,9 @@ export const InstagramLogo = ({
         display: 'inline-block',
         userSelect: 'none',
         fontWeight: 400,
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        ...style,
       }}
       aria-label="Instagram"
     >

@@ -71,8 +71,13 @@ describe('Messages Page Dynamic Phone Web Responsive Suite', () => {
     // New Message trigger
     expect(screen.getByRole('button', { name: /New Message/i })).toBeInTheDocument();
 
-    // Search input
-    expect(screen.getByPlaceholderText(/Search messages/i)).toBeInTheDocument();
+    // Search input and pill styling
+    const searchInput = screen.getByPlaceholderText(/Search messages/i);
+    expect(searchInput).toBeInTheDocument();
+    expect(searchInput).toHaveClass('conversations-search-input');
+    const searchBar = document.querySelector('.conversations-search-bar');
+    expect(searchBar).toBeInTheDocument();
+    expect(searchBar).toHaveClass('conversations-search-inner');
   });
 
   it('renders conversation items with proper meta box and single-line snippet class', () => {
@@ -154,6 +159,10 @@ describe('Messages Page Dynamic Phone Web Responsive Suite', () => {
   it('verifies MessagesPage.css contains responsive rules for single-line snippets and mobile layout', () => {
     const cssPath = path.resolve(__dirname, '../pages/MessagesPage.css');
     const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+    // Search bar flex pill styling
+    expect(cssContent).toMatch(/\.conversations-search-bar\s*\{[\s\S]*display:\s*flex;[\s\S]*align-items:\s*center;/);
+    expect(cssContent).toMatch(/\.conversations-search-bar\s+input\s*\{[\s\S]*border:\s*none/);
 
     // Snippet single-line ellipsis styles
     expect(cssContent).toMatch(/\.conversation-last-message\s*\{[\s\S]*white-space:\s*nowrap;[\s\S]*text-overflow:\s*ellipsis;/);

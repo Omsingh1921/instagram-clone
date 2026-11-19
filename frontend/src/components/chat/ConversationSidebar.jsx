@@ -77,10 +77,11 @@ export const ConversationSidebar = ({
 
       {/* Search Bar matching Instagram Web Search Pill */}
       <div className="conversations-search-container">
-        <div className="conversations-search-bar">
+        <div className="conversations-search-bar conversations-search-inner">
           <Search size={16} className="conversations-search-icon" />
           <input
             type="text"
+            className="conversations-search-input"
             placeholder="Search messages"
             value={convSearchTerm}
             onChange={(e) => setConvSearchTerm(e.target.value)}

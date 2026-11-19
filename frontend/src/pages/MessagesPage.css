@@ -117,26 +117,33 @@
 /* Sidebar Search Bar */
 .conversations-search-container {
   padding: 0 18px 12px 18px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.conversations-search-inner {
+.conversations-search-inner,
+.conversations-search-bar {
   display: flex;
   align-items: center;
   gap: 10px;
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 9999px;
-  padding: 0 15px;
+  padding: 0 14px;
   height: 40px;
+  width: 100%;
+  box-sizing: border-box;
   transition: border-color 0.16s ease, background-color 0.16s ease;
 }
 
-.conversations-search-inner:focus-within {
+.conversations-search-inner:focus-within,
+.conversations-search-bar:focus-within {
   border-color: rgba(168, 85, 247, 0.48);
   background: rgba(255, 255, 255, 0.08);
 }
 
-:root[data-theme="light"] .conversations-search-inner {
+:root[data-theme="light"] .conversations-search-inner,
+:root[data-theme="light"] .conversations-search-bar {
   background-color: var(--bg-secondary);
   border-color: var(--border-subtle);
 }
@@ -144,18 +151,33 @@
 .conversations-search-icon {
   color: #9b9cb2;
   flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.conversations-search-input {
+.conversations-search-input,
+.conversations-search-inner input,
+.conversations-search-bar input {
   flex: 1;
-  background: transparent;
-  border: none;
-  outline: none;
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   color: var(--text-primary);
   font-size: 13.5px;
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  font-family: inherit;
 }
 
-.conversations-search-input::placeholder {
+.conversations-search-input::placeholder,
+.conversations-search-inner input::placeholder,
+.conversations-search-bar input::placeholder {
   color: #8b8da4;
 }
 
@@ -168,6 +190,7 @@
   align-items: center;
   justify-content: center;
   padding: 2px;
+  flex-shrink: 0;
 }
 
 /* Subheader Tabs: Primary / General / Requests */
@@ -1403,6 +1426,15 @@
 
   .conversations-search-container {
     padding: 0 14px 10px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .conversations-search-inner,
+  .conversations-search-bar {
+    height: 38px;
+    padding: 0 12px;
+    border-radius: 12px;
   }
 
   .notes-tray-wrapper {
@@ -1496,6 +1528,16 @@
   .conversations-header {
     padding-left: 10px;
     padding-right: 10px;
+  }
+
+  .conversations-search-container {
+    padding: 0 10px 8px;
+  }
+
+  .conversations-search-inner,
+  .conversations-search-bar {
+    height: 36px;
+    padding: 0 10px;
   }
 
   .conversations-username {

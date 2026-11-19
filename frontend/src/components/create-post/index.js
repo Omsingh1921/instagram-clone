@@ -5,3 +5,6 @@ export { PostUploadStep } from './PostUploadStep';
 export { PostCanvasPreview } from './PostCanvasPreview';
 export { PostEditSidebar } from './PostEditSidebar';
 export { PostDetailsStep, POPULAR_LOCATIONS } from './PostDetailsStep';
+export { usePostMediaState } from './usePostMediaState';
+export { usePostCropZoom } from './usePostCropZoom';
+export { usePostDetails } from './usePostDetails';

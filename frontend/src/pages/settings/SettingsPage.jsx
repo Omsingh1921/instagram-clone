@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useSearchParams, NavLink } from 'react-router-dom';
+import { useSearchParams, useNavigate, NavLink } from 'react-router-dom';
 import {
   User, Lock, Bell, Shield, UserX, Check, Laptop, Smartphone, Globe, LogOut,
   AlertTriangle, Camera, Mail, Trash2, Power, EyeOff, Briefcase, Sparkles,
@@ -40,7 +40,12 @@ import { useToast } from '../../context/ToastContext';
 import './SettingsPage.css';
 
 export const SettingsPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  );
+  const [mobileView, setMobileView] = useState('detail');
   const [activeTab, setActiveTab] = useState('profile');
   const [openGroups, setOpenGroups] = useState(
     () => new Set(['Admin Settings', 'Your account', 'How you use Instagram'])
@@ -214,6 +219,25 @@ export const SettingsPage = () => {
       if (!Number.isNaN(grace) && grace >= 1) setAccountDeletionGraceDays(grace);
     });
   }, []);
+
+  // Track viewport resize for mobile phone web vs desktop PC web
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const handleSelectTab = useCallback((tabId) => {
+    setActiveTab(tabId);
+    setMobileView('detail');
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', tabId);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
 
   // Load Blocked accounts when tab is active
   useEffect(() => {
@@ -760,23 +784,74 @@ export const SettingsPage = () => {
     }))
     .filter((cat) => cat.items.length > 0);
 
+  const allFlattenedItems = filteredCategories.flatMap((cat) => cat.items);
+  const currentActiveItem =
+    allFlattenedItems.find((it) => it.id === activeTab) ||
+    allFlattenedItems[0] || { id: 'profile', label: 'Edit Profile', icon: User };
+
   return (
     <div className="settings-page-wrapper">
       <div className="settings-page-layout">
-      {/* Settings Navigation Bar */}
-      <SettingsNavPane
-          isUserAdmin={isUserAdmin}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          openGroups={openGroups}
-          setOpenGroups={setOpenGroups}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          filteredCategories={filteredCategories}
-        />
+        {/* Settings Navigation Bar: On desktop, always shown. On mobile, shown when mobileView === 'menu' */}
+        {(!isMobile || mobileView === 'menu') && (
+          <SettingsNavPane
+            isUserAdmin={isUserAdmin}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            openGroups={openGroups}
+            setOpenGroups={setOpenGroups}
+            activeTab={activeTab}
+            setActiveTab={handleSelectTab}
+            filteredCategories={filteredCategories}
+            isMobile={isMobile}
+            onBackToProfile={() => navigate(-1)}
+          />
+        )}
 
-      {/* Main Settings Content */}
-      <main className="settings-content-pane">
+        {/* Main Settings Content: On desktop, always shown. On mobile, shown when mobileView === 'detail' */}
+        {(!isMobile || mobileView === 'detail') && (
+          <main className="settings-content-pane">
+            {/* Mobile Header Bar */}
+            {isMobile && (
+              <div className="settings-mobile-subnav">
+                <button
+                  type="button"
+                  className="settings-mobile-back-btn"
+                  onClick={() => setMobileView('menu')}
+                  aria-label="Back to Settings menu"
+                >
+                  <ChevronLeft size={20} />
+                  <span>Settings</span>
+                </button>
+                <h1 className="settings-mobile-subnav-title">
+                  {currentActiveItem.label}
+                </h1>
+                <div className="settings-mobile-subnav-spacer" />
+              </div>
+            )}
+
+            {/* Mobile Quick-Switch Horizontal Pills Tray */}
+            {isMobile && (
+              <div className="settings-mobile-pills-tray" role="tablist" aria-label="Settings categories">
+                {allFlattenedItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  const isPillActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isPillActive}
+                      className={`settings-mobile-pill-btn ${isPillActive ? 'active' : ''}`}
+                      onClick={() => handleSelectTab(item.id)}
+                    >
+                      <ItemIcon size={13} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
         {isUserAdmin && (
           <div className="settings-admin-banner">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600 }}>
@@ -932,8 +1007,9 @@ export const SettingsPage = () => {
         ) : activeTab === 'story_privacy' ? (
           <StoryPrivacyPanel />
         ) : null}
-      </main>
-    </div>
+          </main>
+        )}
+      </div>
     </div>
   );
 };

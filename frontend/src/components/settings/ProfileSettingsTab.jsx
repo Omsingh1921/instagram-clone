@@ -20,7 +20,7 @@ export const ProfileSettingsTab = ({
       <form onSubmit={handleSaveProfile} className="settings-form">
         {/* Profile Photo Header */}
         <div className="settings-profile-card">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="settings-profile-user-info" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <Avatar
               src={currentUser?.avatarUrl || currentUser?.profilePictureUrl}
               alt={currentUser?.username}
@@ -44,7 +44,7 @@ export const ProfileSettingsTab = ({
             accept="image/*"
             onChange={handleAvatarFile}
           />
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div className="settings-profile-card-actions" style={{ display: 'flex', gap: '8px' }}>
             <button
               type="button"
               className="btn btn-secondary"

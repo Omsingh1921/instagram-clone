@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export const SettingsNavPane = ({
   isUserAdmin = false,
@@ -10,10 +10,26 @@ export const SettingsNavPane = ({
   activeTab = 'profile',
   setActiveTab,
   filteredCategories = [],
+  isMobile = false,
+  onBackToProfile,
 }) => {
   return (
-    <nav className="settings-nav-pane">
-      <h2 className="settings-nav-title">Settings</h2>
+    <nav className={`settings-nav-pane ${isMobile ? 'is-mobile-hub' : ''}`}>
+      <div className="settings-nav-header-row">
+        {isMobile && onBackToProfile && (
+          <button
+            type="button"
+            className="settings-nav-mobile-back-btn"
+            onClick={onBackToProfile}
+            aria-label="Back"
+          >
+            <ArrowLeft size={20} />
+          </button>
+        )}
+        <h2 className="settings-nav-title">
+          {isMobile ? 'Settings and privacy' : 'Settings'}
+        </h2>
+      </div>
 
       {!isUserAdmin && (
         <div className="settings-search-wrapper">
@@ -82,8 +98,11 @@ export const SettingsNavPane = ({
                         });
                       }}
                     >
-                      <ItemIcon size={17} />
-                      <span>{item.label}</span>
+                      <ItemIcon size={17} className="settings-nav-button-icon" />
+                      <span className="settings-nav-button-label">{item.label}</span>
+                      {isMobile && (
+                        <ChevronRight size={16} className="settings-nav-button-arrow" />
+                      )}
                     </button>
                   );
                 })}

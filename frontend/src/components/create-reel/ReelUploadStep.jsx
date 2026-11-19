@@ -2,11 +2,25 @@ import React from 'react';
 import { Video } from 'lucide-react';
 
 export const ReelUploadStep = ({ fileInputRef, onFileSelect }) => {
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const droppedFile = e.dataTransfer?.files?.[0];
+    if (droppedFile) {
+      onFileSelect(droppedFile);
+    }
+  };
+
   return (
     <div
       className="ig-upload-dropzone"
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => e.preventDefault()}
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
       onClick={() => fileInputRef.current?.click()}
     >
       <input
@@ -38,5 +52,7 @@ export const ReelUploadStep = ({ fileInputRef, onFileSelect }) => {
     </div>
   );
 };
+
+export const ReelVideoDropzone = ReelUploadStep;
 
 export default ReelUploadStep;

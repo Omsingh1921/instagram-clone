@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Smile, Mic, Image as ImageIcon, Heart, Send, X, Edit3 } from 'lucide-react';
+
+const QUICK_EMOJIS = ['❤️', '😂', '🔥', '👏', '😍', '😢', '🙌', '😮', '👍', '🎉', '😊', '💯', '✨', '🥺'];
 
 export const ChatInputBar = ({
   inputText,
@@ -31,6 +33,32 @@ export const ChatInputBar = ({
   handlingRequestAction,
   sending,
 }) => {
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  useEffect(() => {
+    if (inputRef?.current) {
+      inputRef.current.style.height = 'auto';
+      if (inputText) {
+        inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+      }
+    }
+  }, [inputText, inputRef]);
+
+  const handleInsertEmoji = (emoji) => {
+    setInputText((prev) => (prev ? prev + emoji : emoji));
+    if (inputRef?.current) {
+      inputRef.current.focus();
+    }
+  };
+
+  const handleSubmit = (e) => {
+    setShowEmojiPicker(false);
+    onSendMessage?.(e);
+    if (inputRef?.current) {
+      inputRef.current.style.height = 'auto';
+    }
+  };
+
   return (
     <>
       {/* Media Upload Preview Bar with View-Once Toggle */}
@@ -153,6 +181,21 @@ export const ChatInputBar = ({
         </div>
       ) : (
         <div className="chat-input-wrapper">
+          {showEmojiPicker && (
+            <div className="chat-emoji-quick-row" role="toolbar" aria-label="Quick emojis">
+              {QUICK_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  className="chat-emoji-item-btn"
+                  onClick={() => handleInsertEmoji(emoji)}
+                  aria-label={`Insert ${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
           {editingMessage && (
             <div className="chat-editing-banner">
               <div className="chat-editing-info">
@@ -169,16 +212,13 @@ export const ChatInputBar = ({
               </button>
             </div>
           )}
-          <form onSubmit={onSendMessage} className="chat-input-bar-capsule">
+          <form onSubmit={handleSubmit} className="chat-input-bar-capsule">
             <button
               type="button"
-              className="chat-input-icon-btn emoji-btn"
-              onClick={() => {
-                setInputText((prev) => (prev ? prev + ' 😊' : '😊'));
-                if (inputRef?.current) inputRef.current.focus();
-              }}
-              title="Add emoji"
-              aria-label="Add emoji"
+              className={`chat-input-icon-btn emoji-btn ${showEmojiPicker ? 'active' : ''}`}
+              onClick={() => setShowEmojiPicker((prev) => !prev)}
+              title={showEmojiPicker ? 'Close emoji picker' : 'Add emoji'}
+              aria-label={showEmojiPicker ? 'Close emoji picker' : 'Add emoji'}
             >
               <Smile size={24} />
             </button>
@@ -191,15 +231,28 @@ export const ChatInputBar = ({
               onChange={onSelectMedia}
             />
 
-            <input
+            <textarea
               ref={inputRef}
-              type="text"
+              rows={1}
               className="chat-input-box-clean"
               placeholder={selectedMediaFile ? 'Add a caption...' : 'Message...'}
               value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              onChange={(e) => {
+                setInputText(e.target.value);
+                e.target.style.height = 'auto';
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`;
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if ((inputText.trim() || selectedMediaFile) && !sending) {
+                    handleSubmit(e);
+                  }
+                }
+              }}
               maxLength={2000}
               autoFocus
+              aria-label="Message"
             />
 
             {!inputText.trim() && !selectedMediaFile ? (

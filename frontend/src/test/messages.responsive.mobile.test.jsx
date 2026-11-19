@@ -1,11 +1,12 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import fs from 'node:fs';
 import path from 'node:path';
 import { ConversationSidebar } from '../components/chat/ConversationSidebar';
 import { ConversationsList } from '../components/chat/ConversationsList';
+import { ChatInputBar } from '../components/chat/ChatInputBar';
 import { MobileHeader } from '../components/layout/MobileHeader';
 
 vi.mock('../context/AuthContext', () => ({
@@ -245,5 +246,112 @@ describe('Messages Page Dynamic Phone Web Responsive Suite', () => {
     expect(cssContent).toMatch(
       /\.chat-header-avatar,\s*\.chat-recipient-info\s+\.group-avatar-icon-bubble\s*\{[\s\S]*width:\s*44px;[\s\S]*height:\s*44px;/
     );
+  });
+
+  it('renders dynamic ChatInputBar with auto-expanding textarea, emoji drawer, and send transition', () => {
+    let text = '';
+    const setInputText = vi.fn((val) => {
+      text = typeof val === 'function' ? val(text) : val;
+    });
+    const onSendMessage = vi.fn((e) => e?.preventDefault?.());
+
+    const { rerender } = render(
+      <MemoryRouter>
+        <ChatInputBar
+          inputText={text}
+          setInputText={setInputText}
+          inputRef={{ current: document.createElement('textarea') }}
+          onSendMessage={onSendMessage}
+          onSendQuickHeart={vi.fn()}
+          isRecording={false}
+          recordingTime={0}
+          onStartRecording={vi.fn()}
+          onCancelRecording={vi.fn()}
+          onSendVoiceNote={vi.fn()}
+          selectedMediaFile={null}
+          mediaPreviewUrl={null}
+          onSelectMedia={vi.fn()}
+          onClearMedia={vi.fn()}
+          isViewOnceMedia={false}
+          setIsViewOnceMedia={vi.fn()}
+          mediaFileInputRef={{ current: null }}
+          editingMessage={null}
+          onCancelEdit={vi.fn()}
+          isInRequests={false}
+          isGroup={false}
+          onAcceptRequest={vi.fn()}
+          handlingRequestAction={false}
+          sending={false}
+        />
+      </MemoryRouter>
+    );
+
+    // Dynamic auto-growing textarea exists
+    const textarea = screen.getByPlaceholderText('Message...');
+    expect(textarea).toBeInTheDocument();
+    expect(textarea.tagName.toLowerCase()).toBe('textarea');
+
+    // Right action icons present when input is empty
+    expect(screen.getByRole('button', { name: /Record voice message/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Attach photo or video/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Send heart/i })).toBeInTheDocument();
+
+    // Toggle dynamic emoji quick row
+    const emojiBtn = screen.getByRole('button', { name: /Add emoji/i });
+    fireEvent.click(emojiBtn);
+    expect(screen.getByRole('toolbar', { name: /Quick emojis/i })).toBeInTheDocument();
+
+    // Clicking an emoji invokes setInputText
+    const heartEmoji = screen.getByRole('button', { name: /Insert ❤️/i });
+    fireEvent.click(heartEmoji);
+    expect(setInputText).toHaveBeenCalled();
+
+    // When typing text, dynamic Send button appears
+    text = 'Hello world';
+    rerender(
+      <MemoryRouter>
+        <ChatInputBar
+          inputText={text}
+          setInputText={setInputText}
+          inputRef={{ current: document.createElement('textarea') }}
+          onSendMessage={onSendMessage}
+          onSendQuickHeart={vi.fn()}
+          isRecording={false}
+          recordingTime={0}
+          onStartRecording={vi.fn()}
+          onCancelRecording={vi.fn()}
+          onSendVoiceNote={vi.fn()}
+          selectedMediaFile={null}
+          mediaPreviewUrl={null}
+          onSelectMedia={vi.fn()}
+          onClearMedia={vi.fn()}
+          isViewOnceMedia={false}
+          setIsViewOnceMedia={vi.fn()}
+          mediaFileInputRef={{ current: null }}
+          editingMessage={null}
+          onCancelEdit={vi.fn()}
+          isInRequests={false}
+          isGroup={false}
+          onAcceptRequest={vi.fn()}
+          handlingRequestAction={false}
+          sending={false}
+        />
+      </MemoryRouter>
+    );
+
+    const sendBtn = screen.getByRole('button', { name: /Send message/i });
+    expect(sendBtn).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Record voice message/i })).not.toBeInTheDocument();
+
+    // Pressing Enter key submits message
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
+    expect(onSendMessage).toHaveBeenCalled();
+
+    // Verify CSS contains dynamic input wrapper mobile padding & outline prevention
+    const cssPath = path.resolve(__dirname, '../pages/MessagesPage.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+    expect(cssContent).toMatch(/\.chat-input-box-clean\s*\{[\s\S]*outline:\s*none\s*!important;/);
+    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*\.chat-input-wrapper[\s\S]*padding:\s*8px\s+10px/);
   });
 });

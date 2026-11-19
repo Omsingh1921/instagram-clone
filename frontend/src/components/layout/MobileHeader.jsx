@@ -13,7 +13,7 @@ export const MobileHeader = ({
   onOpenAdminDrawer,
 }) => {
   return (
-    <header className="mobile-header">
+    <header className={`mobile-header ${isMessagesRoute ? 'is-messages-route' : ''}`}>
       <NavLink
         to={isAdmin ? "/admin" : "/"}
         className="mobile-brand-link brand-link"

@@ -61,6 +61,31 @@
   border-bottom: none;
 }
 
+.conversations-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.conversations-mobile-back-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+
+.conversations-mobile-back-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(-1px);
+}
+
 .conversations-username-btn {
   display: inline-flex;
   align-items: center;
@@ -429,20 +454,42 @@
 }
 
 .conversation-recipient-name {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-sm, 14px);
   font-weight: 600;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.conversation-last-msg {
-  font-size: var(--font-size-xs);
+.conversation-item-snippet-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.conversation-last-msg,
+.conversation-last-message {
+  font-size: var(--font-size-xs, 12.5px);
   color: var(--text-secondary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+  display: block;
+  line-height: 1.35;
+}
+
+.conversation-item.unread .conversation-last-msg,
+.conversation-item.unread .conversation-last-message,
+.conversation-last-message.unread {
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .conversation-item-header-row {
@@ -1312,8 +1359,8 @@
 @media (max-width: 768px) {
   .messages-page-layout {
     box-sizing: border-box;
-    height: calc(100vh - var(--top-header-height) - var(--bottom-nav-height));
-    height: calc(100dvh - var(--top-header-height) - var(--bottom-nav-height) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100vh - var(--bottom-nav-height));
+    height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px));
     margin: 0;
     border-radius: 0;
     border: none;
@@ -1332,9 +1379,72 @@
     width: 100%;
     min-width: 0;
     max-width: none;
+    border-right: none;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
   .conversations-sidebar.hidden-mobile {
-    display: none;
+    display: none !important;
+  }
+
+  .conversations-header {
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 10px;
+    height: auto;
+  }
+
+  .conversations-mobile-back-btn {
+    display: inline-flex;
+  }
+
+  .conversations-username {
+    font-size: 19px;
+  }
+
+  .conversations-search-container {
+    padding: 0 14px 10px;
+  }
+
+  .notes-tray-wrapper {
+    padding: 10px 14px 12px;
+  }
+
+  .conversations-subheader {
+    padding: 0 8px;
+  }
+
+  .conversations-tab-btn {
+    padding: 11px 4px;
+    font-size: 13px;
+  }
+
+  .conversations-list-stream {
+    padding-bottom: 8px;
+    width: 100%;
+  }
+
+  .conversation-item {
+    margin: 2px 8px;
+    padding: 8px 10px;
+    width: calc(100% - 16px);
+    border-radius: 12px;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .conversation-meta-box {
+    gap: 2px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .conversation-recipient-name {
+    font-size: 14px;
+  }
+
+  .conversation-last-message,
+  .conversation-last-msg {
+    font-size: 12.5px;
   }
 
   .chat-window {
@@ -1344,7 +1454,7 @@
     box-sizing: border-box;
   }
   .chat-window.hidden-mobile {
-    display: none;
+    display: none !important;
   }
 
   .mobile-back-btn {
@@ -1352,8 +1462,10 @@
   }
 
   .chat-header {
-    height: 56px;
-    padding: 8px 12px;
+    height: calc(56px + env(safe-area-inset-top, 0px));
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
+    padding-left: 10px;
+    padding-right: 12px;
   }
   .chat-header-right-actions {
     gap: 12px;
@@ -1363,7 +1475,7 @@
     overflow-x: hidden;
   }
   .chat-input-bar {
-    padding: 8px 10px;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
   }
   .chat-input-bar-capsule {
     padding: 2px 10px;
@@ -1377,6 +1489,38 @@
   }
   .message-bubble {
     max-width: 82%;
+  }
+}
+
+@media (max-width: 360px) {
+  .conversations-header {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .conversations-username {
+    font-size: 17px;
+  }
+
+  .conversations-tab-btn {
+    font-size: 12px;
+    padding: 10px 2px;
+  }
+
+  .conversation-item {
+    margin: 1px 4px;
+    padding: 7px 8px;
+    width: calc(100% - 8px);
+    gap: 10px;
+  }
+
+  .conversation-recipient-name {
+    font-size: 13px;
+  }
+
+  .conversation-last-message,
+  .conversation-last-msg {
+    font-size: 11.5px;
   }
 }
 

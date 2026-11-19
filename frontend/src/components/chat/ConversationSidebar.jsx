@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Search, X, ChevronDown } from 'lucide-react';
+import { Edit, Search, X, ChevronDown, ArrowLeft } from 'lucide-react';
 import NotesTray from '../notes/NotesTray';
 import ConversationsList from './ConversationsList';
 
@@ -35,20 +35,34 @@ export const ConversationSidebar = ({
       className={`conversations-sidebar ${activeConversation ? 'hidden-mobile' : ''}`}
     >
       <div className="conversations-header">
-        <button
-          type="button"
-          className="conversations-username-btn"
-          onClick={() => {
-            const uid = currentUser?.id || currentUser?.userId;
-            if (uid && navigate) navigate(`/profile/${uid}`);
-          }}
-          title="View profile"
-        >
-          <span className="conversations-username">
-            {currentUser?.username || currentUsername || 'messages'}
-          </span>
-          <ChevronDown size={16} />
-        </button>
+        <div className="conversations-header-left">
+          <button
+            type="button"
+            className="conversations-mobile-back-btn"
+            onClick={() => {
+              if (navigate) navigate('/');
+              else window.location.href = '/';
+            }}
+            title="Back to home"
+            aria-label="Back to home"
+          >
+            <ArrowLeft size={22} />
+          </button>
+          <button
+            type="button"
+            className="conversations-username-btn"
+            onClick={() => {
+              const uid = currentUser?.id || currentUser?.userId;
+              if (uid && navigate) navigate(`/profile/${uid}`);
+            }}
+            title="View profile"
+          >
+            <span className="conversations-username">
+              {currentUser?.username || currentUsername || 'messages'}
+            </span>
+            <ChevronDown size={16} className="conversations-username-chevron" />
+          </button>
+        </div>
 
         <button
           type="button"

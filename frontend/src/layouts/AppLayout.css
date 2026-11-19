@@ -898,6 +898,23 @@
     min-height: 100dvh;
   }
 
+  /* On mobile: Hide duplicate feed header on /messages so Direct Messages has its own clean single top bar */
+  .mobile-header.is-messages-route {
+    display: none !important;
+  }
+
+  /* On mobile: Messages mode must always span 100% full width with 0 left margin */
+  .app-main-content.messages-mode {
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    padding-top: 0 !important;
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    overflow: hidden;
+  }
+
   /* When inside active chat or story viewer on mobile: hide global mobile header & bottom nav so view has full screen */
   body.in-active-chat .mobile-header,
   body.in-active-chat .mobile-bottom-nav,

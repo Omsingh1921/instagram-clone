@@ -116,6 +116,11 @@ describe('Settings Dynamic Responsive Phone Web & PC Web Suite', () => {
     expect(screen.getByText('Settings and privacy')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search settings...')).toBeInTheDocument();
 
+    // Verify category section headers are clean section labels (not accordion buttons)
+    const sectionHeaders = document.querySelectorAll('.settings-mobile-section-header');
+    expect(sectionHeaders.length).toBeGreaterThan(0);
+    expect(document.querySelector('.is-mobile-hub .settings-nav-group-trigger')).toBeNull();
+
     // Tapping a setting from the hub navigates back to detail view
     const profileItem = screen.getByRole('button', { name: /Edit Profile/i });
     act(() => {

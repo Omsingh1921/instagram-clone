@@ -929,7 +929,7 @@ input:checked + .switch-slider:before {
     width: 100%;
     min-height: calc(100vh - 54px);
     min-height: calc(100dvh - 54px);
-    padding: 14px 16px calc(76px + env(safe-area-inset-bottom, 0px));
+    padding: 12px 14px calc(76px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
     border-right: none;
     border-bottom: none;
@@ -940,8 +940,8 @@ input:checked + .switch-slider:before {
   .settings-nav-header-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 14px;
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .settings-nav-mobile-back-btn {
@@ -951,8 +951,8 @@ input:checked + .switch-slider:before {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
     color: #ffffff;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
     flex-shrink: 0;
@@ -965,85 +965,98 @@ input:checked + .switch-slider:before {
 
   .settings-nav-pane.is-mobile-hub .settings-nav-title {
     padding: 0;
-    font-size: 21px;
+    font-size: 17px;
     font-weight: 700;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
     color: #ffffff;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-search-wrapper {
-    padding: 0 0 16px 0;
+    padding: 0 0 12px 0;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-search-icon {
     left: 14px;
+    color: #94a3b8;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-search-input {
-    padding: 10px 14px 10px 38px;
-    font-size: 14px;
+    padding: 8px 14px 8px 36px;
+    font-size: 13.5px;
+    height: 38px;
+    box-sizing: border-box;
     background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
+    color: #ffffff;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-nav-groups-container {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding-bottom: 16px;
+    gap: 14px;
+    padding-bottom: 20px;
     overflow-x: visible;
+  }
+
+  .settings-mobile-section-header {
+    padding: 4px 6px 4px;
+    margin-bottom: 2px;
+  }
+
+  .settings-nav-pane.is-mobile-hub .settings-nav-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0.15px;
+    color: #94a3b8;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-nav-group {
     background: rgba(255, 255, 255, 0.035);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 16px;
     overflow: hidden;
-    padding: 4px;
-  }
-
-  .settings-nav-pane.is-mobile-hub .settings-nav-group-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 10px 14px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-  }
-
-  .settings-nav-pane.is-mobile-hub .settings-nav-group-title {
-    font-size: 13px;
-    font-weight: 600;
-    color: #a8a8b3;
-    letter-spacing: -0.01em;
+    padding: 2px 4px;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-nav-group-items {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    padding: 0 4px 6px;
+    gap: 0;
+    padding: 0;
   }
 
   .settings-nav-pane.is-mobile-hub .settings-nav-button {
     width: 100%;
     margin: 0;
     padding: 11px 12px;
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     gap: 12px;
-    font-size: 14px;
+    font-size: 13.5px;
     font-weight: 500;
-    color: #e2e8f0;
-    border: 1px solid transparent;
+    color: #f1f5f9;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    background: transparent;
+    transition: background-color 0.12s ease;
+  }
+
+  .settings-nav-pane.is-mobile-hub .settings-nav-button:last-child {
+    border-bottom: none;
+  }
+
+  .settings-nav-pane.is-mobile-hub .settings-nav-button:active {
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .settings-nav-button-icon {
     flex-shrink: 0;
     color: #c084fc;
+    width: 17px;
+    height: 17px;
   }
 
   .settings-nav-button-label {
@@ -1052,16 +1065,17 @@ input:checked + .switch-slider:before {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #f8fafc;
   }
 
   .settings-nav-button-arrow {
     flex-shrink: 0;
     color: #64748b;
     margin-left: auto;
-  }
-
-  .settings-nav-pane.is-mobile-hub .settings-nav-button:active {
-    background: rgba(255, 255, 255, 0.08);
+    width: 16px;
+    height: 16px;
   }
 
   /* --- Mobile Detail Content View (Detail Form Mode) --- */

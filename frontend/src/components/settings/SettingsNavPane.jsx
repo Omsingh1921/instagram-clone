@@ -47,31 +47,37 @@ export const SettingsNavPane = ({
       <div className="settings-nav-groups-container">
         {filteredCategories.map((cat) => {
           const isGroupExpanded =
-            Boolean(searchQuery.trim()) || openGroups.has(cat.group);
+            isMobile || Boolean(searchQuery.trim()) || openGroups.has(cat.group);
           return (
             <div key={cat.group} className="settings-nav-group">
-              <button
-                type="button"
-                className={`settings-nav-group-trigger ${
-                  isGroupExpanded ? 'open' : ''
-                }`}
-                aria-expanded={isGroupExpanded}
-                onClick={() => {
-                  setOpenGroups?.((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(cat.group)) next.delete(cat.group);
-                    else next.add(cat.group);
-                    return next;
-                  });
-                }}
-              >
-                <span className="settings-nav-group-title">{cat.group}</span>
-                <ChevronDown
-                  size={14}
-                  className="settings-nav-group-chevron"
-                  aria-hidden="true"
-                />
-              </button>
+              {isMobile ? (
+                <div className="settings-mobile-section-header">
+                  <span className="settings-nav-group-title">{cat.group}</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={`settings-nav-group-trigger ${
+                    isGroupExpanded ? 'open' : ''
+                  }`}
+                  aria-expanded={isGroupExpanded}
+                  onClick={() => {
+                    setOpenGroups?.((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(cat.group)) next.delete(cat.group);
+                      else next.add(cat.group);
+                      return next;
+                    });
+                  }}
+                >
+                  <span className="settings-nav-group-title">{cat.group}</span>
+                  <ChevronDown
+                    size={14}
+                    className="settings-nav-group-chevron"
+                    aria-hidden="true"
+                  />
+                </button>
+              )}
               <div
                 className={`settings-nav-group-items ${
                   isGroupExpanded ? 'expanded' : 'collapsed'

@@ -1,6 +1,7 @@
 import React from 'react';
-import { RotateCw, Play, Heart, Music } from 'lucide-react';
+import { RotateCw, Play, Heart } from 'lucide-react';
 import Avatar from '../common/Avatar';
+import ReelAudioPill from './ReelAudioPill';
 import { getVideoPosterUrl, getAdaptiveVideoUrl } from '../../utils/mediaUrl';
 
 export const ReelVideoCard = ({
@@ -160,22 +161,8 @@ export const ReelVideoCard = ({
           <p className="reel-caption-text">{currentReel.caption}</p>
         )}
 
-        <div
-          className="reel-audio-track"
-          style={{ cursor: 'pointer' }}
-          onClick={(e) => {
-            e.stopPropagation();
-            const audioTitle = currentReel.audioTitle || 'Original Audio';
-            const audioArtist = currentReel.audioArtist || currentReel.author?.username || 'Artist';
-            navigate?.(`/audio?title=${encodeURIComponent(audioTitle)}&artist=${encodeURIComponent(audioArtist)}`);
-          }}
-        >
-          <Music size={12} />
-          <span>
-            {currentReel.audioTitle || 'Original Audio'} ·{' '}
-            {currentReel.audioArtist || currentReel.author?.username || 'Artist'}
-          </span>
-        </div>
+        {/* Sound / Audio Pill */}
+        <ReelAudioPill currentReel={currentReel} navigate={navigate} />
       </div>
 
       {children}

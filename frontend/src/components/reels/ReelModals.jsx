@@ -1,5 +1,5 @@
 import React from 'react';
-import CommentsModal from '../modals/CommentsModal';
+import ReelCommentsDrawer from './ReelCommentsDrawer';
 import ShareModal from '../modals/ShareModal';
 import InsightsModal from '../modals/InsightsModal';
 import ReportModal from '../modals/ReportModal';
@@ -27,15 +27,12 @@ export const ReelModals = ({
 }) => {
   return (
     <>
-      {/* Reel Comments Modal if opened */}
-      {commentsModalOpen && selectedPostId && (
-        <CommentsModal
-          isOpen={commentsModalOpen}
-          onClose={onCloseComments}
-          postId={selectedPostId}
-          isReel={true}
-        />
-      )}
+      {/* Reel Comments Drawer / Modal */}
+      <ReelCommentsDrawer
+        isOpen={commentsModalOpen}
+        postId={selectedPostId}
+        onClose={onCloseComments}
+      />
 
       {/* Reel Share Modal */}
       {shareModalReel && (

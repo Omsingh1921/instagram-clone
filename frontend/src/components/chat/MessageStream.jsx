@@ -104,9 +104,17 @@ export const MessageStream = ({
         ) : messages.length === 0 ? (
           <div className="chat-empty-thread">
             {isGroup ? (
-              <div className="group-avatar-icon-bubble large">
-                <Users size={32} color="#fff" />
-              </div>
+              activeConversation?.avatarUrl || activeConversation?.groupAvatarUrl ? (
+                <Avatar
+                  src={activeConversation.avatarUrl || activeConversation.groupAvatarUrl}
+                  alt={groupDisplayName}
+                  size="lg"
+                />
+              ) : (
+                <div className="group-avatar-icon-bubble large" aria-label={groupDisplayName}>
+                  <Users size={32} color="#fff" />
+                </div>
+              )
             ) : (
               <Avatar
                 src={otherMember?.avatarUrl || otherMember?.profilePictureUrl}
@@ -122,9 +130,18 @@ export const MessageStream = ({
             {!hasMoreMessages && messages.length > 0 && (
               <div className="chat-thread-profile-banner">
                 {isGroup ? (
-                  <div className="group-avatar-icon-bubble large" style={{ margin: '0 auto 12px' }}>
-                    <Users size={36} color="#fff" />
-                  </div>
+                  activeConversation?.avatarUrl || activeConversation?.groupAvatarUrl ? (
+                    <Avatar
+                      src={activeConversation.avatarUrl || activeConversation.groupAvatarUrl}
+                      alt={groupDisplayName}
+                      size="xl"
+                      className="chat-thread-profile-avatar"
+                    />
+                  ) : (
+                    <div className="group-avatar-icon-bubble large" aria-label={groupDisplayName}>
+                      <Users size={38} color="#fff" />
+                    </div>
+                  )
                 ) : (
                   <Avatar
                     src={otherMember?.avatarUrl || otherMember?.profilePictureUrl}

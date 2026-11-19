@@ -202,9 +202,17 @@ export const ConversationsList = ({
                 }}
               >
                 {isConvGroup ? (
-                  <div className="group-avatar-icon-bubble">
-                    <Users size={22} color="#fff" />
-                  </div>
+                  conv.avatarUrl || conv.groupAvatarUrl ? (
+                    <Avatar
+                      src={conv.avatarUrl || conv.groupAvatarUrl}
+                      alt={title}
+                      size="lg"
+                    />
+                  ) : (
+                    <div className="group-avatar-icon-bubble" aria-label={title}>
+                      <Users size={26} color="#fff" />
+                    </div>
+                  )
                 ) : (
                   <Avatar
                     src={other.avatarUrl || other.profilePictureUrl}

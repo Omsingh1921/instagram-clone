@@ -35,9 +35,18 @@ export const ChatHeader = ({
           onClick={onOpenDetails}
         >
           {isGroup ? (
-            <div className="group-avatar-icon-bubble small">
-              <Users size={20} color="#fff" />
-            </div>
+            activeConversation?.avatarUrl || activeConversation?.groupAvatarUrl ? (
+              <Avatar
+                src={activeConversation.avatarUrl || activeConversation.groupAvatarUrl}
+                alt={groupDisplayName}
+                size="md"
+                className="chat-header-avatar"
+              />
+            ) : (
+              <div className="group-avatar-icon-bubble small" aria-label={groupDisplayName}>
+                <Users size={22} color="#fff" />
+              </div>
+            )
           ) : (
             <Avatar
               src={otherMember?.avatarUrl || otherMember?.profilePictureUrl}

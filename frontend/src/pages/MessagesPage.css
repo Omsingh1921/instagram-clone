@@ -453,6 +453,41 @@
   text-align: left;
 }
 
+/* Unify Group and 1-on-1 Avatar circle dimensions in conversation list */
+.conversation-item .avatar-wrapper,
+.conversation-item .group-avatar-icon-bubble {
+  width: 56px;
+  height: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  max-width: 56px;
+  max-height: 56px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.conversation-item .avatar-wrapper {
+  font-size: 18px;
+}
+
+.conversation-item .avatar-wrapper .avatar-image,
+.conversation-item .avatar-wrapper .avatar-fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.conversation-item .group-avatar-icon-bubble {
+  background: linear-gradient(135deg, #0095f6 0%, #a855f7 100%);
+}
+
+.conversation-item .group-avatar-icon-bubble svg {
+  width: 26px;
+  height: 26px;
+}
+
 .conversation-item:hover {
   background-color: rgba(255, 255, 255, 0.05);
 }
@@ -765,6 +800,26 @@
   gap: 8px;
 }
 
+.chat-empty-thread .avatar-wrapper,
+.chat-empty-thread .group-avatar-icon-bubble {
+  width: 68px;
+  height: 68px;
+  min-width: 68px;
+  min-height: 68px;
+  max-width: 68px;
+  max-height: 68px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-empty-thread .group-avatar-icon-bubble svg {
+  width: 32px;
+  height: 32px;
+}
+
 .chat-empty-thread h3 {
   font-size: var(--font-size-base);
   font-weight: 600;
@@ -820,8 +875,24 @@
   cursor: pointer;
 }
 
-.chat-header-avatar {
+.chat-header-avatar,
+.chat-recipient-info .group-avatar-icon-bubble {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 44px;
+  max-height: 44px;
+  border-radius: 50%;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chat-recipient-info .group-avatar-icon-bubble svg {
+  width: 22px;
+  height: 22px;
 }
 
 .chat-recipient-names {
@@ -1556,6 +1627,21 @@
     gap: 10px;
   }
 
+  .conversation-item .avatar-wrapper,
+  .conversation-item .group-avatar-icon-bubble {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+    max-width: 50px;
+    max-height: 50px;
+  }
+
+  .conversation-item .group-avatar-icon-bubble svg {
+    width: 22px;
+    height: 22px;
+  }
+
   .conversation-recipient-name {
     font-size: 13px;
   }
@@ -1609,8 +1695,26 @@
   padding: 36px 20px 24px;
 }
 
-.chat-thread-profile-avatar {
+.chat-thread-profile-banner .avatar-wrapper,
+.chat-thread-profile-banner .chat-thread-profile-avatar,
+.chat-thread-profile-banner .group-avatar-icon-bubble {
+  width: 80px;
+  height: 80px;
+  min-width: 80px;
+  min-height: 80px;
+  max-width: 80px;
+  max-height: 80px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin: 0 auto 12px;
+}
+
+.chat-thread-profile-banner .group-avatar-icon-bubble svg {
+  width: 38px;
+  height: 38px;
 }
 
 .chat-thread-profile-name {

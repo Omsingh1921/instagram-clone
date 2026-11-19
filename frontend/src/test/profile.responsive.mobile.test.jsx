@@ -57,8 +57,8 @@ describe('ProfileHeader Dynamic Phone Web Responsive Suite', () => {
     const cssPath = path.resolve(__dirname, '../pages/profile/ProfilePage.css');
     const cssContent = fs.readFileSync(cssPath, 'utf8');
 
-    // Check Mobile Grid template areas
-    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*grid-template-areas:\s*"avatar\s+stats"\s*"username\s+username"\s*"bio\s+bio"\s*"actions\s+actions"/);
+    // Check Mobile Grid template areas (actions placed directly below avatar & stats row)
+    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*grid-template-areas:\s*"avatar\s+stats"\s*"actions\s+actions"\s*"username\s+username"\s*"bio\s+bio"/);
 
     // Check display: contents on wrapper elements so children participate directly in the grid
     expect(cssContent).toMatch(/\.profile-info-column\s*\{[\s\S]*display:\s*contents;/);
@@ -72,5 +72,30 @@ describe('ProfileHeader Dynamic Phone Web Responsive Suite', () => {
 
     // Check compact 360px breakpoint
     expect(cssContent).toMatch(/@media\s*\(max-width:\s*360px\)\s*\{[\s\S]*\.profile-avatar-trigger/);
+  });
+
+  it('renders floating note prompt above avatar when own profile has no active note', () => {
+    const mockProfile = {
+      username: 'ram',
+      displayName: 'Ram Developer',
+      avatarUrl: 'https://example.com/ram.jpg',
+    };
+
+    render(
+      <MemoryRouter>
+        <ProfileHeader
+          profile={mockProfile}
+          isOwnProfile={true}
+          activeNote={null}
+        />
+      </MemoryRouter>
+    );
+
+    // Prompt bubble rendered above avatar
+    const noteBtn = screen.getByRole('button', { name: /Share a note/i });
+    expect(noteBtn).toBeInTheDocument();
+    expect(noteBtn).toHaveClass('profile-avatar-note-bubble');
+    expect(noteBtn).toHaveClass('profile-add-note-bubble');
+    expect(noteBtn.querySelector('.note-bubble-pointer')).toBeInTheDocument();
   });
 });

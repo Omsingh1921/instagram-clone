@@ -165,7 +165,7 @@
   color: var(--text-secondary);
 }
 
-/* Floating Active Note Bubble above Avatar */
+/* Floating Active Note or Note Prompt Bubble above Avatar */
 .profile-avatar-note-bubble {
   position: absolute;
   top: -22px;
@@ -180,6 +180,31 @@
     0 0 16px rgba(168, 85, 247, 0.18);
   animation: floatNote 2.6s ease-in-out infinite alternate;
   user-select: none;
+}
+
+.profile-add-note-bubble {
+  cursor: pointer;
+  border-style: dashed;
+  outline: none;
+  font-family: inherit;
+}
+
+.profile-add-note-bubble:hover {
+  background: rgba(34, 35, 54, 0.98);
+  border-style: solid;
+  border-color: rgba(192, 132, 252, 0.72);
+}
+
+:root[data-theme="light"] .profile-add-note-bubble {
+  background: #ffffff;
+  border-color: rgba(0, 149, 246, 0.45);
+  color: var(--text-primary);
+}
+
+:root[data-theme="light"] .profile-add-note-bubble:hover {
+  background: var(--bg-secondary);
+  border-color: #0095f6;
+  border-style: solid;
 }
 
 :root[data-theme="light"] .profile-avatar-note-bubble {
@@ -1451,18 +1476,18 @@
   }
 
   /* Authentic Instagram Mobile Grid Layout:
-     Row 1: [ Avatar + Note ]  [ Posts | Followers | Following ]
-     Row 2: [ Username & Verified Badge ]
-     Row 3: [ Bio: Full Name, Category, Bio Text, Links ]
-     Row 4: [ Action Buttons: Edit, Archive, Gear ] */
+     Row 1: [ Avatar + Note Bubble ]  [ Posts | Followers | Following ]
+     Row 2: [ Action Buttons: Edit profile, View archive, Highlights, Gear ] (directly below profile)
+     Row 3: [ Username & Verified Badge ]
+     Row 4: [ Bio: Full Name, Category, Bio Text, Links ] */
   .profile-header-section {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-areas:
       "avatar   stats"
+      "actions  actions"
       "username username"
-      "bio      bio"
-      "actions  actions";
+      "bio      bio";
     column-gap: 20px;
     row-gap: 12px;
     align-items: center;
@@ -1497,9 +1522,14 @@
     max-width: 90px;
   }
 
+  .profile-add-note-bubble {
+    top: -18px;
+    padding: 3px 10px;
+  }
+
   .profile-add-note-pill {
-    margin-top: 6px;
-    padding: 2px 8px;
+    margin-top: 0;
+    padding: 3px 10px;
     font-size: 10.5px;
   }
 
@@ -1596,7 +1626,8 @@
     gap: 8px;
     width: 100%;
     flex-wrap: wrap;
-    margin-top: 4px;
+    margin-top: 2px;
+    margin-bottom: 2px;
   }
 
   .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),

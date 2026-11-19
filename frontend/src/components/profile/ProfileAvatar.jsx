@@ -17,7 +17,8 @@ export const ProfileAvatar = ({
   return (
     <div className="profile-avatar-column">
       <div className="profile-avatar-note-container">
-        {activeNote && (
+        {/* Floating Note Bubble (active note or share note prompt) placed ABOVE avatar */}
+        {activeNote ? (
           <div
             className={`profile-avatar-note-bubble ${isOwnProfile ? 'clickable' : ''}`}
             onClick={() => isOwnProfile && setNoteModalOpen?.(true)}
@@ -31,7 +32,20 @@ export const ProfileAvatar = ({
             </div>
             <div className="note-bubble-pointer" />
           </div>
-        )}
+        ) : isOwnProfile ? (
+          <button
+            type="button"
+            className="profile-avatar-note-bubble profile-add-note-bubble profile-add-note-pill clickable"
+            onClick={() => setNoteModalOpen?.(true)}
+            title="Share a note"
+            aria-label="Share a note"
+          >
+            <div className="note-bubble-content">
+              <span className="note-bubble-text">+ Note</span>
+            </div>
+            <div className="note-bubble-pointer" />
+          </button>
+        ) : null}
 
         <div
           className={`profile-avatar-trigger ${hasActiveStory ? 'has-live-story' : ''}`}
@@ -79,16 +93,6 @@ export const ProfileAvatar = ({
             style={{ display: 'none' }}
           />
         </div>
-
-        {isOwnProfile && !activeNote && (
-          <button
-            type="button"
-            className="profile-add-note-pill"
-            onClick={() => setNoteModalOpen?.(true)}
-          >
-            + Share a note
-          </button>
-        )}
       </div>
     </div>
   );

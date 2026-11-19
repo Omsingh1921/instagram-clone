@@ -7,6 +7,7 @@ import path from 'node:path';
 import { ConversationSidebar } from '../components/chat/ConversationSidebar';
 import { ConversationsList } from '../components/chat/ConversationsList';
 import { ChatInputBar } from '../components/chat/ChatInputBar';
+import { ChatHeader } from '../components/chat/ChatHeader';
 import { MobileHeader } from '../components/layout/MobileHeader';
 
 vi.mock('../context/AuthContext', () => ({
@@ -353,5 +354,52 @@ describe('Messages Page Dynamic Phone Web Responsive Suite', () => {
 
     expect(cssContent).toMatch(/\.chat-input-box-clean\s*\{[\s\S]*outline:\s*none\s*!important;/);
     expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*\.chat-input-wrapper[\s\S]*padding:\s*8px\s+10px/);
+  });
+
+  it('renders ChatHeader with Active now subtext and responsive right action spacing', () => {
+    const mockConv = {
+      id: 'c-1',
+      type: 'DIRECT',
+      isPinned: false,
+      members: [
+        { id: 'u-1', username: 'ram' },
+        { id: 'u-2', username: 'test', displayName: 'test1' },
+      ],
+    };
+
+    const { container } = render(
+      <MemoryRouter>
+        <ChatHeader
+          activeConversation={mockConv}
+          isGroup={false}
+          groupDisplayName="test1"
+          otherMember={{ id: 'u-2', username: 'test', displayName: 'test1' }}
+          isInRequests={false}
+          onBack={vi.fn()}
+          onOpenDetails={vi.fn()}
+          onOpenThemePicker={vi.fn()}
+          onTogglePin={vi.fn()}
+          onMoveFolder={vi.fn()}
+          onVoiceCall={vi.fn()}
+          onVideoCall={vi.fn()}
+        />
+      </MemoryRouter>
+    );
+
+    // Displays name and 'Active now' status dot (not duplicate username!)
+    expect(screen.getByText('test1')).toBeInTheDocument();
+    expect(screen.getByText(/Active now/i)).toBeInTheDocument();
+    expect(container.querySelector('.chat-active-dot')).toBeInTheDocument();
+
+    // Verify Theme Palette button has chat-header-desktop-only class
+    const themeBtn = screen.getByRole('button', { name: /Change chat theme/i });
+    expect(themeBtn).toHaveClass('chat-header-desktop-only');
+
+    // Verify CSS contains responsive mobile rules for header right actions
+    const cssPath = path.resolve(__dirname, '../pages/MessagesPage.css');
+    const cssContent = fs.readFileSync(cssPath, 'utf8');
+
+    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*\.chat-header-desktop-only[\s\S]*display:\s*none\s*!important;/);
+    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*\.chat-header-right-actions\s*\{[\s\S]*margin-left:\s*auto;/);
   });
 });

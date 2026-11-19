@@ -62,9 +62,14 @@ export const ChatHeader = ({
               </span>
             </div>
             <span className="chat-recipient-subtext">
-              {isGroup
-                ? `${(activeConversation.members || []).length} members`
-                : (otherMember?.username ? `${otherMember.username}` : 'Active now')}
+              {isGroup ? (
+                `${(activeConversation.members || []).length} members`
+              ) : (
+                <span className="chat-active-status">
+                  <span className="chat-active-dot" aria-hidden="true" />
+                  Active now
+                </span>
+              )}
             </span>
           </div>
         </div>
@@ -78,7 +83,7 @@ export const ChatHeader = ({
           title={isGroup ? 'Start group audio call' : 'Start audio call'}
           aria-label="Audio call"
         >
-          <Phone size={22} />
+          <Phone size={20} />
         </button>
         <button
           type="button"
@@ -87,16 +92,16 @@ export const ChatHeader = ({
           title={isGroup ? 'Start group video call' : 'Start video call'}
           aria-label="Video call"
         >
-          <Video size={24} />
+          <Video size={22} />
         </button>
         <button
           type="button"
-          className="chat-header-action-btn"
+          className="chat-header-action-btn chat-header-desktop-only"
           onClick={onOpenThemePicker}
           title="Change chat theme"
           aria-label="Change chat theme"
         >
-          <Palette size={21} />
+          <Palette size={20} />
         </button>
         <button
           type="button"
@@ -105,11 +110,11 @@ export const ChatHeader = ({
           title="Conversation details"
           aria-label="Conversation details"
         >
-          <Info size={24} />
+          <Info size={22} />
         </button>
         <button
           type="button"
-          className={`chat-header-pin-btn ${activeConversation?.isPinned ? 'pinned' : ''}`}
+          className={`chat-header-pin-btn chat-header-desktop-only ${activeConversation?.isPinned ? 'pinned' : ''}`}
           onClick={(e) => onTogglePin?.(e, activeConversation.id)}
           title={activeConversation?.isPinned ? 'Unpin chat' : 'Pin chat to top'}
         >
@@ -122,7 +127,7 @@ export const ChatHeader = ({
         {activeConversation?.folder !== 'REQUESTS' && (
           <button
             type="button"
-            className="chat-header-action-btn"
+            className="chat-header-action-btn chat-header-desktop-only chat-header-folder-btn"
             onClick={(e) =>
               onMoveFolder?.(
                 e,

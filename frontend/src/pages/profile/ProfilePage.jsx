@@ -39,20 +39,6 @@ import {
   Edit2,
 } from 'lucide-react';
 import Avatar from '../../components/common/Avatar';
-import CommentsModal from '../../components/modals/CommentsModal';
-import FollowListModal from '../../components/modals/FollowListModal';
-import ReportModal from '../../components/modals/ReportModal';
-import CreateHighlightModal from '../../components/modals/CreateHighlightModal';
-import EditHighlightModal from '../../components/modals/EditHighlightModal';
-import CreateCollectionModal from '../../components/modals/CreateCollectionModal';
-import AddToCollectionModal from '../../components/modals/AddToCollectionModal';
-import CloseFriendsModal from '../../components/modals/CloseFriendsModal';
-import ProfileQrModal from '../../components/modals/ProfileQrModal';
-import NoteModal from '../../components/modals/NoteModal';
-import ProfileGearMenuModal from '../../components/modals/ProfileGearMenuModal';
-import MetaVerifiedModal from '../../components/modals/MetaVerifiedModal';
-import BlockUserModal from '../../components/modals/BlockUserModal';
-import UnblockUserModal from '../../components/modals/UnblockUserModal';
 import {
   ProfilePostsTab,
   ProfileReelsTab,
@@ -64,6 +50,7 @@ import {
   ProfileHighlights,
   ProfileNavTabs,
   ProfileEditForm,
+  ProfileModals,
 } from '../../components/profile';
 import { SkeletonProfileHeader, SkeletonMediaGrid } from '../../components/ui/Skeleton';
 import EmptyState from '../../components/common/EmptyState';
@@ -80,7 +67,6 @@ import collectionService from '../../services/collection.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useUpload } from '../../context/UploadContext';
-import StoryViewerModal from '../../components/story/StoryViewerModal';
 import { formatCount } from '../../utils';
 import ProgressiveImage from '../../components/common/ProgressiveImage';
 import { getVideoPosterUrl } from '../../utils/mediaUrl';
@@ -1356,161 +1342,64 @@ export const ProfilePage = () => {
 
 
 
-      {/* Comments Modal for clicked post */}
-      {selectedPostId && (
-        <CommentsModal
-          isOpen={!!selectedPostId}
-          onClose={() => setSelectedPostId(null)}
-          postId={selectedPostId}
-          onPostUpdated={() => { loadUserPosts(); if (activeTab === "saved") loadSavedPosts(); }}
-        />
-      )}
-
-      {/* Followers / Following List Modal */}
-      {followModalOpen && (
-        <FollowListModal
-          isOpen={followModalOpen}
-          onClose={() => setFollowModalOpen(false)}
-          userId={effectiveUserId}
-          type={followModalType}
-        />
-      )}
-
-      {/* Report Modal */}
-      {reportModalOpen && (
-        <ReportModal
-          isOpen={reportModalOpen}
-          onClose={() => setReportModalOpen(false)}
-          targetType="USER"
-          targetId={userId}
-          onReportSuccess={() => {
-            navigate('/');
-          }}
-        />
-      )}
-
-      {/* Block User Modal */}
-      <BlockUserModal
-        isOpen={blockModalOpen}
-        onClose={() => setBlockModalOpen(false)}
-        userId={userId || profile?.id}
-        username={profile?.username}
-        onBlockSuccess={handleBlockSuccess}
+      {/* Modals */}
+      <ProfileModals
+        selectedPostId={selectedPostId}
+        setSelectedPostId={setSelectedPostId}
+        loadUserPosts={loadUserPosts}
+        activeTab={activeTab}
+        loadSavedPosts={loadSavedPosts}
+        followModalOpen={followModalOpen}
+        setFollowModalOpen={setFollowModalOpen}
+        effectiveUserId={effectiveUserId}
+        followModalType={followModalType}
+        reportModalOpen={reportModalOpen}
+        setReportModalOpen={setReportModalOpen}
+        userId={userId}
+        navigate={navigate}
+        blockModalOpen={blockModalOpen}
+        setBlockModalOpen={setBlockModalOpen}
+        profile={profile}
+        handleBlockSuccess={handleBlockSuccess}
+        unblockModalOpen={unblockModalOpen}
+        setUnblockModalOpen={setUnblockModalOpen}
+        handleUnblockSuccess={handleUnblockSuccess}
+        createHighlightOpen={createHighlightOpen}
+        setCreateHighlightOpen={setCreateHighlightOpen}
+        fetchHighlights={fetchHighlights}
+        editingHighlightId={editingHighlightId}
+        setEditingHighlightId={setEditingHighlightId}
+        createCollectionOpen={createCollectionOpen}
+        setCreateCollectionOpen={setCreateCollectionOpen}
+        loadCollections={loadCollections}
+        addToCollectionOpen={addToCollectionOpen}
+        setAddToCollectionModalOpen={setAddToCollectionModalOpen}
+        selectedCollection={selectedCollection}
+        collectionPosts={collectionPosts}
+        collectionReels={collectionReels}
+        savedPosts={savedPosts}
+        savedReels={savedReels}
+        handleSelectCollection={handleSelectCollection}
+        closeFriendsModalOpen={closeFriendsModalOpen}
+        setCloseFriendsModalOpen={setCloseFriendsModalOpen}
+        qrModalOpen={qrModalOpen}
+        setQrModalOpen={setQrModalOpen}
+        currentUser={currentUser}
+        noteModalOpen={noteModalOpen}
+        setNoteModalOpen={setNoteModalOpen}
+        activeNote={activeNote}
+        setActiveNote={setActiveNote}
+        gearMenuOpen={gearMenuOpen}
+        setGearMenuOpen={setGearMenuOpen}
+        setMetaVerifiedOpen={setMetaVerifiedOpen}
+        metaVerifiedOpen={metaVerifiedOpen}
+        logout={logout}
+        storyViewerOpen={storyViewerOpen}
+        setStoryViewerOpen={setStoryViewerOpen}
+        effectiveStoryGroups={effectiveStoryGroups}
+        activeHighlightGroup={activeHighlightGroup}
+        setActiveHighlightGroup={setActiveHighlightGroup}
       />
-
-      {/* Unblock User Modal */}
-      <UnblockUserModal
-        isOpen={unblockModalOpen}
-        onClose={() => setUnblockModalOpen(false)}
-        userId={userId || profile?.id}
-        username={profile?.username}
-        onUnblockSuccess={handleUnblockSuccess}
-      />
-
-      {/* Create Highlight Modal */}
-      {createHighlightOpen && (
-        <CreateHighlightModal
-          isOpen={createHighlightOpen}
-          onClose={() => setCreateHighlightOpen(false)}
-          onHighlightCreated={() => fetchHighlights()}
-        />
-      )}
-
-      {/* Create Collection Modal */}
-      {createCollectionOpen && (
-        <CreateCollectionModal
-          isOpen={createCollectionOpen}
-          onClose={() => setCreateCollectionOpen(false)}
-          onCreated={() => loadCollections()}
-        />
-      )}
-
-      {/* Add To Collection Modal */}
-      {addToCollectionOpen && selectedCollection && (
-        <AddToCollectionModal
-          isOpen={addToCollectionOpen}
-          onClose={() => setAddToCollectionModalOpen(false)}
-          collectionId={selectedCollection.id}
-          collectionName={selectedCollection.name}
-          existingPostIds={collectionPosts.map((p) => p.id)}
-          existingReelIds={collectionReels.map((r) => r.id)}
-          initialSavedPosts={savedPosts}
-          initialSavedReels={savedReels}
-          onItemsAdded={() => {
-            handleSelectCollection(selectedCollection);
-            loadCollections();
-          }}
-        />
-      )}
-
-      {/* Close Friends Modal */}
-      <CloseFriendsModal
-        isOpen={closeFriendsModalOpen}
-        onClose={() => setCloseFriendsModalOpen(false)}
-      />
-
-      {/* QR Code Nametag Modal */}
-      <ProfileQrModal
-        isOpen={qrModalOpen}
-        onClose={() => setQrModalOpen(false)}
-        username={profile?.username || currentUser?.username}
-      />
-
-      {/* Note Creator & Viewer Modal */}
-      <NoteModal
-        isOpen={noteModalOpen}
-        onClose={() => setNoteModalOpen(false)}
-        currentNote={activeNote}
-        onNoteUpdated={(note) => setActiveNote(note)}
-      />
-
-      {/* Profile Gear Menu Modal (Action Sheet matching Instagram) */}
-      <ProfileGearMenuModal
-        isOpen={gearMenuOpen}
-        onClose={() => setGearMenuOpen(false)}
-        onOpenQr={() => setQrModalOpen(true)}
-        onOpenMetaVerified={() => setMetaVerifiedOpen(true)}
-        onLogout={logout}
-      />
-
-      {/* Meta Verified Benefits Modal */}
-      <MetaVerifiedModal
-        isOpen={metaVerifiedOpen}
-        onClose={() => setMetaVerifiedOpen(false)}
-      />
-
-      {/* Edit Highlight Modal */}
-      {editingHighlightId && (
-        <EditHighlightModal
-          isOpen={Boolean(editingHighlightId)}
-          onClose={() => setEditingHighlightId(null)}
-          highlightId={editingHighlightId}
-          onHighlightUpdated={fetchHighlights}
-        />
-      )}
-
-      {/* Story Viewer Modal (Live Stories or Selected Highlight) */}
-      {storyViewerOpen && effectiveStoryGroups.length > 0 && (
-        <StoryViewerModal
-          isOpen={storyViewerOpen}
-          storyGroups={effectiveStoryGroups}
-          initialGroupIdx={0}
-          initialStoryIdx={0}
-          onClose={() => setStoryViewerOpen(false)}
-          onHighlightUpdated={fetchHighlights}
-        />
-      )}
-
-      {activeHighlightGroup && activeHighlightGroup.length > 0 && (
-        <StoryViewerModal
-          isOpen={true}
-          storyGroups={activeHighlightGroup}
-          initialGroupIdx={0}
-          initialStoryIdx={0}
-          onClose={() => setActiveHighlightGroup(null)}
-          onHighlightUpdated={fetchHighlights}
-        />
-      )}
     </div>
   );
 };

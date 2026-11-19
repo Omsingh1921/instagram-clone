@@ -6,3 +6,4 @@ export const MessageInputBar = (props) => {
 };
 
 export default MessageInputBar;
+

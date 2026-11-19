@@ -77,7 +77,7 @@ export const ProfileActions = ({
             ) && (
               <button
                 type="button"
-                className="btn btn-secondary profile-btn"
+                className="btn btn-secondary profile-btn profile-highlight-action-btn profile-desktop-only"
                 onClick={() => setCreateHighlightOpen?.(true)}
                 title="Create story highlight"
               >
@@ -87,7 +87,7 @@ export const ProfileActions = ({
             )}
             <button
               type="button"
-              className="btn btn-secondary profile-btn profile-icon-btn"
+              className="btn btn-secondary profile-btn profile-icon-btn profile-close-friends-btn profile-desktop-only"
               onClick={() => setCloseFriendsModalOpen?.(true)}
               title="Close Friends"
               aria-label="Close Friends"
@@ -96,7 +96,7 @@ export const ProfileActions = ({
             </button>
             <button
               type="button"
-              className="btn btn-secondary profile-btn profile-icon-btn profile-gear-btn"
+              className="btn btn-secondary profile-btn profile-icon-btn profile-gear-btn profile-desktop-only"
               onClick={() => setGearMenuOpen?.(true)}
               title="Settings"
               aria-label="Settings"

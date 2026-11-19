@@ -70,6 +70,10 @@ describe('ProfileHeader Dynamic Phone Web Responsive Suite', () => {
     // Check action buttons full-width responsive flex
     expect(cssContent).toMatch(/\.profile-action-buttons\s*\{[\s\S]*grid-area:\s*actions;/);
 
+    // Check Highlights, Close Friends, and Gear buttons removed from mobile web action bar
+    expect(cssContent).toMatch(/\.profile-highlight-action-btn,[\s\S]*\.profile-close-friends-btn,[\s\S]*\.profile-gear-btn,[\s\S]*\.profile-action-buttons\s+\.profile-desktop-only\s*\{[\s\S]*display:\s*none\s*!important;/);
+    expect(cssContent).toMatch(/\.profile-action-buttons\s*\{[\s\S]*flex-wrap:\s*nowrap;/);
+
     // Check compact 360px breakpoint
     expect(cssContent).toMatch(/@media\s*\(max-width:\s*360px\)\s*\{[\s\S]*\.profile-avatar-trigger/);
   });

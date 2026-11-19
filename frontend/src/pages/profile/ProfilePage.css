@@ -1619,20 +1619,29 @@
     font-size: 13.5px;
   }
 
+  /* Remove Highlights button, Close Friends star, and Gear button from mobile web action bar */
+  .profile-highlight-action-btn,
+  .profile-close-friends-btn,
+  .profile-gear-btn,
+  .profile-action-buttons .profile-desktop-only {
+    display: none !important;
+  }
+
   .profile-action-buttons {
     grid-area: actions;
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     margin-top: 2px;
     margin-bottom: 2px;
   }
 
   .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),
   .profile-action-buttons > .btn-primary:not(.profile-icon-btn) {
-    flex: 1 1 120px;
+    flex: 1 1 0;
+    width: 50%;
     min-width: 0;
     text-align: center;
   }
@@ -1728,7 +1737,8 @@
 
   .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),
   .profile-action-buttons > .btn-primary:not(.profile-icon-btn) {
-    flex: 1 1 100px;
+    flex: 1 1 0;
+    width: 50%;
     font-size: 12px;
   }
 

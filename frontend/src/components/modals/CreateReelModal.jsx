@@ -1,39 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Video,
-  X,
-  MapPin,
-  ChevronDown,
-  ChevronUp,
-  ArrowLeft,
-  Check,
-  Scissors,
-  Play,
-  RotateCcw,
-  Sparkles,
-  Sliders,
-  Crop,
-  Film,
-  Volume2,
-  VolumeX,
-} from 'lucide-react';
 import Modal from '../common/Modal';
-import LoadingSpinner from '../common/LoadingSpinner';
-import Avatar from '../common/Avatar';
 import mediaService from '../../services/media.service';
 import reelService from '../../services/reel.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useUpload } from '../../context/UploadContext';
 import {
   formatTime,
   extractVideoThumbnail,
   extractFilmstripFrames,
   PhoneVideoTrimmer,
   TrimmedVideoPlayer,
-} from './CreatePostModal';
-import { INSTAGRAM_FILTERS, getFilterStyle } from '../../utils/instagramFilters';
-import { useUpload } from '../../context/UploadContext';
+} from '../create-post';
+import {
+  ReelUploadStep,
+  ReelSubnav,
+  ReelCanvasPreview,
+  ReelEditSidebar,
+  ReelDetailsStep,
+} from '../create-reel';
 import './CreatePostModal.css';
+
+export {
+  formatTime,
+  extractVideoThumbnail,
+  extractFilmstripFrames,
+  PhoneVideoTrimmer,
+  TrimmedVideoPlayer,
+};
 
 const WIZARD_STEPS = {
   UPLOAD: 'UPLOAD',
@@ -93,7 +87,6 @@ export const CreateReelModal = ({ isOpen, onClose, onReelCreated }) => {
   const [hideLikeCount, setHideLikeCount] = useState(false);
   const [commentsDisabled, setCommentsDisabled] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const fileInputRef = useRef(null);
@@ -126,7 +119,6 @@ export const CreateReelModal = ({ isOpen, onClose, onReelCreated }) => {
     setHideLikeCount(false);
     setCommentsDisabled(false);
     setShowAdvanced(false);
-    setIsDragOver(false);
     setLoading(false);
     setCurrentStep(WIZARD_STEPS.UPLOAD);
   };
@@ -347,7 +339,6 @@ export const CreateReelModal = ({ isOpen, onClose, onReelCreated }) => {
       return;
     }
 
-    // Snapshot parameters for background execution
     const capturedFile = file;
     const capturedPreviewUrl = previewUrl;
     const capturedRatio = selectedRatio;
@@ -499,588 +490,104 @@ export const CreateReelModal = ({ isOpen, onClose, onReelCreated }) => {
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         {/* Wizard Navigation Header */}
-        {currentStep !== WIZARD_STEPS.UPLOAD && (
-          <div className="ig-wizard-subnav">
-            <button
-              type="button"
-              className="ig-subnav-btn"
-              onClick={() => {
-                if (currentStep === WIZARD_STEPS.DETAILS) {
-                  setCurrentStep(WIZARD_STEPS.EDIT);
-                } else if (currentStep === WIZARD_STEPS.EDIT) {
-                  setCurrentStep(WIZARD_STEPS.UPLOAD);
-                }
-              }}
-              title="Back"
-            >
-              <ArrowLeft size={20} />
-            </button>
-
-            <span className="ig-subnav-title">
-              {currentStep === WIZARD_STEPS.EDIT ? 'Edit Reel' : 'New Reel'}
-            </span>
-
-            {currentStep === WIZARD_STEPS.EDIT ? (
-              <div className="ig-subnav-right-actions">
-                <button
-                  type="button"
-                  className="ig-subnav-save-crop-btn"
-                  onClick={handleSaveCrop}
-                  disabled={isSavingCrop}
-                  title="Save Reel Trim & Edits (✓)"
-                  aria-label="Save Reel Trim & Edits"
-                >
-                  <Check size={16} strokeWidth={2.8} />
-                  <span>Save</span>
-                </button>
-                <button
-                  type="button"
-                  className="ig-subnav-action-btn next"
-                  onClick={handleProceedToDetails}
-                  disabled={isSavingCrop}
-                >
-                  Next
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                className="ig-subnav-action-btn share"
-                onClick={(e) => handleSubmit(e, false)}
-                disabled={loading}
-              >
-                {loading ? <LoadingSpinner size="sm" /> : 'Share'}
-              </button>
-            )}
-          </div>
-        )}
+        <ReelSubnav
+          currentStep={currentStep}
+          WIZARD_STEPS={WIZARD_STEPS}
+          onBack={() => {
+            if (currentStep === WIZARD_STEPS.DETAILS) {
+              setCurrentStep(WIZARD_STEPS.EDIT);
+            } else if (currentStep === WIZARD_STEPS.EDIT) {
+              setCurrentStep(WIZARD_STEPS.UPLOAD);
+            }
+          }}
+          onSaveCrop={handleSaveCrop}
+          isSavingCrop={isSavingCrop}
+          onProceedToDetails={handleProceedToDetails}
+          onSubmit={handleSubmit}
+          loading={loading}
+        />
 
         {/* STEP 1: INITIAL UPLOAD SELECTOR */}
         {currentStep === WIZARD_STEPS.UPLOAD && (
-          <div
-            className="ig-upload-dropzone"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => e.preventDefault()}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={(e) => handleFileSelect(e.target.files?.[0])}
-              accept="video/*"
-              style={{ display: 'none' }}
-            />
-            <div className="ig-upload-center-box">
-              <div className="ig-dropzone-circle">
-                <Video size={36} className="ig-media-main-icon" />
-              </div>
-              <h3 className="ig-dropzone-title">Upload a Reel Video</h3>
-              <p className="ig-dropzone-desc">
-                Vertical short videos up to 90 seconds (MP4, MOV, WEBM)
-              </p>
-              <button
-                type="button"
-                className="btn btn-primary ig-browse-files-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  fileInputRef.current?.click();
-                }}
-              >
-                Select from computer
-              </button>
-            </div>
-          </div>
+          <ReelUploadStep
+            fileInputRef={fileInputRef}
+            onFileSelect={handleFileSelect}
+          />
         )}
 
         {/* STEP 2: EDIT, CROP & PHONE VIDEO TRIMMER */}
         {currentStep === WIZARD_STEPS.EDIT && file && (
           <div className="ig-edit-workspace">
-            {/* Left: Media Canvas */}
-            <div
-              className="ig-edit-canvas"
-              style={{ aspectRatio: selectedRatio.ratio || '9 / 16' }}
-            >
-              {/* Floating Top-Right Save / Confirm Button over Media Canvas */}
-              <button
-                type="button"
-                className="ig-canvas-corner-save-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSaveCrop();
-                }}
-                disabled={isSavingCrop}
-                title="Save current trim (✓)"
-                aria-label="Save current trim"
-              >
-                <Check size={15} strokeWidth={2.8} />
-                <span>Save</span>
-              </button>
+            <ReelCanvasPreview
+              selectedRatio={selectedRatio}
+              onSaveCrop={handleSaveCrop}
+              isSavingCrop={isSavingCrop}
+              cropSavedToast={cropSavedToast}
+              videoPreviewRef={videoPreviewRef}
+              previewUrl={previewUrl}
+              selectedFilter={selectedFilter}
+              videoDuration={videoDuration}
+              handleVideoMetadataLoaded={handleVideoMetadataLoaded}
+              handleVideoTimeUpdate={handleVideoTimeUpdate}
+              isEditVideoPlaying={isEditVideoPlaying}
+              setIsEditVideoPlaying={setIsEditVideoPlaying}
+              handleToggleEditVideoPlay={handleToggleEditVideoPlay}
+              videoTrim={videoTrim}
+              editVideoCurrentTime={editVideoCurrentTime}
+              isEditVideoMuted={isEditVideoMuted}
+              handleToggleEditVideoMute={handleToggleEditVideoMute}
+              setVideoTrim={setVideoTrim}
+              setEditVideoCurrentTime={setEditVideoCurrentTime}
+              handleResetVideoTrim={handleResetVideoTrim}
+              handleApplyVideoPreset={handleApplyVideoPreset}
+              filmstripFrames={filmstripFrames}
+            />
 
-              {/* Toast banner upon saving crop */}
-              {cropSavedToast && (
-                <div className="ig-crop-saved-banner" role="status">
-                  <Check size={14} strokeWidth={3} />
-                  <span>Reel trim & crop saved! ✓</span>
-                </div>
-              )}
-
-              <div className="ig-video-viewport">
-                <video
-                  ref={videoPreviewRef}
-                  src={previewUrl}
-                  className="ig-canvas-media"
-                  style={{
-                    ...getFilterStyle(selectedFilter),
-                    objectFit: selectedRatio.id === 'ORIGINAL' ? 'contain' : 'cover',
-                    width: '100%',
-                    height: '100%',
-                    cursor: 'pointer',
-                  }}
-                  onLoadedMetadata={handleVideoMetadataLoaded}
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  onPlay={() => setIsEditVideoPlaying(true)}
-                  onPause={() => setIsEditVideoPlaying(false)}
-                  onClick={handleToggleEditVideoPlay}
-                />
-
-                {/* Center Play Icon Overlay when paused */}
-                {!isEditVideoPlaying && (
-                  <div className="ig-video-center-play-overlay" onClick={handleToggleEditVideoPlay}>
-                    <div className="ig-video-center-play-circle">
-                      <Play size={32} fill="#ffffff" color="#ffffff" style={{ marginLeft: '4px' }} />
-                    </div>
-                  </div>
-                )}
-
-                {/* Scissors trim indicator badge / Full video badge */}
-                {videoTrim.start > 0 || (videoTrim.end < (videoTrim.duration || videoDuration) && videoTrim.end > 0) ? (
-                  <div className="ig-video-trim-indicator-pill">
-                    <Scissors size={12} color="#ffcc00" />
-                    <span>
-                      Trim: {formatTime(videoTrim.start)} – {formatTime(videoTrim.end || videoTrim.duration)} (
-                      {formatTime(Math.max(1, (videoTrim.end || videoTrim.duration) - videoTrim.start))})
-                    </span>
-                  </div>
-                ) : (
-                  <div className="ig-video-trim-indicator-pill full-len">
-                    <Film size={12} color="#0095f6" />
-                    <span>
-                      Full Reel: {formatTime(videoTrim.duration || videoDuration)}
-                    </span>
-                  </div>
-                )}
-
-                {/* BOTTOM PHONE-STYLE CUSTOM CROP ACCORDING TO DURATION */}
-                <PhoneVideoTrimmer
-                  videoTrim={videoTrim}
-                  currentTime={editVideoCurrentTime}
-                  isPlaying={isEditVideoPlaying}
-                  isMuted={isEditVideoMuted}
-                  onTogglePlay={handleToggleEditVideoPlay}
-                  onToggleMute={handleToggleEditVideoMute}
-                  onTrimChange={({ start, end }) => {
-                    setVideoTrim((prev) => ({ ...prev, start, end }));
-                  }}
-                  onSeek={(time) => {
-                    if (videoPreviewRef.current) {
-                      videoPreviewRef.current.currentTime = time;
-                      setEditVideoCurrentTime(time);
-                    }
-                  }}
-                  onReset={handleResetVideoTrim}
-                  onPreset={handleApplyVideoPreset}
-                  filmstripFrames={filmstripFrames}
-                />
-              </div>
-            </div>
-
-            {/* Right: Sidebar Controls (Ratio & Filters) */}
-            <div className="ig-edit-sidebar">
-              <div className="ig-edit-tab-headers">
-                <button
-                  type="button"
-                  className={`ig-edit-tab-btn ${editTab === 'RATIO' ? 'active' : ''}`}
-                  onClick={() => setEditTab('RATIO')}
-                >
-                  <Sliders size={16} />
-                  <span>Adjust & Trim</span>
-                </button>
-                <button
-                  type="button"
-                  className={`ig-edit-tab-btn ${editTab === 'FILTERS' ? 'active' : ''}`}
-                  onClick={() => setEditTab('FILTERS')}
-                >
-                  <Sparkles size={16} />
-                  <span>Filters</span>
-                </button>
-              </div>
-
-              {/* Filters Gallery */}
-              {editTab === 'FILTERS' && (
-                <div className="ig-filters-gallery">
-                  {INSTAGRAM_FILTERS.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      className={`ig-filter-card ${selectedFilter === f.id ? 'active' : ''}`}
-                      onClick={() => setSelectedFilter(f.id)}
-                    >
-                      <div className="ig-filter-thumb-box">
-                        {customThumbnailUrl ? (
-                          <img
-                            src={customThumbnailUrl}
-                            alt={f.name}
-                            className="ig-filter-thumb-img"
-                            style={{ filter: f.filter }}
-                          />
-                        ) : (
-                          <div className="ig-filter-thumb-video-fallback" style={{ filter: f.filter }}>
-                            <Film size={20} />
-                          </div>
-                        )}
-                        <span className="ig-filter-video-badge" title="Reel filter">
-                          <Film size={10} />
-                        </span>
-                      </div>
-                      <span className="ig-filter-name">{f.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Aspect Ratio & Trim Controls */}
-              {editTab === 'RATIO' && (
-                <div className="ig-ratio-panel">
-                  <h4 className="ig-panel-heading">Aspect Ratio</h4>
-                  <div className="ig-ratio-options-grid">
-                    {REEL_ASPECT_RATIOS.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        className={`ig-ratio-option-btn ${selectedRatio.id === r.id ? 'active' : ''}`}
-                        onClick={() => setSelectedRatio(r)}
-                      >
-                        <span>{r.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Video Duration Trimming & Cropping Controls */}
-                  <div className="ig-video-trim-section">
-                    <div className="ig-crop-section-header">
-                      <h4
-                        className="ig-panel-heading"
-                        style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}
-                      >
-                        <Scissors size={15} color="#0095f6" />
-                        <span>Trim Reel Duration</span>
-                      </h4>
-                      {(videoTrim.start > 0 || (videoTrim.end < videoTrim.duration && videoTrim.end > 0)) && (
-                        <button
-                          type="button"
-                          className="ig-crop-reset-link"
-                          onClick={handleResetVideoTrim}
-                        >
-                          Reset
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Duration summary badge */}
-                    <div className="ig-trim-summary-badge">
-                      <span className="ig-trim-time-range">
-                        {formatTime(videoTrim.start)} – {formatTime(videoTrim.end || videoTrim.duration)}
-                      </span>
-                      <span className="ig-trim-duration-pill">
-                        Length: {formatTime(Math.max(0, (videoTrim.end || videoTrim.duration) - videoTrim.start))}
-                      </span>
-                    </div>
-
-                    {/* Dual Range Sliders for Start & End Time */}
-                    <div className="ig-trim-slider-block">
-                      <div className="ig-trim-row">
-                        <div className="ig-trim-label">
-                          <span>Start Trim</span>
-                          <span className="ig-trim-val">{formatTime(videoTrim.start)}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0"
-                          max={Math.max(1, (videoTrim.end || videoTrim.duration) - 1)}
-                          step="1"
-                          value={videoTrim.start}
-                          onChange={(e) => handleTrimStartChange(Number(e.target.value))}
-                          className="ig-trim-range-input"
-                          aria-label="Video Start Time"
-                        />
-                      </div>
-
-                      <div className="ig-trim-row">
-                        <div className="ig-trim-label">
-                          <span>End Trim</span>
-                          <span className="ig-trim-val">{formatTime(videoTrim.end || videoTrim.duration)}</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={(videoTrim.start || 0) + 1}
-                          max={videoTrim.duration || 90}
-                          step="1"
-                          value={videoTrim.end || videoTrim.duration}
-                          onChange={(e) => handleTrimEndChange(Number(e.target.value))}
-                          className="ig-trim-range-input"
-                          aria-label="Video End Time"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Quick Duration Preset Pills */}
-                    <div className="ig-trim-presets-row">
-                      <button
-                        type="button"
-                        className={`ig-trim-preset-btn ${videoTrim.start === 0 && (videoTrim.end === videoTrim.duration || !videoTrim.end) ? 'active' : ''}`}
-                        onClick={() => handleApplyVideoPreset(videoTrim.duration)}
-                      >
-                        Full
-                      </button>
-                      {videoTrim.duration > 15 && (
-                        <button
-                          type="button"
-                          className={`ig-trim-preset-btn ${videoTrim.end - videoTrim.start === 15 ? 'active' : ''}`}
-                          onClick={() => handleApplyVideoPreset(15)}
-                        >
-                          15s
-                        </button>
-                      )}
-                      {videoTrim.duration > 30 && (
-                        <button
-                          type="button"
-                          className={`ig-trim-preset-btn ${videoTrim.end - videoTrim.start === 30 ? 'active' : ''}`}
-                          onClick={() => handleApplyVideoPreset(30)}
-                        >
-                          30s
-                        </button>
-                      )}
-                      {videoTrim.duration > 60 && (
-                        <button
-                          type="button"
-                          className={`ig-trim-preset-btn ${videoTrim.end - videoTrim.start === 60 ? 'active' : ''}`}
-                          onClick={() => handleApplyVideoPreset(60)}
-                        >
-                          60s
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="ig-trim-preset-btn save-trim"
-                        onClick={handleSaveCrop}
-                        disabled={isSavingCrop}
-                        title="Save current video trim"
-                      >
-                        <Check size={12} strokeWidth={2.5} />
-                        <span>Save Trim</span>
-                      </button>
-                    </div>
-
-                    {/* Video Cover Frame Selector */}
-                    <div className="ig-trim-cover-block">
-                      <div className="ig-trim-label">
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Film size={13} />
-                          <span>Cover Frame</span>
-                        </span>
-                        <span className="ig-trim-val">
-                          {formatTime(videoTrim.coverTime || videoTrim.start)}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min={videoTrim.start}
-                        max={videoTrim.end || videoTrim.duration}
-                        step="1"
-                        value={videoTrim.coverTime || videoTrim.start}
-                        onChange={(e) => handleCoverTimeChange(Number(e.target.value))}
-                        className="ig-trim-range-input"
-                        aria-label="Video Cover Frame"
-                      />
-                    </div>
-
-                    <p className="ig-crop-drag-hint">
-                      ✂️ Reel will play and loop between {formatTime(videoTrim.start)} and{' '}
-                      {formatTime(videoTrim.end || videoTrim.duration)}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ReelEditSidebar
+              editTab={editTab}
+              setEditTab={setEditTab}
+              selectedFilter={selectedFilter}
+              setSelectedFilter={setSelectedFilter}
+              customThumbnailUrl={customThumbnailUrl}
+              REEL_ASPECT_RATIOS={REEL_ASPECT_RATIOS}
+              selectedRatio={selectedRatio}
+              setSelectedRatio={setSelectedRatio}
+              videoTrim={videoTrim}
+              videoDuration={videoDuration}
+              handleResetVideoTrim={handleResetVideoTrim}
+              handleTrimStartChange={handleTrimStartChange}
+              handleTrimEndChange={handleTrimEndChange}
+              handleApplyVideoPreset={handleApplyVideoPreset}
+              handleSaveCrop={handleSaveCrop}
+              isSavingCrop={isSavingCrop}
+              handleCoverTimeChange={handleCoverTimeChange}
+            />
           </div>
         )}
 
         {/* STEP 3: DETAILS & SHARE */}
         {currentStep === WIZARD_STEPS.DETAILS && file && (
-          <form onSubmit={(e) => handleSubmit(e, false)} className="ig-details-workspace">
-            {/* Left: Trimmed Reel Video Player */}
-            <div className="ig-details-media-pane">
-              <TrimmedVideoPlayer
-                src={previewUrl}
-                videoTrim={videoTrim}
-                filterStyle={getFilterStyle(selectedFilter)}
-                aspectRatio={selectedRatio.ratio || '9 / 16'}
-                fitMode={selectedRatio.id === 'ORIGINAL' ? 'contain' : 'cover'}
-              />
-            </div>
-
-            {/* Right: Caption, Location, Advanced Settings & Buttons */}
-            <div className="ig-details-form-pane">
-              {/* User Identity Header */}
-              <div className="ig-details-author-row">
-                <Avatar
-                  user={currentUser}
-                  size="sm"
-                  src={currentUser?.profilePictureUrl || currentUser?.avatarUrl}
-                />
-                <span className="ig-details-author-username">{currentUser?.username || 'user'}</span>
-              </div>
-
-              {/* Caption Area */}
-              <div className="ig-details-caption-box">
-                <textarea
-                  rows={4}
-                  className="ig-details-caption-textarea"
-                  placeholder="Write a caption for your reel... (use #hashtags and @mentions)"
-                  value={caption}
-                  onChange={(e) => setCaption(e.target.value)}
-                  maxLength={2200}
-                />
-                <span className="ig-details-char-count">{caption.length}/2,200</span>
-              </div>
-
-              {/* Location Input with quick pill suggestions */}
-              <div className="ig-details-form-group">
-                <label className="ig-details-field-label">
-                  <MapPin size={15} />
-                  <span>Add Location</span>
-                </label>
-                <div className="ig-location-input-wrapper">
-                  <input
-                    type="text"
-                    className="ig-details-input"
-                    placeholder="Add location (e.g. Mumbai, India)"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    maxLength={100}
-                  />
-                  {location && (
-                    <button
-                      type="button"
-                      className="ig-clear-btn"
-                      onClick={() => setLocation('')}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-                {!location && (
-                  <div className="ig-location-pills">
-                    {POPULAR_LOCATIONS.map((loc) => (
-                      <button
-                        key={loc}
-                        type="button"
-                        className="ig-location-pill"
-                        onClick={() => setLocation(loc)}
-                      >
-                        {loc.split(',')[0]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Cover Frame Thumbnail Preview */}
-              {customThumbnailUrl && (
-                <div className="ig-cover-preview-card" style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                  <img
-                    src={customThumbnailUrl}
-                    alt="Cover preview"
-                    style={{ width: '40px', height: '56px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Cover Frame</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                      Frame at {formatTime(videoTrim.coverTime || videoTrim.start)}
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Advanced Settings Accordion */}
-              <div className="ig-details-accordion">
-                <button
-                  type="button"
-                  className="ig-accordion-header"
-                  onClick={() => setShowAdvanced((p) => !p)}
-                >
-                  <div className="ig-accordion-title-wrap">
-                    <span className="ig-accordion-title">Advanced Settings</span>
-                    <span className="ig-accordion-desc">Manage comments and view counts</span>
-                  </div>
-                  {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </button>
-
-                {showAdvanced && (
-                  <div className="ig-accordion-content">
-                    <label className="ig-setting-switch-row">
-                      <div className="ig-switch-text">
-                        <span className="ig-switch-main-text">Hide like and view counts</span>
-                        <span className="ig-switch-sub-text">
-                          Only you will see total likes/views on this reel
-                        </span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        className="ig-switch-box"
-                        checked={hideLikeCount}
-                        onChange={(e) => setHideLikeCount(e.target.checked)}
-                      />
-                    </label>
-
-                    <label className="ig-setting-switch-row">
-                      <div className="ig-switch-text">
-                        <span className="ig-switch-main-text">Turn off commenting</span>
-                        <span className="ig-switch-sub-text">Disable comments on this reel</span>
-                      </div>
-                      <input
-                        type="checkbox"
-                        className="ig-switch-box"
-                        checked={commentsDisabled}
-                        onChange={(e) => setCommentsDisabled(e.target.checked)}
-                      />
-                    </label>
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom Action Buttons: Save Draft & Share Reel */}
-              <div className="ig-details-bottom-actions" style={{ display: 'flex', gap: '10px', padding: '14px', marginTop: 'auto', borderTop: '1px solid var(--border-color)' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => handleSubmit(null, true)}
-                  disabled={loading}
-                  style={{ flex: 1 }}
-                >
-                  Save Draft
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading}
-                  style={{ flex: 1 }}
-                >
-                  {loading ? <LoadingSpinner size="sm" /> : 'Share Reel'}
-                </button>
-              </div>
-            </div>
-          </form>
+          <ReelDetailsStep
+            previewUrl={previewUrl}
+            videoTrim={videoTrim}
+            selectedFilter={selectedFilter}
+            selectedRatio={selectedRatio}
+            currentUser={currentUser}
+            caption={caption}
+            setCaption={setCaption}
+            location={location}
+            setLocation={setLocation}
+            POPULAR_LOCATIONS={POPULAR_LOCATIONS}
+            customThumbnailUrl={customThumbnailUrl}
+            showAdvanced={showAdvanced}
+            setShowAdvanced={setShowAdvanced}
+            hideLikeCount={hideLikeCount}
+            setHideLikeCount={setHideLikeCount}
+            commentsDisabled={commentsDisabled}
+            setCommentsDisabled={setCommentsDisabled}
+            onSubmit={handleSubmit}
+            loading={loading}
+          />
         )}
       </div>
     </Modal>

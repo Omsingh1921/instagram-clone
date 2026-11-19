@@ -1477,19 +1477,19 @@
 
   /* Authentic Instagram Mobile Grid Layout:
      Row 1: [ Avatar + Note Bubble ]  [ Posts | Followers | Following ]
-     Row 2: [ Action Buttons: Edit profile, View archive, Highlights, Gear ] (directly below profile)
-     Row 3: [ Username & Verified Badge ]
-     Row 4: [ Bio: Full Name, Category, Bio Text, Links ] */
+     Row 2: [ Username & Verified Badge ]
+     Row 3: [ Bio: Full Name, Category, Bio Text, Links ]
+     Row 4: [ Action Buttons: Edit profile, View archive / Follow, Message ] */
   .profile-header-section {
     display: grid;
     grid-template-columns: auto 1fr;
     grid-template-areas:
       "avatar   stats"
-      "actions  actions"
       "username username"
-      "bio      bio";
+      "bio      bio"
+      "actions  actions";
     column-gap: 20px;
-    row-gap: 12px;
+    row-gap: 8px;
     align-items: center;
     margin-bottom: 18px;
     padding: 0;
@@ -1586,27 +1586,33 @@
     align-items: center;
     gap: 8px;
     margin-top: 2px;
+    margin-bottom: 0px;
   }
 
   .profile-username-title {
-    font-size: 17px;
+    font-size: 16.5px;
     font-weight: 700;
     color: #ffffff;
     margin: 0;
+    line-height: 1.3;
   }
 
   .profile-bio-section {
     grid-area: bio;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
     font-size: 13.5px;
-    line-height: 1.45;
+    line-height: 1.4;
+    margin-top: 0px;
+    margin-bottom: 4px;
   }
 
   .profile-full-name {
     font-size: 14px;
     font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.35;
   }
 
   .profile-category-pill {
@@ -1634,8 +1640,8 @@
     gap: 8px;
     width: 100%;
     flex-wrap: nowrap;
-    margin-top: 2px;
-    margin-bottom: 2px;
+    margin-top: 6px;
+    margin-bottom: 4px;
   }
 
   .profile-action-buttons > .btn-secondary:not(.profile-icon-btn),

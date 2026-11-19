@@ -57,8 +57,8 @@ describe('ProfileHeader Dynamic Phone Web Responsive Suite', () => {
     const cssPath = path.resolve(__dirname, '../pages/profile/ProfilePage.css');
     const cssContent = fs.readFileSync(cssPath, 'utf8');
 
-    // Check Mobile Grid template areas (actions placed directly below avatar & stats row)
-    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*grid-template-areas:\s*"avatar\s+stats"\s*"actions\s+actions"\s*"username\s+username"\s*"bio\s+bio"/);
+    // Check Mobile Grid template areas (username and bio below avatar & stats row, actions below bio)
+    expect(cssContent).toMatch(/@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*grid-template-areas:\s*"avatar\s+stats"\s*"username\s+username"\s*"bio\s+bio"\s*"actions\s+actions"/);
 
     // Check display: contents on wrapper elements so children participate directly in the grid
     expect(cssContent).toMatch(/\.profile-info-column\s*\{[\s\S]*display:\s*contents;/);
@@ -101,5 +101,30 @@ describe('ProfileHeader Dynamic Phone Web Responsive Suite', () => {
     expect(noteBtn).toHaveClass('profile-avatar-note-bubble');
     expect(noteBtn).toHaveClass('profile-add-note-bubble');
     expect(noteBtn.querySelector('.note-bubble-pointer')).toBeInTheDocument();
+  });
+
+  it('does not duplicate name in bio when displayName matches username', () => {
+    const mockProfile = {
+      username: 'test',
+      displayName: 'test',
+      avatarUrl: 'https://example.com/test.jpg',
+    };
+
+    render(
+      <MemoryRouter>
+        <ProfileHeader
+          profile={mockProfile}
+          isOwnProfile={false}
+          postsCount={5}
+          followersCount={2}
+          followingCount={4}
+        />
+      </MemoryRouter>
+    );
+
+    // Only one 'test' is rendered (in username title), not duplicated in full-name
+    const elements = screen.getAllByText('test');
+    expect(elements).toHaveLength(1);
+    expect(document.querySelector('.profile-full-name')).not.toBeInTheDocument();
   });
 });

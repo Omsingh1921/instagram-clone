@@ -386,10 +386,12 @@ describe('Messages Page Dynamic Phone Web Responsive Suite', () => {
       </MemoryRouter>
     );
 
-    // Displays name and 'Active now' status dot (not duplicate username!)
+    // Displays name, @handle for distinct username, and 'Active now' status dot
     expect(screen.getByText('test1')).toBeInTheDocument();
+    expect(screen.getByText(/@test/i)).toBeInTheDocument();
     expect(screen.getByText(/Active now/i)).toBeInTheDocument();
     expect(container.querySelector('.chat-active-dot')).toBeInTheDocument();
+    expect(container.querySelector('.chat-subtext-handle')).toBeInTheDocument();
 
     // Verify Theme Palette button has chat-header-desktop-only class
     const themeBtn = screen.getByRole('button', { name: /Change chat theme/i });

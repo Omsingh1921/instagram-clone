@@ -92,14 +92,24 @@ export const ChatHeader = ({
             <span className="chat-recipient-subtext">
               {isGroup ? (
                 `${(activeConversation.members || []).length} members`
-              ) : presence && presence.online === false && presence.lastSeen ? (
-                <span className="chat-active-status offline">
-                  {`Active ${timeAgo(presence.lastSeen)} ago`}
-                </span>
               ) : (
-                <span className="chat-active-status">
-                  <span className="chat-active-dot" aria-hidden="true" />
-                  Active now
+                <span className="chat-active-status-wrapper">
+                  {otherMember?.username &&
+                    otherMember.username.toLowerCase() !== groupDisplayName?.toLowerCase() && (
+                      <span className="chat-subtext-handle">
+                        @{otherMember.username} ·{' '}
+                      </span>
+                  )}
+                  {presence && presence.online === false && presence.lastSeen ? (
+                    <span className="chat-active-status offline">
+                      {`Active ${timeAgo(presence.lastSeen)} ago`}
+                    </span>
+                  ) : (
+                    <span className="chat-active-status">
+                      <span className="chat-active-dot" aria-hidden="true" />
+                      Active now
+                    </span>
+                  )}
                 </span>
               )}
             </span>

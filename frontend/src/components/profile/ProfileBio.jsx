@@ -2,10 +2,18 @@ import React from 'react';
 import { Link2, Mail, Phone } from 'lucide-react';
 
 export const ProfileBio = ({ profile = {} }) => {
+  const distinctDisplayName =
+    (profile.displayName || profile.fullName) &&
+    (profile.displayName || profile.fullName).trim().toLowerCase() !==
+      (profile.username || '').trim().toLowerCase()
+      ? (profile.displayName || profile.fullName).trim()
+      : null;
+
   return (
     <div className="profile-bio-section">
-      {(profile.displayName || profile.fullName || profile.pronouns) && (
+      {(distinctDisplayName || profile.pronouns) && (
         <div
+          className="profile-name-pronouns-row"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -13,15 +21,17 @@ export const ProfileBio = ({ profile = {} }) => {
             flexWrap: 'wrap',
           }}
         >
-          <span className="profile-full-name">
-            {profile.displayName || profile.fullName}
-          </span>
+          {distinctDisplayName && (
+            <span className="profile-full-name">
+              {distinctDisplayName}
+            </span>
+          )}
           {profile.pronouns && (
             <span
               className="profile-pronouns"
               style={{ fontSize: '13px', color: 'var(--text-secondary)' }}
             >
-              · {profile.pronouns}
+              {distinctDisplayName ? '· ' : ''}{profile.pronouns}
             </span>
           )}
         </div>

@@ -1,44 +1,37 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  X,
-  ChevronLeft,
-  ChevronRight,
-  Trash2,
-  Eye,
-  Heart,
-  MoreVertical,
-  Flag,
-  BarChart2,
-  Star,
-  Music,
-  Sparkles,
-  ExternalLink,
-  MapPin,
-  Hash,
-  Camera,
-  Bell,
-  BellRing,
-  Send,
-  RotateCw,
-  Volume2,
-  VolumeX,
-  Edit2,
-  MinusCircle,
-  Plus,
-} from 'lucide-react';
-import Avatar from '../common/Avatar';
-import { SkeletonUserRows } from '../ui/Skeleton';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import storyService from '../../services/story.service';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { timeAgo } from '../../utils';
-import ProgressiveImage from '../common/ProgressiveImage';
-import { getVideoPosterUrl, getAdaptiveVideoUrl, shouldPrefetchMedia } from '../../utils/mediaUrl';
+import { shouldPrefetchMedia } from '../../utils/mediaUrl';
 import { AddToHighlightModal } from '../modals/AddToHighlightModal';
 import { EditHighlightModal } from '../modals/EditHighlightModal';
 import { CreateHighlightModal } from '../modals/CreateHighlightModal';
+import {
+  StoryProgressBars,
+  StoryHeader,
+  StorySlideMedia,
+  StoryInteractiveWidgets,
+  StoryViewerFooter,
+  StoryViewersSheet,
+  StoryReportModal,
+  REPORT_REASONS,
+  DEFAULT_QUICK_EMOJIS,
+} from './viewer';
 import './StoryViewerModal.css';
+
+export {
+  StoryProgressBars,
+  StoryHeader,
+  StorySlideMedia,
+  StoryInteractiveWidgets,
+  StoryViewerFooter,
+  StoryViewersSheet,
+  StoryReportModal,
+  REPORT_REASONS,
+  DEFAULT_QUICK_EMOJIS,
+};
 
 const STORY_DURATION = 5000; // 5 seconds per story
 const QUICK_EMOJIS = ['😂', '😮', '😍', '😢', '👏', '🔥', '🎉', '💯'];
@@ -816,1297 +809,149 @@ export const StoryViewerModal = ({
         className={`story-viewer-frame ${isHolding ? 'is-holding' : ''}`}
       >
         {/* Progress Bars */}
-        <div className="story-progress-container">
-          {currentGroup.stories.map((s, idx) => {
-            let width = '0%';
-            if (idx < storyIdx) width = '100%';
-            else if (idx === storyIdx) {
-              width = s.isUploading
-                ? `${Math.max(8, s.uploadProgress || 10)}%`
-                : `${progress}%`;
-            }
-
-            const isCurrentVideo = idx === storyIdx && isVideoStory;
-
-            return (
-              <div key={s.id} className={`story-progress-bar ${s.isUploading ? 'uploading-story-progress' : ''}`}>
-                <div
-                  className={`story-progress-fill ${s.isUploading ? 'uploading-story-fill' : ''} ${isCurrentVideo ? 'video-sync-fill' : ''}`}
-                  style={{
-                    width,
-                    transition: isCurrentVideo || isHolding ? 'none' : undefined,
-                  }}
-                />
-              </div>
-            );
-          })}
-        </div>
+        <StoryProgressBars
+          stories={currentGroup.stories}
+          storyIdx={storyIdx}
+          progress={progress}
+          isVideoStory={isVideoStory}
+          isHolding={isHolding}
+        />
 
         {/* Header */}
-        <div className="story-viewer-header">
-          <div className="story-viewer-author">
-            <Avatar
-              src={(currentGroup.author?.avatarUrl || currentGroup.author?.profilePictureUrl)}
-              alt={currentGroup.author?.username}
-              size="sm"
-            />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <span className="story-viewer-username">{currentGroup.author?.username}</span>
-                {isHighlight && (
-                  <span className="story-viewer-highlight-badge" title={highlightTitle}>
-                    {highlightTitle || 'Highlight'}
-                  </span>
-                )}
-                {currentStory.isUploading ? (
-                  <span className="story-uploading-tag">
-                    <RotateCw size={10} className="story-upload-spinning-icon" />
-                    <span>Uploading {currentStory.uploadProgress ? `${currentStory.uploadProgress}%` : ''}</span>
-                  </span>
-                ) : (
-                  <span className="story-viewer-time">{timeAgo(currentStory.createdAt)}</span>
-                )}
-                {currentStory.isCloseFriends && (
-                  <span className="story-close-friends-badge">
-                    <Star size={10} fill="#fff" /> Close Friends
-                  </span>
-                )}
-                {currentStory.caption?.startsWith('Reposted from') && (
-                  <span className="story-repost-tag" title={currentStory.caption}>
-                    {currentStory.caption}
-                  </span>
-                )}
-              </div>
-              {(currentStory.audioTitle || currentStory.filterName) && (
-                <div className="story-meta-pill">
-                  {currentStory.audioTitle ? (
-                    <>
-                      <Music size={10} />
-                      <span>{currentStory.audioTitle}{currentStory.audioArtist ? ` • ${currentStory.audioArtist}` : ''}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={10} />
-                      <span>{currentStory.filterName}</span>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+        <StoryHeader
+          currentGroup={currentGroup}
+          currentStory={currentStory}
+          isHighlight={isHighlight}
+          highlightTitle={highlightTitle}
+          isVideoStory={isVideoStory}
+          isMuted={isMuted}
+          setIsMuted={setIsMuted}
+          showMoreMenu={showMoreMenu}
+          setShowMoreMenu={setShowMoreMenu}
+          setIsPaused={setIsPaused}
+          onClose={onClose}
+          isMyStory={isMyStory}
+          isAdmin={isAdmin}
+          setShowEditHighlight={setShowEditHighlight}
+          handleRemoveFromHighlight={handleRemoveFromHighlight}
+          handleDeleteHighlight={handleDeleteHighlight}
+          setShowAddToHighlight={setShowAddToHighlight}
+          handleOpenInsights={handleOpenInsights}
+          handleDeleteStory={handleDeleteStory}
+          setShowReportModal={setShowReportModal}
+        />
 
-          <div className="story-viewer-controls">
-            {isVideoStory && (
-              <button
-                type="button"
-                className="story-ctrl-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsMuted(!isMuted);
-                }}
-                aria-label={isMuted ? 'Unmute video' : 'Mute video'}
-                title={isMuted ? 'Unmute' : 'Mute'}
-              >
-                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-              </button>
-            )}
-            <button
-              type="button"
-              className="story-ctrl-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMoreMenu(!showMoreMenu);
-                setIsPaused(!showMoreMenu);
-              }}
-              aria-label="Story options"
-            >
-              <MoreVertical size={18} />
-            </button>
-            <button
-              type="button"
-              className="story-ctrl-btn"
-              onClick={onClose}
-              aria-label="Close stories"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        {/* More Options Menu Dropdown */}
-        {showMoreMenu && (
-          <div className="story-more-menu" onClick={(e) => e.stopPropagation()}>
-            {currentStory.isUploading ? (
-              <button
-                type="button"
-                className="story-more-item"
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  onClose();
-                }}
-              >
-                <X size={16} />
-                <span>Close Viewer</span>
-              </button>
-            ) : isMyStory ? (
-              <>
-                {isHighlight ? (
-                  <>
-                    <button
-                      type="button"
-                      className="story-more-item"
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        setIsPaused(true);
-                        setShowEditHighlight(true);
-                      }}
-                    >
-                      <Edit2 size={16} />
-                      <span>Edit Highlight</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="story-more-item danger"
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        handleRemoveFromHighlight();
-                      }}
-                    >
-                      <MinusCircle size={16} />
-                      <span>Remove from Highlight</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="story-more-item danger"
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        handleDeleteHighlight();
-                      }}
-                    >
-                      <Trash2 size={16} />
-                      <span>Delete Highlight</span>
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="story-more-item"
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        setIsPaused(true);
-                        setShowAddToHighlight(true);
-                      }}
-                    >
-                      <Sparkles size={16} />
-                      <span>Add to Highlight</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="story-more-item"
-                      onClick={handleOpenInsights}
-                    >
-                      <BarChart2 size={16} />
-                      <span>Story Insights</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="story-more-item danger"
-                      onClick={() => {
-                        setShowMoreMenu(false);
-                        handleDeleteStory();
-                      }}
-                    >
-                      <Trash2 size={16} />
-                      <span>Delete Story</span>
-                    </button>
-                  </>
-                )}
-              </>
-            ) : (
-              <>
-                {isAdmin && isHighlight && (
-                  <button
-                    type="button"
-                    className="story-more-item danger"
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      handleDeleteHighlight();
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    <span>Delete Highlight (Admin)</span>
-                  </button>
-                )}
-                {isAdmin && !isHighlight && (
-                  <button
-                    type="button"
-                    className="story-more-item danger"
-                    onClick={() => {
-                      setShowMoreMenu(false);
-                      handleDeleteStory();
-                    }}
-                  >
-                    <Trash2 size={16} />
-                    <span>Delete Story (Admin)</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="story-more-item danger"
-                  onClick={() => {
-                    setShowMoreMenu(false);
-                    setShowReportModal(true);
-                    setIsPaused(true);
-                  }}
-                >
-                  <Flag size={16} />
-                  <span>Report Story</span>
-                </button>
-              </>
-            )}
-          </div>
-        )}
-
-        {/* Content */}
+        {/* Content (Media + Interactive Widgets) */}
         <div className="story-viewer-content">
-          {isVideoStory ? (
-            <video
-              ref={videoRef}
-              key={currentStory.id || currentStory.mediaUrl}
-              src={currentStory.mediaUrl?.startsWith('blob:') ? currentStory.mediaUrl : getAdaptiveVideoUrl(currentStory.mediaUrl)}
-              poster={currentStory.mediaUrl?.startsWith('blob:') ? undefined : getVideoPosterUrl(currentStory.mediaUrl)}
-              autoPlay
-              muted={isMuted}
-              playsInline
-              loop={Boolean(currentStory.isUploading)}
-              className="story-viewer-media"
-              onTimeUpdate={handleVideoTimeUpdate}
-              onLoadedMetadata={handleVideoLoadedMetadata}
-              onEnded={handleVideoEnded}
-            />
-          ) : (
-            <ProgressiveImage
-              src={currentStory.mediaUrl}
-              alt="Story"
-              className="story-viewer-media"
-              objectFit="contain"
-              loading="eager"
-            />
-          )}
+          <StorySlideMedia
+            isVideoStory={isVideoStory}
+            videoRef={videoRef}
+            currentStory={currentStory}
+            isMuted={isMuted}
+            handleVideoTimeUpdate={handleVideoTimeUpdate}
+            handleVideoLoadedMetadata={handleVideoLoadedMetadata}
+            handleVideoEnded={handleVideoEnded}
+            showViewers={showViewers}
+            showQuestionResponses={showQuestionResponses}
+            showInsights={showInsights}
+            showReportModal={showReportModal}
+            handlePointerDown={handlePointerDown}
+            handlePointerUp={handlePointerUp}
+            handlePointerCancel={handlePointerCancel}
+            floatingReaction={floatingReaction}
+            onClose={onClose}
+            navigate={navigate}
+          />
 
-          {/* Tap & Hold Zones */}
-          {!showViewers && !showQuestionResponses && !showInsights && !showReportModal && (
-            <>
-              <div
-                className="story-nav-tap left"
-                onPointerDown={(e) => handlePointerDown(e, 'left')}
-                onPointerUp={(e) => handlePointerUp(e, 'left')}
-                onPointerCancel={handlePointerCancel}
-                onPointerLeave={handlePointerCancel}
-              />
-              <div
-                className="story-nav-tap right"
-                onPointerDown={(e) => handlePointerDown(e, 'right')}
-                onPointerUp={(e) => handlePointerUp(e, 'right')}
-                onPointerCancel={handlePointerCancel}
-                onPointerLeave={handlePointerCancel}
-              />
-            </>
-          )}
-
-          {/* Floating Reaction Micro-Animation */}
-          {floatingReaction && (
-            <div className="floating-reaction-badge">
-              <span>{floatingReaction}</span>
-              <span>Reaction sent</span>
-            </div>
-          )}
-
-          {/* Shared Content Preview Cards */}
-          {currentStory.sharedPostId && (
-            <div
-              className="story-shared-preview-pill"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-                navigate(`/post/${currentStory.sharedPostId}`);
-              }}
-            >
-              <span>📷 View Post</span>
-              <ExternalLink size={12} />
-            </div>
-          )}
-
-          {currentStory.sharedReelId && (
-            <div
-              className="story-shared-preview-pill"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-                navigate(`/reels/${currentStory.sharedReelId}`);
-              }}
-            >
-              <span>🎬 View Reel</span>
-              <ExternalLink size={12} />
-            </div>
-          )}
-
-          {/* Question Sticker Overlay */}
-          {currentStory?.question && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '38%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '260px',
-                background: '#ffffff',
-                borderRadius: '16px',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
-                overflow: 'hidden',
-                textAlign: 'center',
-                zIndex: 25,
-                border: '1px solid rgba(0,0,0,0.08)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ background: '#f5f5f7', padding: '12px 14px', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
-                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#8e8e8e', fontWeight: 600 }}>
-                  Question
-                </span>
-                <p style={{ margin: '4px 0 0', fontWeight: 700, color: '#1a1a1a', fontSize: '14px', wordBreak: 'break-word' }}>
-                  {currentStory.question.prompt || 'Ask me a question'}
-                </p>
-              </div>
-
-              <div style={{ padding: '12px 14px', background: '#ffffff' }}>
-                {isMyStory ? (
-                  <button
-                    type="button"
-                    onClick={handleOpenQuestionResponses}
-                    style={{
-                      width: '100%',
-                      background: '#0095f6',
-                      color: '#ffffff',
-                      border: 'none',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      fontSize: '13px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    View Responses ({currentStory.question.totalResponses || 0})
-                  </button>
-                ) : hasAnsweredQuestion ? (
-                  <div style={{ color: '#00ba7c', fontSize: '13px', fontWeight: 600, padding: '4px 0' }}>
-                    ✓ Response sent!
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <input
-                      type="text"
-                      placeholder="Type something..."
-                      value={questionAnswer}
-                      onChange={(e) => setQuestionAnswer(e.target.value)}
-                      onFocus={() => setIsPaused(true)}
-                      onBlur={() => !showQuestionResponses && !showViewers && setIsPaused(false)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSubmitQuestionAnswer();
-                      }}
-                      style={{
-                        flex: 1,
-                        background: '#f0f2f5',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '8px 10px',
-                        fontSize: '13px',
-                        outline: 'none',
-                        color: '#1a1a1a'
-                      }}
-                    />
-                    <button
-                      type="button"
-                      disabled={!questionAnswer.trim()}
-                      onClick={handleSubmitQuestionAnswer}
-                      style={{
-                        background: questionAnswer.trim() ? '#0095f6' : '#cccccc',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '8px',
-                        padding: '0 12px',
-                        fontWeight: 600,
-                        fontSize: '13px',
-                        cursor: questionAnswer.trim() ? 'pointer' : 'default'
-                      }}
-                    >
-                      Send
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Interactive Story Poll Sticker */}
-          {pollState && (
-            <div
-              className="story-poll-sticker"
-              style={{
-                position: 'absolute',
-                top: currentStory.question ? '68%' : '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                width: '260px',
-                background: '#ffffff',
-                borderRadius: '16px',
-                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
-                overflow: 'hidden',
-                textAlign: 'center',
-                zIndex: 25,
-                border: '1px solid rgba(0,0,0,0.08)',
-                padding: '14px 16px'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <p style={{ margin: '0 0 12px', fontWeight: 700, color: '#1a1a1a', fontSize: '15px', wordBreak: 'break-word', lineHeight: 1.3 }}>
-                {pollState.question || 'Poll'}
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {/* Option A */}
-                <button
-                  type="button"
-                  disabled={votingPoll || pollState.userVote != null || isMyStory}
-                  onClick={() => handleVotePoll(1)}
-                  style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '42px',
-                    borderRadius: '10px',
-                    border: pollState.userVote === 1 ? '2px solid #0095f6' : '1px solid rgba(0,0,0,0.1)',
-                    background: '#f8f9fa',
-                    overflow: 'hidden',
-                    cursor: (pollState.userVote != null || isMyStory) ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 12px',
-                    fontWeight: 600,
-                    fontSize: '13px',
-                    color: '#1a1a1a'
-                  }}
-                >
-                  {(pollState.userVote != null || isMyStory) && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: `${Math.round(pollState.percentA || 0)}%`,
-                        background: pollState.userVote === 1 ? 'rgba(0,149,246,0.22)' : 'rgba(0,0,0,0.07)',
-                        transition: 'width 0.4s ease'
-                      }}
-                    />
-                  )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>
-                    {pollState.userVote === 1 ? '✓ ' : ''}{pollState.optionA || 'Yes'}
-                  </span>
-                  {(pollState.userVote != null || isMyStory) && (
-                    <span style={{ position: 'relative', zIndex: 1, fontWeight: 700 }}>
-                      {Math.round(pollState.percentA || 0)}%
-                    </span>
-                  )}
-                </button>
-
-                {/* Option B */}
-                <button
-                  type="button"
-                  disabled={votingPoll || pollState.userVote != null || isMyStory}
-                  onClick={() => handleVotePoll(2)}
-                  style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '42px',
-                    borderRadius: '10px',
-                    border: pollState.userVote === 2 ? '2px solid #0095f6' : '1px solid rgba(0,0,0,0.1)',
-                    background: '#f8f9fa',
-                    overflow: 'hidden',
-                    cursor: (pollState.userVote != null || isMyStory) ? 'default' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '0 12px',
-                    fontWeight: 600,
-                    fontSize: '13px',
-                    color: '#1a1a1a'
-                  }}
-                >
-                  {(pollState.userVote != null || isMyStory) && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        bottom: 0,
-                        width: `${Math.round(pollState.percentB || 0)}%`,
-                        background: pollState.userVote === 2 ? 'rgba(0,149,246,0.22)' : 'rgba(0,0,0,0.07)',
-                        transition: 'width 0.4s ease'
-                      }}
-                    />
-                  )}
-                  <span style={{ position: 'relative', zIndex: 1 }}>
-                    {pollState.userVote === 2 ? '✓ ' : ''}{pollState.optionB || 'No'}
-                  </span>
-                  {(pollState.userVote != null || isMyStory) && (
-                    <span style={{ position: 'relative', zIndex: 1, fontWeight: 700 }}>
-                      {Math.round(pollState.percentB || 0)}%
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              {(pollState.userVote != null || isMyStory) && (
-                <div style={{ marginTop: '8px', fontSize: '11px', color: '#8e8e8e', fontWeight: 500 }}>
-                  {pollState.totalVotes || 0} {pollState.totalVotes === 1 ? 'vote' : 'votes'}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Interactive Quiz Sticker */}
-          {quizState && (
-            <div
-              className="story-interactive-sticker story-quiz-sticker"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: '#8e8e8e', fontWeight: 700, marginBottom: '4px' }}>
-                Quiz
-              </div>
-              <p style={{ margin: '0 0 10px', fontWeight: 700, color: '#1a1a1a', fontSize: '14px', lineHeight: 1.3 }}>
-                {quizState.question || 'Guess the answer!'}
-              </p>
-
-              {[
-                { idx: 0, text: quizState.optionA, pct: quizState.percentA },
-                { idx: 1, text: quizState.optionB, pct: quizState.percentB },
-                { idx: 2, text: quizState.optionC, pct: quizState.percentC },
-                { idx: 3, text: quizState.optionD, pct: quizState.percentD },
-              ].filter(opt => Boolean(opt.text)).map((opt) => {
-                const hasVoted = quizState.userVote != null || isMyStory;
-                const isSelected = quizState.userVote === opt.idx;
-                const isCorrect = opt.idx === quizState.correctOptionIndex;
-                let optClass = 'story-quiz-option';
-                if (hasVoted) {
-                  if (isCorrect) optClass += ' correct';
-                  else if (isSelected) optClass += ' selected-wrong';
-                }
-
-                return (
-                  <button
-                    key={opt.idx}
-                    type="button"
-                    className={optClass}
-                    disabled={hasVoted || votingQuiz}
-                    onClick={() => handleVoteQuiz(opt.idx)}
-                  >
-                    {hasVoted && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: 0,
-                          top: 0,
-                          bottom: 0,
-                          width: `${Math.round(opt.pct || 0)}%`,
-                          background: isCorrect ? 'rgba(0,186,124,0.18)' : 'rgba(0,0,0,0.06)',
-                          transition: 'width 0.4s ease'
-                        }}
-                      />
-                    )}
-                    <span style={{ position: 'relative', zIndex: 1 }}>
-                      {hasVoted && isCorrect ? '✓ ' : ''}{opt.text}
-                    </span>
-                    {hasVoted && (
-                      <span style={{ position: 'relative', zIndex: 1, fontWeight: 700 }}>
-                        {Math.round(opt.pct || 0)}%
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Interactive Emoji Slider Sticker */}
-          {sliderState && (
-            <div
-              className="story-interactive-sticker story-slider-sticker"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className="story-slider-emoji">{sliderState.emoji || '🔥'}</span>
-              <p style={{ margin: '0 0 12px', fontWeight: 700, color: '#1a1a1a', fontSize: '14px' }}>
-                {sliderState.question || 'How hot is this?'}
-              </p>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={sliderValue}
-                disabled={sliderState.userVote != null || isMyStory || votingSlider}
-                onChange={(e) => setSliderValue(Number(e.target.value))}
-                onMouseUp={() => handleVoteSlider(sliderValue)}
-                onTouchEnd={() => handleVoteSlider(sliderValue)}
-                className="story-slider-input"
-              />
-              {(sliderState.userVote != null || isMyStory) && (
-                <div style={{ marginTop: '8px', fontSize: '12px', fontWeight: 600, color: '#0095f6' }}>
-                  Average: {Math.round(sliderState.averageRating || 0)}% ({sliderState.totalVotes || 0} votes)
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Interactive Countdown Sticker */}
-          {countdownState && (
-            <div
-              className="story-interactive-sticker story-countdown-sticker"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="story-countdown-title">{countdownState.title || 'Event Countdown'}</div>
-              <div className="story-countdown-digits">
-                <div className="story-countdown-box">
-                  <span className="story-countdown-num">{timeLeft?.days ?? '0'}</span>
-                  <span className="story-countdown-unit">Days</span>
-                </div>
-                <div className="story-countdown-box">
-                  <span className="story-countdown-num">{timeLeft?.hours ?? '0'}</span>
-                  <span className="story-countdown-unit">Hours</span>
-                </div>
-                <div className="story-countdown-box">
-                  <span className="story-countdown-num">{timeLeft?.minutes ?? '0'}</span>
-                  <span className="story-countdown-unit">Mins</span>
-                </div>
-                <div className="story-countdown-box">
-                  <span className="story-countdown-num">{timeLeft?.seconds ?? '0'}</span>
-                  <span className="story-countdown-unit">Secs</span>
-                </div>
-              </div>
-
-              {!isMyStory && (
-                <button
-                  type="button"
-                  className="story-countdown-btn"
-                  onClick={handleToggleCountdownReminder}
-                  disabled={togglingReminder}
-                >
-                  {countdownState.isSubscribed ? (
-                    <>
-                      <BellRing size={14} />
-                      <span>Reminder Set</span>
-                    </>
-                  ) : (
-                    <>
-                      <Bell size={14} />
-                      <span>Remind Me</span>
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Link Sticker(s) */}
-          {(currentStory?.links?.length
-            ? currentStory.links
-            : currentStory?.link
-            ? [currentStory.link]
-            : []
-          ).map((lnk, idx) => (
-            <a
-              key={lnk.id || idx}
-              href={lnk.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="story-link-pill"
-              style={
-                lnk.xPercent != null && lnk.yPercent != null
-                  ? { left: `${lnk.xPercent}%`, top: `${lnk.yPercent}%` }
-                  : undefined
-              }
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLink size={14} />
-              <span>{lnk.title || lnk.stickerText || 'Visit Link'}</span>
-            </a>
-          ))}
-
-          {/* Location Sticker(s) */}
-          {(currentStory?.locations?.length
-            ? currentStory.locations
-            : currentStory?.location
-            ? [currentStory.location]
-            : []
-          ).map((loc, idx) => (
-            <div
-              key={loc.id || idx}
-              className="story-location-badge"
-              style={
-                loc.xPercent != null && loc.yPercent != null
-                  ? { left: `${loc.xPercent}%`, top: `${loc.yPercent}%` }
-                  : undefined
-              }
-              onClick={(e) => e.stopPropagation()}
-            >
-              <MapPin size={13} color="#ff4d4f" />
-              <span>{loc.locationName || loc.name}</span>
-            </div>
-          ))}
-
-          {/* Hashtag Sticker(s) */}
-          {(currentStory?.hashtags?.length
-            ? currentStory.hashtags
-            : currentStory?.hashtag
-            ? [currentStory.hashtag]
-            : []
-          ).map((tag, idx) => (
-            <div
-              key={tag.id || idx}
-              className="story-hashtag-badge"
-              style={
-                tag.xPercent != null && tag.yPercent != null
-                  ? { left: `${tag.xPercent}%`, top: `${tag.yPercent}%` }
-                  : undefined
-              }
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Hash size={13} />
-              <span>#{String(tag.hashtag || tag.tag).replace(/^#/, '')}</span>
-            </div>
-          ))}
-
-          {/* Mention Stickers Overlay */}
-          {currentStory?.mentions && currentStory.mentions.length > 0 && (
-            <div className="story-mentions-container" onClick={(e) => e.stopPropagation()}>
-              {currentStory.mentions.map((m, idx) => {
-                const hasPos = m.xPercent != null && m.yPercent != null;
-                return (
-                  <div
-                    key={m.userId || m.username || idx}
-                    className="story-mention-badge"
-                    style={
-                      hasPos
-                        ? {
-                            position: 'absolute',
-                            left: `${m.xPercent}%`,
-                            top: `${m.yPercent}%`,
-                            transform: 'translate(-50%, -50%)',
-                          }
-                        : {}
-                    }
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (m.userId || m.username) {
-                        onClose?.();
-                        navigate(`/profile/${m.userId || m.username}`);
-                      }
-                    }}
-                    title={`View @${m.username || 'user'}`}
-                  >
-                    <span>@{m.username}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Add Yours Sticker */}
-          {currentStory?.addYours && (
-            <div className="story-add-yours-sticker" onClick={(e) => e.stopPropagation()}>
-              <div className="story-add-yours-header">
-                <Camera size={12} />
-                <span>Add Yours</span>
-              </div>
-              <p style={{ margin: '4px 0 6px', fontWeight: 700, color: '#1a1a1a', fontSize: '13px' }}>
-                {currentStory.addYours.prompt}
-              </p>
-              <span style={{ fontSize: '11px', color: '#8e8e8e' }}>
-                {currentStory.addYours.totalEntries || 0} responses
-              </span>
-            </div>
-          )}
+          <StoryInteractiveWidgets
+            currentStory={currentStory}
+            isMyStory={isMyStory}
+            handleOpenQuestionResponses={handleOpenQuestionResponses}
+            hasAnsweredQuestion={hasAnsweredQuestion}
+            questionAnswer={questionAnswer}
+            setQuestionAnswer={setQuestionAnswer}
+            setIsPaused={setIsPaused}
+            showQuestionResponses={showQuestionResponses}
+            showViewers={showViewers}
+            handleSubmitQuestionAnswer={handleSubmitQuestionAnswer}
+            pollState={pollState}
+            votingPoll={votingPoll}
+            handleVotePoll={handleVotePoll}
+            quizState={quizState}
+            votingQuiz={votingQuiz}
+            handleVoteQuiz={handleVoteQuiz}
+            sliderState={sliderState}
+            sliderValue={sliderValue}
+            setSliderValue={setSliderValue}
+            votingSlider={votingSlider}
+            handleVoteSlider={handleVoteSlider}
+            countdownState={countdownState}
+            timeLeft={timeLeft}
+            handleToggleCountdownReminder={handleToggleCountdownReminder}
+            togglingReminder={togglingReminder}
+            onClose={onClose}
+            navigate={navigate}
+          />
         </div>
 
         {/* Footer */}
-        <div className={`story-viewer-footer ${!isMyStory ? 'other-user-footer' : ''}`} style={{ flexDirection: 'column', alignItems: 'stretch' }}>
-          {currentStory.isUploading ? (
-            <div className="story-viewer-uploading-card">
-              <div className="story-viewer-uploading-header">
-                <div className="story-viewer-uploading-left">
-                  <RotateCw size={14} className="story-upload-spinning-icon" />
-                  <span className="story-viewer-uploading-title">
-                    Uploading your story...
-                  </span>
-                </div>
-                <span className="story-viewer-uploading-pct">
-                  {currentStory.uploadProgress || 10}%
-                </span>
-              </div>
-              <div className="story-viewer-uploading-progress-track">
-                <div
-                  className="story-viewer-uploading-progress-bar"
-                  style={{ width: `${Math.max(8, currentStory.uploadProgress || 10)}%` }}
-                />
-              </div>
-            </div>
-          ) : isMyStory ? (
-            <div className="story-viewer-owner-bar">
-              <button
-                type="button"
-                className="story-seen-badge-btn"
-                onClick={handleOpenViewers}
-                title="View story activity and viewers"
-              >
-                <div className="story-seen-icon-stack">
-                  <Eye size={18} />
-                </div>
-                <span className="story-seen-count">
-                  {currentStory.viewCount > 0
-                    ? `Seen by ${currentStory.viewCount}`
-                    : '0 views'}
-                </span>
-              </button>
+        <StoryViewerFooter
+          isMyStory={isMyStory}
+          currentStory={currentStory}
+          currentGroup={currentGroup}
+          isHighlight={isHighlight}
+          handleOpenViewers={handleOpenViewers}
+          setIsPaused={setIsPaused}
+          setShowAddToHighlight={setShowAddToHighlight}
+          setShowEditHighlight={setShowEditHighlight}
+          isMentionedInCurrentStory={isMentionedInCurrentStory}
+          sharedStoriesMap={sharedStoriesMap}
+          handleShareMentionedStory={handleShareMentionedStory}
+          sharingMention={sharingMention}
+          quickEmojis={QUICK_EMOJIS}
+          handleReactEmoji={handleReactEmoji}
+          replyText={replyText}
+          setReplyText={setReplyText}
+          showViewers={showViewers}
+          showMoreMenu={showMoreMenu}
+          handleSendReply={handleSendReply}
+          likedStory={likedStory}
+          handleLikeStory={handleLikeStory}
+        />
 
-              {!isHighlight ? (
-                <button
-                  type="button"
-                  className="story-highlight-trigger-btn"
-                  onClick={() => {
-                    setIsPaused(true);
-                    setShowAddToHighlight(true);
-                  }}
-                  title="Add to Highlight"
-                >
-                  <div className="story-highlight-icon-bubble">
-                    <Sparkles size={16} />
-                  </div>
-                  <span className="story-highlight-label">Highlight</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="story-highlight-trigger-btn"
-                  onClick={() => {
-                    setIsPaused(true);
-                    setShowEditHighlight(true);
-                  }}
-                  title="Edit Highlight"
-                >
-                  <div className="story-highlight-icon-bubble">
-                    <Edit2 size={15} />
-                  </div>
-                  <span className="story-highlight-label">Edit Highlight</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <>
-              {/* Add Mentioned Story to Your Story */}
-              {isMentionedInCurrentStory && (
-                <div className="story-add-mention-wrapper">
-                  <button
-                    type="button"
-                    className={`story-add-mention-btn ${sharedStoriesMap[currentStory.id] ? 'is-shared' : ''}`}
-                    onClick={handleShareMentionedStory}
-                    disabled={sharingMention || sharedStoriesMap[currentStory.id]}
-                    aria-label={sharedStoriesMap[currentStory.id] ? 'Added to your story' : 'Add this to your story'}
-                  >
-                    {sharedStoriesMap[currentStory.id] ? (
-                      <>
-                        <span className="story-add-mention-check">✓</span>
-                        <span>Added to your story</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus size={15} />
-                        <span>
-                          {sharingMention ? 'Adding to story...' : 'Add this to your story'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+        {/* Viewers & Activity Sheet */}
+        <StoryViewersSheet
+          showViewers={showViewers}
+          showQuestionResponses={showQuestionResponses}
+          showInsights={showInsights}
+          isMyStory={isMyStory}
+          handleCloseViewers={handleCloseViewers}
+          handleCloseQuestionResponses={handleCloseQuestionResponses}
+          setShowInsights={setShowInsights}
+          setIsPaused={setIsPaused}
+          loadingViewers={loadingViewers}
+          viewers={viewers}
+          loadingQuestionResponses={loadingQuestionResponses}
+          questionResponses={questionResponses}
+          loadingInsights={loadingInsights}
+          insightsData={insightsData}
+          onClose={onClose}
+          navigate={navigate}
+        />
 
-              {/* Quick Emoji Reactions Bar */}
-              <div className="story-quick-reactions">
-                {QUICK_EMOJIS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    className="story-reaction-btn"
-                    onClick={() => handleReactEmoji(emoji)}
-                    title={`React with ${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
-              </div>
-
-              {/* Reply Box and Like Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-                <div className="story-reply-box">
-                  <input
-                    type="text"
-                    placeholder={`Reply to ${currentGroup.author?.username || 'user'}...`}
-                    className="story-reply-input"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    onFocus={() => setIsPaused(true)}
-                    onBlur={() => !showViewers && !showMoreMenu && setIsPaused(false)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSendReply();
-                    }}
-                  />
-                  {replyText.trim() && (
-                    <button
-                      type="button"
-                      className="story-reply-send-btn"
-                      onClick={handleSendReply}
-                    >
-                      Send
-                    </button>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  className={`story-like-btn ${likedStory ? 'liked' : ''}`}
-                  onClick={handleLikeStory}
-                  title="Like story"
-                >
-                  <Heart size={24} fill={likedStory ? '#ef4444' : 'none'} color={likedStory ? '#ef4444' : '#fff'} />
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Viewers Sheet (Instagram Style) */}
-        {showViewers && isMyStory && (
-          <div className="story-viewers-sheet">
-            <div className="story-viewers-sheet-header">
-              <div className="story-viewers-sheet-title">
-                <Eye size={18} />
-                <span>Story Activity</span>
-                <span className="story-viewers-sheet-badge">
-                  {viewers.length} {viewers.length === 1 ? 'view' : 'views'}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="story-viewers-sheet-close"
-                onClick={handleCloseViewers}
-                aria-label="Close viewers"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="story-viewers-sheet-body">
-              {loadingViewers ? (
-                <SkeletonUserRows count={4} compact />
-              ) : viewers.length > 0 ? (
-                viewers.map((viewer) => (
-                  <div key={viewer.id} className="story-viewer-user-row">
-                    <div
-                      className="story-viewer-user-info"
-                      onClick={() => {
-                        onClose();
-                        navigate(`/profile/${viewer.id}`);
-                      }}
-                    >
-                      <Avatar
-                        src={viewer.avatarUrl || viewer.profilePictureUrl}
-                        alt={viewer.username}
-                        size="sm"
-                      />
-                      <div className="story-viewer-user-names">
-                        <span className="story-viewer-user-uname">{viewer.username}</span>
-                        <span className="story-viewer-user-fname">
-                          {viewer.displayName || viewer.fullName || ''}
-                        </span>
-                      </div>
-                    </div>
-                    {viewer.viewedAt && (
-                      <span className="story-viewer-user-time">{timeAgo(viewer.viewedAt)}</span>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="story-viewers-empty-state">
-                  <Eye size={36} className="story-viewers-empty-icon" />
-                  <h4 className="story-viewers-empty-title">
-                    {viewers.length > 0
-                      ? `${viewers.length} ${viewers.length === 1 ? 'Account has' : 'Accounts have'} seen your story`
-                      : 'No views yet'}
-                  </h4>
-                  <p className="story-viewers-empty-desc">
-                    {viewers.length > 0
-                      ? 'People who have seen your story are counted in the views total above.'
-                      : 'When other accounts view your story, their profiles and view times will appear here.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Question Responses Sheet (Author Only) */}
-        {showQuestionResponses && isMyStory && (
-          <div className="story-viewers-sheet">
-            <div className="story-viewers-sheet-header">
-              <div className="story-viewers-sheet-title">
-                <span>Question Responses</span>
-                <span className="story-viewers-sheet-badge">
-                  {questionResponses.length} {questionResponses.length === 1 ? 'response' : 'responses'}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="story-viewers-sheet-close"
-                onClick={handleCloseQuestionResponses}
-                aria-label="Close responses"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="story-viewers-sheet-body">
-              {loadingQuestionResponses ? (
-                <SkeletonUserRows count={4} compact />
-              ) : questionResponses.length > 0 ? (
-                questionResponses.map((item) => (
-                  <div key={item.id} className="story-viewer-user-row" style={{ alignItems: 'flex-start' }}>
-                    <div
-                      className="story-viewer-user-info"
-                      onClick={() => {
-                        onClose();
-                        navigate(`/profile/${item.user?.id}`);
-                      }}
-                    >
-                      <Avatar
-                        src={item.user?.avatarUrl}
-                        alt={item.user?.username}
-                        size="sm"
-                      />
-                      <div className="story-viewer-user-names">
-                        <span className="story-viewer-user-uname">{item.user?.username}</span>
-                        <div style={{ background: '#f0f2f5', padding: '6px 10px', borderRadius: '8px', marginTop: '4px', color: '#1a1a1a', fontSize: '13px' }}>
-                          {item.answer}
-                        </div>
-                      </div>
-                    </div>
-                    {item.createdAt && (
-                      <span className="story-viewer-user-time">{timeAgo(item.createdAt)}</span>
-                    )}
-                  </div>
-                ))
-              ) : (
-                <div className="story-viewers-empty-state">
-                  <h4 className="story-viewers-empty-title">No responses yet</h4>
-                  <p className="story-viewers-empty-desc">
-                    When viewers type an answer into your question sticker, their responses will appear here.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Story Insights Sheet (Author Only) */}
-        {showInsights && isMyStory && (
-          <div className="story-viewers-sheet">
-            <div className="story-viewers-sheet-header">
-              <div className="story-viewers-sheet-title">
-                <BarChart2 size={18} />
-                <span>Story Insights</span>
-              </div>
-              <button
-                type="button"
-                className="story-viewers-sheet-close"
-                onClick={() => {
-                  setShowInsights(false);
-                  setIsPaused(false);
-                }}
-                aria-label="Close insights"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="story-viewers-sheet-body">
-              {loadingInsights ? (
-                <SkeletonUserRows count={4} compact />
-              ) : insightsData ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '10px 4px' }}>
-                  {/* Overview Cards */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '20px', fontWeight: 700, color: '#fff', display: 'block' }}>
-                        {insightsData.impressions || 0}
-                      </span>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Impressions</span>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '20px', fontWeight: 700, color: '#fff', display: 'block' }}>
-                        {insightsData.reach || 0}
-                      </span>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Accounts Reached</span>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '20px', fontWeight: 700, color: '#fff', display: 'block' }}>
-                        {insightsData.repliesCount || 0}
-                      </span>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Replies</span>
-                    </div>
-                    <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
-                      <span style={{ fontSize: '20px', fontWeight: 700, color: '#fff', display: 'block' }}>
-                        {insightsData.sharesCount || 0}
-                      </span>
-                      <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Shares</span>
-                    </div>
-                  </div>
-
-                  {/* Navigation Metrics */}
-                  <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '14px' }}>
-                    <h5 style={{ margin: '0 0 10px', fontSize: '13px', fontWeight: 600, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                      Navigation
-                    </h5>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Forward Taps</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>{insightsData.forwardTaps || 0}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Back Taps</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>{insightsData.backTaps || 0}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Next Story Taps</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>{insightsData.nextStoryTaps || 0}</span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Exited</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>{insightsData.exitedCount || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="story-viewers-empty-state">
-                  <BarChart2 size={36} className="story-viewers-empty-icon" />
-                  <h4 className="story-viewers-empty-title">No insights available</h4>
-                  <p className="story-viewers-empty-desc">
-                    Metrics appear after accounts begin interacting with your story.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Report Story Sheet (Viewers Only) */}
-        {showReportModal && !isMyStory && (
-          <div className="story-viewers-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="story-viewers-sheet-header">
-              <div className="story-viewers-sheet-title">
-                <Flag size={18} color="#ef4444" />
-                <span>Report Story</span>
-              </div>
-              <button
-                type="button"
-                className="story-viewers-sheet-close"
-                onClick={() => {
-                  setShowReportModal(false);
-                  setIsPaused(false);
-                }}
-                aria-label="Close report"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="story-viewers-sheet-body" style={{ padding: '16px' }}>
-              <p style={{ margin: '0 0 12px', fontSize: '13px', color: 'rgba(255,255,255,0.8)' }}>
-                Why are you reporting this story?
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '14px' }}>
-                {[
-                  { key: 'INAPPROPRIATE', label: 'Inappropriate or Sensitive' },
-                  { key: 'SPAM', label: 'Spam or Scam' },
-                  { key: 'HARASSMENT', label: 'Harassment or Bullying' },
-                  { key: 'VIOLENCE', label: 'Violence or Dangerous Content' },
-                  { key: 'OTHER', label: 'Something else' },
-                ].map((reason) => (
-                  <label
-                    key={reason.key}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px',
-                      padding: '8px 12px',
-                      borderRadius: '8px',
-                      background: reportReason === reason.key ? 'rgba(0,149,246,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: reportReason === reason.key ? '1px solid #0095f6' : '1px solid rgba(255,255,255,0.08)',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      color: '#fff',
-                    }}
-                  >
-                    <input
-                      type="radio"
-                      name="reportReason"
-                      value={reason.key}
-                      checked={reportReason === reason.key}
-                      onChange={() => setReportReason(reason.key)}
-                    />
-                    <span>{reason.label}</span>
-                  </label>
-                ))}
-              </div>
-
-              <textarea
-                placeholder="Additional details (optional)..."
-                value={reportDetails}
-                onChange={(e) => setReportDetails(e.target.value)}
-                rows={3}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: '8px',
-                  color: '#fff',
-                  padding: '8px 10px',
-                  fontSize: '13px',
-                  outline: 'none',
-                  resize: 'none',
-                  marginBottom: '12px',
-                }}
-              />
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleReportStory}
-                disabled={submittingReport}
-                style={{ width: '100%', padding: '10px', fontWeight: 600 }}
-              >
-                {submittingReport ? 'Submitting...' : 'Submit Report'}
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Report Story Sheet */}
+        <StoryReportModal
+          showReportModal={showReportModal}
+          isMyStory={isMyStory}
+          setShowReportModal={setShowReportModal}
+          setIsPaused={setIsPaused}
+          reportReason={reportReason}
+          setReportReason={setReportReason}
+          reportDetails={reportDetails}
+          setReportDetails={setReportDetails}
+          handleReportStory={handleReportStory}
+          submittingReport={submittingReport}
+        />
 
         {/* Add to Highlight Modal */}
         {showAddToHighlight && currentStory && (

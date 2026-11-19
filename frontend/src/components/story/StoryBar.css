@@ -150,3 +150,39 @@
     opacity: 0.55;
   }
 }
+
+/* Responsive dynamic adaptation for PC Web and Phone Web */
+@media (max-width: 768px) {
+  .story-bar-wrapper {
+    max-width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .story-scroll-btn {
+    display: none; /* Native touch swiping on mobile */
+  }
+
+  .story-bar-container {
+    gap: 10px;
+    padding: 2px 4px;
+  }
+
+  .story-bar-item {
+    width: 62px;
+  }
+}
+
+@media (max-width: 360px) {
+  .story-bar-container {
+    gap: 8px;
+  }
+
+  .story-bar-item {
+    width: 56px;
+  }
+
+  .story-username-label {
+    font-size: 11px;
+    max-width: 56px;
+  }
+}

@@ -898,9 +898,11 @@
     min-height: 100dvh;
   }
 
-  /* When inside active chat on mobile: hide global mobile header & bottom nav so chat has full screen */
+  /* When inside active chat or story viewer on mobile: hide global mobile header & bottom nav so view has full screen */
   body.in-active-chat .mobile-header,
-  body.in-active-chat .mobile-bottom-nav {
+  body.in-active-chat .mobile-bottom-nav,
+  body.in-story-viewer .mobile-header,
+  body.in-story-viewer .mobile-bottom-nav {
     display: none !important;
   }
 

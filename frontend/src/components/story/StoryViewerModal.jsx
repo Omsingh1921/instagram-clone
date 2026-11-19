@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { AddToHighlightModal } from '../modals/AddToHighlightModal';
@@ -111,10 +112,45 @@ export const StoryViewerModal = ({
   // Keep blocked state synchronized without triggering re-render cycles
   isBlockedRef.current = Boolean(mgmt.isModalBlocked || interactive.showQuestionResponses);
 
+  // Lock body scroll and apply in-story-viewer class to hide global mobile headers/bottom navs
+  useEffect(() => {
+    if (!isOpen) return;
+    document.body.classList.add('in-story-viewer');
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.classList.remove('in-story-viewer');
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
+
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && onClose) {
+      onClose();
+    }
+  };
+
   if (!isOpen || !nav.currentGroup || !nav.currentStory) return null;
 
-  return (
-    <div className="story-viewer-overlay" role="dialog" aria-modal="true">
+  const modalContent = (
+    <div
+      className="story-viewer-overlay"
+      role="dialog"
+      aria-modal="true"
+      onClick={handleBackdropClick}
+    >
+      {/* External Desktop Close Button */}
+      <button
+        type="button"
+        className="story-desktop-close-btn"
+        onClick={onClose}
+        aria-label="Close story viewer"
+        title="Close (Esc)"
+      >
+        <X size={26} />
+      </button>
+
       {/* External Prev Arrow */}
       {nav.groupIdx > 0 && !mgmt.showViewers && (
         <button
@@ -122,12 +158,16 @@ export const StoryViewerModal = ({
           className="story-nav-arrow prev"
           onClick={nav.goToPrevStory}
           aria-label="Previous user story"
+          title="Previous (Left Arrow)"
         >
           <ChevronLeft size={24} />
         </button>
       )}
 
-      <div className={`story-viewer-frame ${nav.isHolding ? 'is-holding' : ''}`}>
+      <div
+        className={`story-viewer-frame ${nav.isHolding ? 'is-holding' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Progress Bars */}
         <StoryProgressBars
           stories={nav.currentGroup.stories}
@@ -338,12 +378,15 @@ export const StoryViewerModal = ({
           className="story-nav-arrow next"
           onClick={nav.goToNextStory}
           aria-label="Next user story"
+          title="Next (Right Arrow)"
         >
           <ChevronRight size={24} />
         </button>
       )}
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default StoryViewerModal;

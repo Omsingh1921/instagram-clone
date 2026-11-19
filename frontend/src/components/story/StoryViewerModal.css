@@ -2,26 +2,58 @@
 .story-viewer-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal);
-  background-color: rgba(0, 0, 0, 0.95);
+  z-index: calc(var(--z-modal) + 200);
+  background-color: rgba(0, 0, 0, 0.94);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.15s ease-out;
+  touch-action: none;
+  overflow: hidden;
+}
+
+.story-desktop-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 40;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.story-desktop-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: scale(1.08);
+}
+
+.story-desktop-close-btn:active {
+  transform: scale(0.95);
 }
 
 .story-viewer-frame {
   position: relative;
-  width: 100%;
-  max-width: 420px;
-  height: 90vh;
-  max-height: 800px;
-  background-color: #111;
+  width: min(100vw - 32px, calc(90vh * 9 / 16), 425px);
+  height: min(90vh, 790px);
+  aspect-ratio: 9 / 16;
+  background-color: #07070c;
   border-radius: var(--radius-xl);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .story-progress-container {
@@ -165,26 +197,37 @@
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.15);
-  border: none;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 20;
-  transition: all var(--transition-fast);
+  z-index: 30;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .story-nav-arrow:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.32);
+  transform: translateY(-50%) scale(1.1);
 }
 
-.story-nav-arrow.prev { left: -60px; }
-.story-nav-arrow.next { right: -60px; }
+.story-nav-arrow:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.story-nav-arrow.prev {
+  left: clamp(16px, 4.5vw, 60px);
+}
+
+.story-nav-arrow.next {
+  right: clamp(16px, 4.5vw, 60px);
+}
 
 /* Story Viewer Footer */
 .story-viewer-footer {
@@ -896,14 +939,85 @@
 }
 
 @media (max-width: 768px) {
-  .story-viewer-frame {
-    max-width: 100%;
-    height: 100vh;
-    max-height: none;
-    border-radius: 0;
+  .story-viewer-overlay {
+    background-color: #000000;
+    padding: 0;
   }
+
+  .story-desktop-close-btn {
+    display: none;
+  }
+
+  .story-viewer-frame {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    aspect-ratio: auto;
+  }
+
   .story-nav-arrow {
     display: none;
+  }
+
+  .story-progress-container {
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    left: 8px;
+    right: 8px;
+  }
+
+  .story-viewer-header {
+    top: calc(env(safe-area-inset-top, 0px) + 18px);
+    left: 10px;
+    right: 10px;
+  }
+
+  .story-viewer-footer {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    left: 10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 360px) {
+  .story-progress-container {
+    top: calc(env(safe-area-inset-top, 0px) + 6px);
+    left: 6px;
+    right: 6px;
+  }
+
+  .story-viewer-header {
+    top: calc(env(safe-area-inset-top, 0px) + 14px);
+    left: 8px;
+    right: 8px;
+  }
+
+  .story-viewer-footer {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    left: 8px;
+    right: 8px;
+    gap: 4px;
+  }
+
+  .story-interactive-sticker {
+    max-width: 260px;
+    width: 94%;
+  }
+
+  .story-countdown-digits {
+    gap: 4px;
+  }
+
+  .story-countdown-box {
+    padding: 4px 6px;
+    min-width: 36px;
+  }
+
+  .story-countdown-num {
+    font-size: 15px;
   }
 }
 
